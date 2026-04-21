@@ -1,0 +1,62 @@
+# ==============================================================
+# JudgeSense — gitignore
+# ==============================================================
+
+# Secrets — NEVER commit API keys
+.env
+.env.local
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Large result files (keep metrics.json, skip raw)
+data/results/raw_outputs/*.jsonl
+!data/results/raw_outputs/.gitkeep
+
+# Generated figures (regenerable from notebooks)
+figures/*.pdf
+figures/*.png
+!figures/.gitkeep
+
+# Models / cached downloads
+*.bin
+*.safetensors
+.cache/
+models/
+
+# Logs
+*.log
+logs/
