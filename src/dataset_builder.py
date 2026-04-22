@@ -56,11 +56,11 @@ class PromptPairGenerator:
     # ------------------------------------------------------------------
     def generate_factuality_pairs(self) -> List[Dict]:
         templates = [
-            "Evaluate the factual accuracy of the following response. Is it factually correct? Answer with YES or NO.\n\nResponse: {r}",
-            "As a fact-checker, determine whether this response contains accurate information. Answer YES (accurate) or NO (contains errors).\n\nResponse: {r}",
-            "Rate the factual correctness: Accurate (all claims correct) or Inaccurate (contains errors).\n\nResponse: {r}",
-            "Does the following response present factually correct information? Please answer yes or no.\n\nResponse: {r}",
-            "Perform a factuality assessment of the statement below. Are all factual claims correct?\n\nResponse: {r}",
+            "Is this factually correct? Answer YES or NO only.\n\nResponse: {r}",
+            "Fact-check this response. Reply YES (correct) or NO (incorrect).\n\nResponse: {r}",
+            "Are the facts in this response accurate? YES or NO.\n\nResponse: {r}",
+            "Does this response contain factual errors? Answer NO (accurate) or YES (has errors).\n\nResponse: {r}",
+            "Evaluate factual accuracy. One word answer - YES or NO.\n\nResponse: {r}",
         ]
         responses = [
             ("The Earth orbits around the Sun.", "accurate"),
@@ -99,11 +99,11 @@ class PromptPairGenerator:
     # ------------------------------------------------------------------
     def generate_coherence_pairs(self) -> List[Dict]:
         templates = [
-            "On a scale of 1-5, rate the coherence of this summary:\n1 = Incoherent, 5 = Very coherent\n\nSummary: {s}",
-            "Evaluate the logical flow and coherence of the summary below. Score from 1 (poor) to 5 (excellent).\n\nSummary: {s}",
-            "How coherently does the summary organize information? Rate 1 (very poor) to 5 (very good).\n\nSummary: {s}",
-            "As a writing expert, assess coherence of this summary. Use a 1-5 scale where 1 is incoherent and 5 is highly coherent.\n\nSummary: {s}",
-            "Score the coherence of the following summary on a scale from 1 (lowest) to 5 (highest):\n\nSummary: {s}",
+            "Rate coherence 1-5. One number only.\n\nText: {s}",
+            "Coherence score 1 to 5, respond with number only.\n\nText: {s}",
+            "How coherent is this? Score: 1=poor 5=excellent. Number only.\n\nText: {s}",
+            "Assign coherence rating 1-5. Single digit response.\n\nText: {s}",
+            "Coherence: 1 (incoherent) to 5 (very coherent). Reply with number.\n\nText: {s}",
         ]
         summaries = [
             "The meeting discussed budget allocation. Marketing needs increased funding. Sales performed well last quarter. The CEO approved the proposal.",
@@ -137,11 +137,11 @@ class PromptPairGenerator:
     # ------------------------------------------------------------------
     def generate_relevance_pairs(self) -> List[Dict]:
         templates = [
-            "Given the query: {q}\n\nWhich response is more relevant?\nA: {ra}\nB: {rb}",
-            "Query: {q}\n\nCompare these two responses for relevance:\nResponse 1: {ra}\nResponse 2: {rb}\nWhich is more relevant?",
-            "As a search relevance expert, evaluate which response better addresses: {q}\nOption A: {ra}\nOption B: {rb}",
-            "Rank these responses by relevance to '{q}':\n- {ra}\n- {rb}",
-            "For the question '{q}', which answer is more relevant?\n{ra}\nor\n{rb}",
+            "Which is more relevant to '{q}'? A or B only.\nA: {ra}\nB: {rb}",
+            "More relevant to '{q}'? Reply A or B.\nA: {ra}\nB: {rb}",
+            "For query '{q}', better answer? A or B.\nA: {ra}\nB: {rb}",
+            "Relevance to '{q}': choose A or B.\nA: {ra}\nB: {rb}",
+            "'{q}' - which answer is more relevant? A or B only.\nA: {ra}\nB: {rb}",
         ]
         samples = [
             ("What is machine learning?",
@@ -185,11 +185,11 @@ class PromptPairGenerator:
     # ------------------------------------------------------------------
     def generate_preference_pairs(self) -> List[Dict]:
         templates = [
-            "Compare these two responses to '{q}'.\n\nResponse A: {ra}\n\nResponse B: {rb}\n\nWhich response is better?",
-            "Evaluate responses to '{q}' based on quality, clarity, and completeness.\nA: {ra}\n\nB: {rb}\n\nWhich is superior?",
-            "As an expert evaluator, judge which response better answers '{q}':\nOption 1: {ra}\nOption 2: {rb}",
-            "For the query '{q}', choose the better response:\n- {ra}\n- {rb}",
-            "Which response to '{q}' is better?\nFirst: {ra}\nSecond: {rb}",
+            "Better response to '{q}'? A or B only.\nA: {ra}\nB: {rb}",
+            "Higher quality answer to '{q}'? Reply A or B.\nA: {ra}\nB: {rb}",
+            "For '{q}', which response is superior? A or B.\nA: {ra}\nB: {rb}",
+            "Preferred response to '{q}'? Single letter: A or B.\nA: {ra}\nB: {rb}",
+            "'{q}' - best response? A or B only.\nA: {ra}\nB: {rb}",
         ]
         samples = [
             ("Explain machine learning",
@@ -251,7 +251,7 @@ class PromptPairGenerator:
             with open(path, "w") as f:
                 for p in pairs:
                     f.write(json.dumps(p) + "\n")
-            print(f"  Saved {len(pairs)} pairs → {path}")
+            print(f"  Saved {len(pairs)} pairs -> {path}")
             all_pairs.extend(pairs)
 
         combined = output_dir / "combined.jsonl"
@@ -259,7 +259,7 @@ class PromptPairGenerator:
             for p in all_pairs:
                 f.write(json.dumps(p) + "\n")
 
-        print(f"\n✓ Dataset generation complete!")
+        print(f"\n[OK] Dataset generation complete!")
         print(f"  Total pairs : {len(all_pairs)}")
         print(f"  Files saved : {output_dir}")
 

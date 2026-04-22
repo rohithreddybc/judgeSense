@@ -19,6 +19,7 @@ import json
 import logging
 import os
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
@@ -73,6 +74,24 @@ _KEY_ENV_VARS = {
     "gpt-4o-mini": "OPENAI_API_KEY",
     "llama3":      "HF_TOKEN",
     "mistral":     "MISTRAL_API_KEY",
+}
+
+# Rate limiting (seconds between API calls)
+_RATE_LIMIT = {
+    "gpt-4o-mini": 0.5,
+    "llama3":      1.0,
+    "mistral":     0.5,
+}
+
+# Cost per 1K tokens (input + output average)
+_COST_PER_1K_TOKENS = {
+    "gpt-4o-mini": 0.000150,
+    "gpt-4o":      0.002500,
+    "claude-haiku": 0.000800,
+    "claude-sonnet": 0.003000,
+    "gemini-flash": 0.000000,
+    "llama3":      0.000000,
+    "mistral":     0.000000,
 }
 
 
@@ -195,6 +214,32 @@ def _call_model(model: str, client, prompt: str) -> str:
         raise ValueError(f"Unknown model: {model!r}")
 
 
+# ── Helpers for efficiency improvements ────────────────────────────────────────
+
+def _call_model_with_retry(model: str, client, prompt: str) -> str:
+    """Call model with single retry on failure (waits 5 seconds before retry)."""
+    try:
+        return _call_model(model, client, prompt)
+    except Exception as exc:
+        log.warning("Initial call failed for %s, retrying in 5s: %s", model, exc)
+        time.sleep(5)
+        try:
+            return _call_model(model, client, prompt)
+        except Exception as exc2:
+            return f"ERROR: {exc2}"
+
+
+def _normalize_and_record(raw: str, task_type: str) -> tuple[str, str]:
+    """Normalize decision and return both raw and normalized forms."""
+    try:
+        from src.models import normalize_decision
+        normalized = normalize_decision(raw, task_type)
+    except ImportError:
+        # Fallback if module import fails
+        normalized = raw[:20]
+    return raw, normalized
+
+
 # ── Core evaluation loop ───────────────────────────────────────────────────────
 
 def run_evaluation(
@@ -204,15 +249,15 @@ def run_evaluation(
     client,
     run_number: int,
     output_path: Path,
-) -> int:
+) -> tuple[int, float]:
     """
     Evaluate prompt pairs and stream results to output_path.
 
-    Calls prompt_a then prompt_b for each pair, recording both decisions.
-    API errors are caught and logged; the loop always continues.
+    Calls prompt_a then prompt_b for each pair, with rate limiting and retry logic.
+    Records both raw and normalized decisions.
 
     Returns:
-        Number of pairs successfully evaluated (both decisions non-error).
+        (n_ok, estimated_cost): Pairs successfully evaluated and estimated USD cost.
     """
     iterator = pairs
     if _TQDM_OK:
@@ -223,45 +268,55 @@ def run_evaluation(
             leave=True,
         )
 
+    rate_limit_sec = _RATE_LIMIT.get(model, 0.5)
+    cost_per_1k = _COST_PER_1K_TOKENS.get(model, 0.0)
+    total_tokens = 0
     n_ok = 0
+
     for pair in iterator:
         pair_id   = pair.get("pair_id", "unknown")
         task_type = pair.get("task_type", task)
         prompt_a  = pair.get("prompt_a", "")
         prompt_b  = pair.get("prompt_b", "")
 
-        try:
-            decision_a = _call_model(model, client, prompt_a)
-        except Exception as exc:
-            log.error("API error on pair %s (prompt_a): %s", pair_id, exc)
-            decision_a = f"ERROR: {exc}"
+        # Call prompt A (with rate limiting and retry)
+        raw_a = _call_model_with_retry(model, client, prompt_a)
+        raw_a, norm_a = _normalize_and_record(raw_a, task_type)
+        time.sleep(rate_limit_sec)
 
-        try:
-            decision_b = _call_model(model, client, prompt_b)
-        except Exception as exc:
-            log.error("API error on pair %s (prompt_b): %s", pair_id, exc)
-            decision_b = f"ERROR: {exc}"
+        # Call prompt B (with rate limiting and retry)
+        raw_b = _call_model_with_retry(model, client, prompt_b)
+        raw_b, norm_b = _normalize_and_record(raw_b, task_type)
+        time.sleep(rate_limit_sec)
+
+        # Estimate token usage: prompt ~50 tokens, response ~20 tokens
+        total_tokens += (50 + 20) * 2  # for both A and B
 
         record = {
-            "pair_id":           pair_id,
-            "task_type":         task_type,
-            "model":             model,
-            "prompt_a_decision": decision_a,
-            "prompt_b_decision": decision_b,
-            "run_number":        run_number,
-            "timestamp":         datetime.now(timezone.utc).isoformat(),
+            "pair_id":              pair_id,
+            "task_type":            task_type,
+            "model":                model,
+            "prompt_a_decision_raw": raw_a,
+            "prompt_a_decision":    norm_a,
+            "prompt_b_decision_raw": raw_b,
+            "prompt_b_decision":    norm_b,
+            "run_number":           run_number,
+            "timestamp":            datetime.now(timezone.utc).isoformat(),
         }
         _append_jsonl(record, output_path)
 
-        if not decision_a.startswith("ERROR") and not decision_b.startswith("ERROR"):
+        if not raw_a.startswith("ERROR") and not raw_b.startswith("ERROR"):
             n_ok += 1
+
+    estimated_cost = (total_tokens / 1000.0) * cost_per_1k
 
     if not _TQDM_OK:
         log.info(
-            "Completed run %d — %d/%d pairs evaluated successfully.",
-            run_number, n_ok, len(pairs),
+            "Completed run %d — %d/%d pairs evaluated successfully. "
+            "Estimated cost: ${:.4f}",
+            run_number, n_ok, len(pairs), estimated_cost,
         )
-    return n_ok
+    return n_ok, estimated_cost
 
 
 # ── CLI ────────────────────────────────────────────────────────────────────────
@@ -347,6 +402,8 @@ def main(argv: Optional[List[str]] = None) -> None:
         args.model, tasks, args.runs, args.dry_run,
     )
 
+    total_cost = 0.0
+
     for task in tasks:
         input_path = Path(args.input) / f"{task}.jsonl"
 
@@ -370,7 +427,7 @@ def main(argv: Optional[List[str]] = None) -> None:
                 "Run %d/%d | task=%s | pairs=%d | output=%s",
                 run_num, args.runs, task, len(pairs), output_path,
             )
-            run_evaluation(
+            _, cost = run_evaluation(
                 model=args.model,
                 task=task,
                 pairs=pairs,
@@ -378,8 +435,10 @@ def main(argv: Optional[List[str]] = None) -> None:
                 run_number=run_num,
                 output_path=output_path,
             )
+            total_cost += cost
+            log.info("Task %s run %d cost: $%.4f (total: $%.4f)", task, run_num, cost, total_cost)
 
-    log.info("Evaluation complete.")
+    log.info("Evaluation complete. Total estimated cost: $%.4f", total_cost)
 
 
 if __name__ == "__main__":
