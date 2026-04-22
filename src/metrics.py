@@ -7,7 +7,9 @@ as defined in the JudgeSense paper.
 
 from __future__ import annotations
 
-from typing import Callable, Sequence, Tuple
+import json
+from pathlib import Path
+from typing import Callable, Dict, List, Sequence, Tuple
 
 import numpy as np
 
@@ -53,13 +55,6 @@ def decision_flip_rate(
     decision between prompt variants A and B.
 
     flip_rate = 1 - JSS
-
-    Args:
-        decisions_a: Decisions from prompt variant A.
-        decisions_b: Decisions from prompt variant B.
-
-    Returns:
-        Flip rate in [0, 1]. Higher means more sensitive to prompt wording.
     """
     return 1.0 - judge_sensitivity_score(decisions_a, decisions_b)
 
@@ -71,24 +66,7 @@ def cohens_kappa(
     """
     Cohen's kappa: inter-rater agreement corrected for chance agreement.
 
-    kappa = (p_o - p_e) / (1 - p_e)
-
-    where p_o is observed agreement and p_e is expected agreement by chance.
-    Uses sklearn.metrics.cohen_kappa_score when available; falls back to a
-    manual computation otherwise.
-
-    Args:
-        decisions_a: Decisions from prompt variant A.
-        decisions_b: Decisions from prompt variant B.
-
-    Returns:
-        Cohen's kappa in [-1, 1]:
-            < 0.0  : less than chance agreement
-            0–0.20 : slight
-            0.20–0.40 : fair
-            0.40–0.60 : moderate
-            0.60–0.80 : substantial
-            0.80–1.0  : near-perfect
+    Returns 1.0 when sklearn returns NaN (all labels identical — perfect agreement).
 
     Raises:
         ValueError: If inputs are empty or have different lengths.
@@ -104,7 +82,6 @@ def cohens_kappa(
         import math
         import warnings
         from sklearn.metrics import cohen_kappa_score
-        # sklearn warns + returns NaN when only one label is present; we handle that
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             kappa = cohen_kappa_score(decisions_a, decisions_b)
@@ -123,7 +100,6 @@ def cohens_kappa(
         for label in labels
     )
 
-    # Guard against degenerate case where all decisions are identical
     if abs(1.0 - p_e) < 1e-12:
         return 1.0
     return (p_o - p_e) / (1.0 - p_e)
@@ -142,21 +118,10 @@ def bootstrap_confidence_interval(
     Resamples (decisions_a[i], decisions_b[i]) pairs with replacement
     n_bootstrap times, applies metric_fn to each resample, and returns
     the percentile-based confidence interval.
-
-    Args:
-        decisions_a: Decisions from prompt variant A.
-        decisions_b: Decisions from prompt variant B.
-        metric_fn: A callable (decisions_a, decisions_b) -> float.
-        n_bootstrap: Number of bootstrap iterations (default 1000).
-        confidence: Coverage probability, e.g. 0.95 for a 95% CI.
-
-    Returns:
-        (lower, upper): Lower and upper confidence interval bounds.
     """
     pairs = list(zip(decisions_a, decisions_b))
     n = len(pairs)
 
-    # Fixed seed for reproducibility across runs
     rng = np.random.default_rng(seed=42)
 
     boot_stats = []
@@ -179,22 +144,11 @@ def compute_all_metrics(
     """
     Compute the full JudgeSense metric suite.
 
-    Args:
-        decisions_a: Decisions from prompt variant A.
-        decisions_b: Decisions from prompt variant B.
-
-    Returns:
-        Dictionary with keys:
-            jss          — Judge Sensitivity Score
-            flip_rate    — Decision Flip Rate (1 - JSS)
-            cohens_kappa — Cohen's kappa
-            ci_lower     — 95% bootstrap CI lower bound for JSS
-            ci_upper     — 95% bootstrap CI upper bound for JSS
-            n_pairs      — total number of evaluated pairs
-            n_flips      — number of pairs where decisions differed
+    Returns dict with keys: jss, flip_rate, cohens_kappa, ci_lower, ci_upper,
+    n_pairs, n_flips.
     """
-    jss = judge_sensitivity_score(decisions_a, decisions_b)
-    flip = decision_flip_rate(decisions_a, decisions_b)
+    jss   = judge_sensitivity_score(decisions_a, decisions_b)
+    flip  = decision_flip_rate(decisions_a, decisions_b)
     kappa = cohens_kappa(decisions_a, decisions_b)
     ci_lower, ci_upper = bootstrap_confidence_interval(
         decisions_a, decisions_b, judge_sensitivity_score
@@ -203,44 +157,128 @@ def compute_all_metrics(
     n_flips = round(flip * n_pairs)
 
     return {
-        "jss": round(jss, 4),
-        "flip_rate": round(flip, 4),
+        "jss":          round(jss,   4),
+        "flip_rate":    round(flip,  4),
         "cohens_kappa": round(kappa, 4),
-        "ci_lower": round(ci_lower, 4),
-        "ci_upper": round(ci_upper, 4),
-        "n_pairs": n_pairs,
-        "n_flips": n_flips,
+        "ci_lower":     round(ci_lower, 4),
+        "ci_upper":     round(ci_upper, 4),
+        "n_pairs":      n_pairs,
+        "n_flips":      n_flips,
     }
 
 
+def compute_results_summary(results_dir: str | Path) -> Dict:
+    """
+    Read all JSONL from results_dir, compute JSS per (model, task),
+    save metrics_summary.json alongside results, and print a formatted table.
+
+    Records with error != None or UNCLEAR decisions are excluded from metrics.
+
+    Returns the summary dict.
+    """
+    results_dir = Path(results_dir)
+    summary: Dict[str, Dict[str, dict]] = {}
+
+    for jsonl_file in sorted(results_dir.glob("*.jsonl")):
+        groups: Dict[Tuple[str, str], Tuple[List[str], List[str]]] = {}
+        with open(jsonl_file, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    rec = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+
+                if rec.get("error") is not None:
+                    continue
+
+                model     = rec.get("model", "unknown")
+                task_type = rec.get("task_type", "unknown")
+                norm_a    = rec.get("normalized_a") or rec.get("prompt_a_decision", "")
+                norm_b    = rec.get("normalized_b") or rec.get("prompt_b_decision", "")
+
+                if norm_a == "UNCLEAR" or norm_b == "UNCLEAR":
+                    continue
+
+                key = (model, task_type)
+                if key not in groups:
+                    groups[key] = ([], [])
+                groups[key][0].append(norm_a)
+                groups[key][1].append(norm_b)
+
+        for (model, task_type), (da, db) in groups.items():
+            if len(da) < 2:
+                continue
+            metrics = compute_all_metrics(da, db)
+            if model not in summary:
+                summary[model] = {}
+            summary[model][task_type] = metrics
+
+    # Save
+    out_path = results_dir.parent / "metrics_summary.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as fh:
+        json.dump(summary, fh, indent=2)
+
+    # Print table
+    header = f"{'Model':<20} {'Task':<12} {'JSS':>6} {'Flip':>6} {'Kappa':>7} {'CI 95%':>14} {'N':>6}"
+    print("\n" + "=" * len(header))
+    print("JudgeSense Metrics Summary")
+    print("=" * len(header))
+    print(header)
+    print("-" * len(header))
+    for model in sorted(summary):
+        for task in sorted(summary[model]):
+            m = summary[model][task]
+            ci = f"[{m['ci_lower']:.3f},{m['ci_upper']:.3f}]"
+            print(
+                f"{model:<20} {task:<12} {m['jss']:>6.3f} {m['flip_rate']:>6.3f} "
+                f"{m['cohens_kappa']:>7.3f} {ci:>14} {m['n_pairs']:>6}"
+            )
+    print("=" * len(header))
+    print(f"Saved to: {out_path}\n")
+
+    return summary
+
+
 if __name__ == "__main__":
+    import argparse
     import pprint
 
-    print("=== JudgeSense Metrics Self-Test ===\n")
+    parser = argparse.ArgumentParser(description="JudgeSense metrics")
+    parser.add_argument(
+        "--summarize",
+        action="store_true",
+        help="Compute metrics summary from data/results/raw_outputs/ and print table.",
+    )
+    args = parser.parse_args()
 
-    # Scenario 1: High consistency — 8 out of 10 agree
-    a1 = ["YES", "YES", "NO",  "YES", "NO",  "YES", "YES", "NO",  "YES", "NO"]
-    b1 = ["YES", "NO",  "NO",  "YES", "NO",  "YES", "YES", "NO",  "YES", "YES"]
-    print("Scenario 1: High consistency (8/10 agree, 2 flips)")
-    pprint.pprint(compute_all_metrics(a1, b1))
-    print()
+    if args.summarize:
+        compute_results_summary("data/results/raw_outputs/")
+    else:
+        print("=== JudgeSense Metrics Self-Test ===\n")
 
-    # Scenario 2: Low consistency — 3 out of 5 agree
-    a2 = ["YES", "YES", "YES", "YES", "YES"]
-    b2 = ["NO",  "YES", "NO",  "YES", "NO"]
-    print("Scenario 2: Low consistency (3/5 agree, 2 flips)")
-    pprint.pprint(compute_all_metrics(a2, b2))
-    print()
+        a1 = ["YES", "YES", "NO",  "YES", "NO",  "YES", "YES", "NO",  "YES", "NO"]
+        b1 = ["YES", "NO",  "NO",  "YES", "NO",  "YES", "YES", "NO",  "YES", "YES"]
+        print("Scenario 1: High consistency (8/10 agree, 2 flips)")
+        pprint.pprint(compute_all_metrics(a1, b1))
+        print()
 
-    # Scenario 3: Perfect consistency
-    a3 = ["YES"] * 10
-    b3 = ["YES"] * 10
-    print("Scenario 3: Perfect consistency (10/10 agree, 0 flips)")
-    pprint.pprint(compute_all_metrics(a3, b3))
-    print()
+        a2 = ["YES", "YES", "YES", "YES", "YES"]
+        b2 = ["NO",  "YES", "NO",  "YES", "NO"]
+        print("Scenario 2: Low consistency (3/5 agree, 2 flips)")
+        pprint.pprint(compute_all_metrics(a2, b2))
+        print()
 
-    # Scenario 4: Zero consistency
-    a4 = ["YES"] * 6
-    b4 = ["NO"]  * 6
-    print("Scenario 4: Zero consistency (0/6 agree, all flips)")
-    pprint.pprint(compute_all_metrics(a4, b4))
+        a3 = ["YES"] * 10
+        b3 = ["YES"] * 10
+        print("Scenario 3: Perfect consistency (10/10 agree, 0 flips)")
+        pprint.pprint(compute_all_metrics(a3, b3))
+        print()
+
+        a4 = ["YES"] * 6
+        b4 = ["NO"]  * 6
+        print("Scenario 4: Zero consistency (0/6 agree, all flips)")
+        pprint.pprint(compute_all_metrics(a4, b4))

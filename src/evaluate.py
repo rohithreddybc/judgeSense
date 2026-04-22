@@ -1,65 +1,80 @@
 """
 JudgeSense evaluation runner — calls judge LLMs on prompt pairs and records decisions.
 
-For each prompt pair (A, B) in a task JSONL, this script submits both prompts
-to the chosen judge model and records both decisions, enabling downstream
-computation of the Judge Sensitivity Score (JSS) and related metrics.
-
 Usage examples:
     python src/evaluate.py --model gpt-4o-mini --task factuality --runs 3
-    python src/evaluate.py --model gpt-4o-mini --task all --runs 1 --dry-run
-    python src/evaluate.py --model mistral --task coherence --runs 5 \
-        --input data/prompt_pairs/ --output data/results/raw_outputs/
+    python src/evaluate.py --model claude-haiku --task all --runs 1 --dry-run
+    python src/evaluate.py --model all --task all --runs 3
 """
 
 from __future__ import annotations
 
 import argparse
 import json
-import logging
 import os
 import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Optional
-
-# ── Optional dependencies ──────────────────────────────────────────────────────
-
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-    _DOTENV_OK = True
-except ImportError:
-    _DOTENV_OK = False
-
-try:
-    from tqdm import tqdm as _tqdm
-    _TQDM_OK = True
-except ImportError:
-    _TQDM_OK = False
+from typing import List, Optional, Set, Tuple
 
 
-# ── Logging ────────────────────────────────────────────────────────────────────
+# ── .env loading ──────────────────────────────────────────────────────────────
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)],
-)
-log = logging.getLogger("judgeSense.evaluate")
+def _load_env():
+    """Load .env file manually — avoids python-dotenv AssertionError on Windows."""
+    try:
+        with open('.env') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    k, v = line.split('=', 1)
+                    os.environ.setdefault(k.strip(), v.strip())
+    except FileNotFoundError:
+        pass
 
-if not _DOTENV_OK:
-    log.warning(
-        "python-dotenv is not installed — .env file will not be loaded. "
-        "API keys must be set as environment variables."
-    )
+_load_env()
 
 
-# ── Repository path constants ──────────────────────────────────────────────────
+# ── Model registry ────────────────────────────────────────────────────────────
 
-_REPO_ROOT = Path(__file__).resolve().parent.parent
-_DATA_DIR = _REPO_ROOT / "data" / "prompt_pairs"
+# Import after env loading so keys are available
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from src.models import SUPPORTED_MODELS, normalize_decision
+
+_ALL_MODELS = list(SUPPORTED_MODELS.keys())  # 9 models
+
+# Rate limits in seconds per API call (between calls, not per minute)
+_RATE_LIMIT = {
+    "openai":       0.5,
+    "anthropic":    0.5,
+    "huggingface":  1.0,
+    "mistral":      0.5,
+}
+
+_TIMEOUT    = 30   # seconds per API call
+_MAX_TOKENS = 20   # judges output single tokens (YES/NO/A/B/1-5)
+
+# Cost per 1K tokens (input + output blended estimate) — 0 for free tiers
+_COST_PER_1K = {
+    "gpt-4o-mini":   0.000150,
+    "gpt-4o":        0.002500,
+    "claude-haiku":  0.000800,
+    "claude-sonnet": 0.003000,
+    "llama3-8b":     0.0,
+    "llama3-70b":    0.0,
+    "mistral-7b":    0.0,
+    "qwen":          0.0,
+    "deepseek":      0.0,
+}
+
+_SYSTEM_PROMPT = "You are an evaluation assistant. Give only the requested answer with no explanation."
+
+
+# ── Path constants ─────────────────────────────────────────────────────────────
+
+_REPO_ROOT   = Path(__file__).resolve().parent.parent
+_DATA_DIR    = _REPO_ROOT / "data" / "prompt_pairs"
 _RESULTS_DIR = _REPO_ROOT / "data" / "results" / "raw_outputs"
 
 _TASK_FILES = {
@@ -69,36 +84,10 @@ _TASK_FILES = {
     "preference": _DATA_DIR / "preference.jsonl",
 }
 
-# Maps model names to the environment variable that holds their API key
-_KEY_ENV_VARS = {
-    "gpt-4o-mini": "OPENAI_API_KEY",
-    "llama3":      "HF_TOKEN",
-    "mistral":     "MISTRAL_API_KEY",
-}
 
-# Rate limiting (seconds between API calls)
-_RATE_LIMIT = {
-    "gpt-4o-mini": 0.5,
-    "llama3":      1.0,
-    "mistral":     0.5,
-}
-
-# Cost per 1K tokens (input + output average)
-_COST_PER_1K_TOKENS = {
-    "gpt-4o-mini": 0.000150,
-    "gpt-4o":      0.002500,
-    "claude-haiku": 0.000800,
-    "claude-sonnet": 0.003000,
-    "gemini-flash": 0.000000,
-    "llama3":      0.000000,
-    "mistral":     0.000000,
-}
-
-
-# ── JSONL I/O helpers ──────────────────────────────────────────────────────────
+# ── JSONL I/O ─────────────────────────────────────────────────────────────────
 
 def _load_jsonl(path: Path) -> List[dict]:
-    """Load a JSONL file; skip blank lines and warn on malformed lines."""
     records: List[dict] = []
     with open(path, "r", encoding="utf-8") as fh:
         for lineno, raw in enumerate(fh, start=1):
@@ -107,239 +96,234 @@ def _load_jsonl(path: Path) -> List[dict]:
                 continue
             try:
                 records.append(json.loads(raw))
-            except json.JSONDecodeError as exc:
-                log.warning("Skipping malformed line %d in %s: %s", lineno, path, exc)
+            except json.JSONDecodeError:
+                print(f"[WARN] Skipping malformed line {lineno} in {path}")
     return records
 
 
 def _append_jsonl(record: dict, path: Path) -> None:
-    """Append one record to a JSONL file; creates file and parent dirs if needed."""
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "a", encoding="utf-8") as fh:
         fh.write(json.dumps(record) + "\n")
 
 
-# ── API client factories ───────────────────────────────────────────────────────
-
-def _build_client(model: str, api_key: str):
-    """
-    Instantiate the SDK client for the given model.
-
-    Raises:
-        ImportError: If the required SDK package is not installed.
-        ValueError: If the model name is unrecognised.
-    """
-    if model == "gpt-4o-mini":
-        try:
-            from openai import OpenAI
-        except ImportError:
-            raise ImportError(
-                "openai package is required for gpt-4o-mini. "
-                "Install with: pip install openai"
-            )
-        return OpenAI(api_key=api_key)
-
-    elif model == "llama3":
-        try:
-            from huggingface_hub import InferenceClient
-        except ImportError:
-            raise ImportError(
-                "huggingface-hub is required for llama3. "
-                "Install with: pip install huggingface-hub"
-            )
-        return InferenceClient(api_key=api_key)
-
-    elif model == "mistral":
-        try:
-            from mistralai import Mistral
-        except ImportError:
-            raise ImportError(
-                "mistralai is required for mistral. "
-                "Install with: pip install mistralai"
-            )
-        return Mistral(api_key=api_key)
-
-    else:
-        raise ValueError(f"Unknown model: {model!r}. Choose from: gpt-4o-mini, llama3, mistral")
+def _completed_keys(path: Path) -> Set[Tuple[str, int]]:
+    """Return set of (pair_id, run) tuples already written to output file."""
+    if not path.exists():
+        return set()
+    keys: Set[Tuple[str, int]] = set()
+    for rec in _load_jsonl(path):
+        pid = rec.get("pair_id")
+        run = rec.get("run")
+        if pid is not None and run is not None:
+            keys.add((pid, int(run)))
+    return keys
 
 
-# ── Per-model call functions ───────────────────────────────────────────────────
+# ── Provider call functions ───────────────────────────────────────────────────
 
-def _call_openai(client, prompt: str) -> str:
+def _call_openai(client, model_id: str, prompt: str) -> str:
     response = client.chat.completions.create(
-        model="gpt-4o-mini-2024-07-18",
+        model=model_id,
         messages=[
-            {
-                "role": "system",
-                "content": "You are an expert evaluator. Provide clear, concise judgments.",
-            },
-            {"role": "user", "content": prompt},
+            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "user",   "content": prompt},
         ],
         temperature=0.0,
-        max_tokens=500,
+        max_tokens=_MAX_TOKENS,
+        timeout=_TIMEOUT,
     )
     return response.choices[0].message.content.strip()
 
 
-def _call_llama(client, prompt: str) -> str:
-    # HuggingFace Inference API — use chat completions endpoint
-    result = client.chat.completions.create(
-        model="meta-llama/Llama-3.1-8B-Instruct",
+def _call_anthropic(client, model_id: str, prompt: str) -> str:
+    response = client.messages.create(
+        model=model_id,
+        max_tokens=_MAX_TOKENS,
+        system=_SYSTEM_PROMPT,
         messages=[{"role": "user", "content": prompt}],
-        max_tokens=500,
-        temperature=0.01,  # some HF endpoints require temperature > 0
     )
-    return result.choices[0].message.content.strip()
+    return response.content[0].text.strip()
 
 
-def _call_mistral(client, prompt: str) -> str:
-    result = client.chat.complete(
-        model="mistral-small-latest",
+def _call_huggingface(client, model_id: str, prompt: str) -> str:
+    response = client.chat.completions.create(
+        model=model_id,
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=_MAX_TOKENS,
+        temperature=0.01,  # some HF endpoints reject 0.0
+    )
+    return response.choices[0].message.content.strip()
+
+
+def _call_mistral(client, model_id: str, prompt: str) -> str:
+    response = client.chat.complete(
+        model=model_id,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.0,
-        max_tokens=500,
+        max_tokens=_MAX_TOKENS,
     )
-    return result.choices[0].message.content.strip()
+    return response.choices[0].message.content.strip()
 
 
-def _call_model(model: str, client, prompt: str) -> str:
-    """Route a prompt to the correct SDK call based on model name."""
-    if model == "gpt-4o-mini":
-        return _call_openai(client, prompt)
-    elif model == "llama3":
-        return _call_llama(client, prompt)
-    elif model == "mistral":
-        return _call_mistral(client, prompt)
+# ── Client factory ────────────────────────────────────────────────────────────
+
+def _build_client(model_name: str):
+    """Build SDK client for model_name. Returns (client, model_id, provider)."""
+    cfg      = SUPPORTED_MODELS[model_name]
+    provider = cfg["provider"]
+    model_id = cfg["model_id"]
+    api_key  = os.environ.get(cfg["key"], "")
+
+    if not api_key:
+        raise RuntimeError(f"Missing env var: {cfg['key']} (required for {model_name})")
+
+    if provider == "openai":
+        try:
+            from openai import OpenAI
+        except ImportError:
+            raise ImportError("pip install openai")
+        return OpenAI(api_key=api_key), model_id, provider
+
+    elif provider == "anthropic":
+        try:
+            import anthropic
+        except ImportError:
+            raise ImportError("pip install anthropic")
+        return anthropic.Anthropic(api_key=api_key), model_id, provider
+
+    elif provider == "huggingface":
+        try:
+            from huggingface_hub import InferenceClient
+        except ImportError:
+            raise ImportError("pip install huggingface-hub")
+        return InferenceClient(api_key=api_key), model_id, provider
+
+    elif provider == "mistral":
+        try:
+            from mistralai import Mistral
+        except ImportError:
+            raise ImportError("pip install mistralai")
+        return Mistral(api_key=api_key), model_id, provider
+
     else:
-        raise ValueError(f"Unknown model: {model!r}")
+        raise ValueError(f"Unknown provider: {provider}")
 
 
-# ── Helpers for efficiency improvements ────────────────────────────────────────
+# ── Single call with one retry ────────────────────────────────────────────────
 
-def _call_model_with_retry(model: str, client, prompt: str) -> str:
-    """Call model with single retry on failure (waits 5 seconds before retry)."""
+def _call(provider: str, client, model_id: str, prompt: str) -> str:
+    """Route to correct provider function; retry once on failure."""
+    dispatch = {
+        "openai":      _call_openai,
+        "anthropic":   _call_anthropic,
+        "huggingface": _call_huggingface,
+        "mistral":     _call_mistral,
+    }
+    fn = dispatch[provider]
     try:
-        return _call_model(model, client, prompt)
+        return fn(client, model_id, prompt)
     except Exception as exc:
-        log.warning("Initial call failed for %s, retrying in 5s: %s", model, exc)
         time.sleep(5)
         try:
-            return _call_model(model, client, prompt)
+            return fn(client, model_id, prompt)
         except Exception as exc2:
-            return f"ERROR: {exc2}"
+            return f"ERROR:{exc2}"
 
 
-def _normalize_and_record(raw: str, task_type: str) -> tuple[str, str]:
-    """Normalize decision and return both raw and normalized forms."""
-    try:
-        from src.models import normalize_decision
-        normalized = normalize_decision(raw, task_type)
-    except ImportError:
-        # Fallback if module import fails
-        normalized = raw[:20]
-    return raw, normalized
-
-
-# ── Core evaluation loop ───────────────────────────────────────────────────────
+# ── Core evaluation loop ──────────────────────────────────────────────────────
 
 def run_evaluation(
-    model: str,
+    model_name: str,
     task: str,
     pairs: List[dict],
     client,
+    model_id: str,
+    provider: str,
     run_number: int,
+    runs_total: int,
     output_path: Path,
-) -> tuple[int, float]:
+    done: Set[Tuple[str, int]],
+) -> Tuple[int, float]:
     """
-    Evaluate prompt pairs and stream results to output_path.
-
-    Calls prompt_a then prompt_b for each pair, with rate limiting and retry logic.
-    Records both raw and normalized decisions.
-
-    Returns:
-        (n_ok, estimated_cost): Pairs successfully evaluated and estimated USD cost.
+    Evaluate all pairs for one run. Skips pairs already in `done`.
+    Returns (n_ok, estimated_cost).
     """
-    iterator = pairs
-    if _TQDM_OK:
-        iterator = _tqdm(
-            pairs,
-            desc=f"run {run_number} | {model} | {task}",
-            unit="pair",
-            leave=True,
-        )
+    rate_sec   = _RATE_LIMIT.get(provider, 0.5)
+    cost_1k    = _COST_PER_1K.get(model_name, 0.0)
+    total_tok  = 0
+    n_ok       = 0
 
-    rate_limit_sec = _RATE_LIMIT.get(model, 0.5)
-    cost_per_1k = _COST_PER_1K_TOKENS.get(model, 0.0)
-    total_tokens = 0
-    n_ok = 0
-
-    for pair in iterator:
-        pair_id   = pair.get("pair_id", "unknown")
+    for i, pair in enumerate(pairs, 1):
+        pair_id   = pair.get("pair_id", f"unknown_{i}")
         task_type = pair.get("task_type", task)
         prompt_a  = pair.get("prompt_a", "")
         prompt_b  = pair.get("prompt_b", "")
 
-        # Call prompt A (with rate limiting and retry)
-        raw_a = _call_model_with_retry(model, client, prompt_a)
-        raw_a, norm_a = _normalize_and_record(raw_a, task_type)
-        time.sleep(rate_limit_sec)
+        if (pair_id, run_number) in done:
+            continue
 
-        # Call prompt B (with rate limiting and retry)
-        raw_b = _call_model_with_retry(model, client, prompt_b)
-        raw_b, norm_b = _normalize_and_record(raw_b, task_type)
-        time.sleep(rate_limit_sec)
+        print(f"{model_name} | {task} | pair {i}/{len(pairs)} | run {run_number}/{runs_total}")
 
-        # Estimate token usage: prompt ~50 tokens, response ~20 tokens
-        total_tokens += (50 + 20) * 2  # for both A and B
+        # Call A
+        raw_a = _call(provider, client, model_id, prompt_a)
+        time.sleep(rate_sec)
+
+        # Call B
+        raw_b = _call(provider, client, model_id, prompt_b)
+        time.sleep(rate_sec)
+
+        error_a = raw_a.startswith("ERROR:") if isinstance(raw_a, str) else False
+        error_b = raw_b.startswith("ERROR:") if isinstance(raw_b, str) else False
+        has_error = error_a or error_b
+
+        norm_a = normalize_decision(raw_a, task_type) if not error_a else "UNCLEAR"
+        norm_b = normalize_decision(raw_b, task_type) if not error_b else "UNCLEAR"
 
         record = {
-            "pair_id":              pair_id,
-            "task_type":            task_type,
-            "model":                model,
-            "prompt_a_decision_raw": raw_a,
-            "prompt_a_decision":    norm_a,
-            "prompt_b_decision_raw": raw_b,
-            "prompt_b_decision":    norm_b,
-            "run_number":           run_number,
-            "timestamp":            datetime.now(timezone.utc).isoformat(),
+            "pair_id":          pair_id,
+            "task_type":        task_type,
+            "model":            model_name,
+            "run":              run_number,
+            "prompt_a_decision": norm_a,
+            "prompt_b_decision": norm_b,
+            "normalized_a":     norm_a,
+            "normalized_b":     norm_b,
+            "flipped":          norm_a != norm_b,
+            "prompt_a_raw":     raw_a,
+            "prompt_b_raw":     raw_b,
+            "timestamp":        datetime.now(timezone.utc).isoformat(),
+            "error":            (raw_a if error_a else raw_b) if has_error else None,
         }
         _append_jsonl(record, output_path)
+        done.add((pair_id, run_number))
 
-        if not raw_a.startswith("ERROR") and not raw_b.startswith("ERROR"):
+        if not has_error:
             n_ok += 1
+            total_tok += (50 + _MAX_TOKENS) * 2
 
-    estimated_cost = (total_tokens / 1000.0) * cost_per_1k
-
-    if not _TQDM_OK:
-        log.info(
-            "Completed run %d — %d/%d pairs evaluated successfully. "
-            "Estimated cost: ${:.4f}",
-            run_number, n_ok, len(pairs), estimated_cost,
-        )
+    estimated_cost = (total_tok / 1000.0) * cost_1k
     return n_ok, estimated_cost
 
 
-# ── CLI ────────────────────────────────────────────────────────────────────────
+# ── CLI ───────────────────────────────────────────────────────────────────────
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="evaluate",
-        description=(
-            "JudgeSense evaluation runner.\n"
-            "Submits prompt pairs (A, B) to a judge LLM and records both decisions."
-        ),
+        description="JudgeSense evaluation runner.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
         "--model",
         required=True,
-        choices=["gpt-4o-mini", "llama3", "mistral"],
-        help="Judge LLM to use.",
+        choices=_ALL_MODELS + ["all"],
+        help="Judge LLM to use, or 'all' to run every model.",
     )
     parser.add_argument(
         "--task",
         required=True,
-        choices=["factuality", "coherence", "relevance", "preference", "all"],
+        choices=list(_TASK_FILES.keys()) + ["all"],
         help="Task dataset to evaluate, or 'all' for every task.",
     )
     parser.add_argument(
@@ -354,7 +338,7 @@ def _build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=_DATA_DIR,
         metavar="DIR",
-        help=f"Directory containing prompt pair JSONL files (default: {_DATA_DIR}).",
+        help=f"Directory with prompt pair JSONL files (default: {_DATA_DIR}).",
     )
     parser.add_argument(
         "--output",
@@ -375,70 +359,56 @@ def main(argv: Optional[List[str]] = None) -> None:
     parser = _build_parser()
     args = parser.parse_args(argv)
 
-    # Resolve tasks list
-    tasks = list(_TASK_FILES.keys()) if args.task == "all" else [args.task]
-
-    # Validate API key before doing any work — fail with a clean message
-    env_var = _KEY_ENV_VARS[args.model]
-    api_key = os.environ.get(env_var)
-    if not api_key:
-        log.error(
-            "Missing API key: environment variable %s is not set.\n"
-            "  Add it to your .env file:  %s=your_key_here\n"
-            "  Or export it in the shell: export %s=your_key_here",
-            env_var, env_var, env_var,
-        )
-        sys.exit(1)
-
-    # Build SDK client once; reuse across all tasks and runs
-    try:
-        client = _build_client(args.model, api_key)
-    except (ImportError, ValueError) as exc:
-        log.error("Cannot initialise client for %s: %s", args.model, exc)
-        sys.exit(1)
-
-    log.info(
-        "Evaluation started | model=%s | tasks=%s | runs=%d | dry_run=%s",
-        args.model, tasks, args.runs, args.dry_run,
-    )
+    models = _ALL_MODELS if args.model == "all" else [args.model]
+    tasks  = list(_TASK_FILES.keys()) if args.task == "all" else [args.task]
 
     total_cost = 0.0
 
-    for task in tasks:
-        input_path = Path(args.input) / f"{task}.jsonl"
+    for model_name in models:
+        print(f"\n=== Model: {model_name} ===")
 
-        if not input_path.exists():
-            log.warning("Input file not found, skipping: %s", input_path)
+        try:
+            client, model_id, provider = _build_client(model_name)
+        except (RuntimeError, ImportError, ValueError) as exc:
+            print(f"[SKIP] {model_name}: {exc}")
             continue
 
-        pairs = _load_jsonl(input_path)
-        if not pairs:
-            log.warning("No valid pairs loaded for task=%s from %s", task, input_path)
-            continue
+        for task in tasks:
+            input_path = Path(args.input) / f"{task}.jsonl"
 
-        if args.dry_run:
-            pairs = pairs[:5]
-            log.info("[dry-run] Limiting to %d pairs for task=%s", len(pairs), task)
+            if not input_path.exists():
+                print(f"[WARN] Input file not found, skipping: {input_path}")
+                continue
 
-        output_path = Path(args.output) / f"{args.model}_{task}.jsonl"
+            pairs = _load_jsonl(input_path)
+            if not pairs:
+                print(f"[WARN] No valid pairs for task={task}")
+                continue
 
-        for run_num in range(1, args.runs + 1):
-            log.info(
-                "Run %d/%d | task=%s | pairs=%d | output=%s",
-                run_num, args.runs, task, len(pairs), output_path,
-            )
-            _, cost = run_evaluation(
-                model=args.model,
-                task=task,
-                pairs=pairs,
-                client=client,
-                run_number=run_num,
-                output_path=output_path,
-            )
-            total_cost += cost
-            log.info("Task %s run %d cost: $%.4f (total: $%.4f)", task, run_num, cost, total_cost)
+            if args.dry_run:
+                pairs = pairs[:5]
+                print(f"[dry-run] Limiting to {len(pairs)} pairs for task={task}")
 
-    log.info("Evaluation complete. Total estimated cost: $%.4f", total_cost)
+            output_path = Path(args.output) / f"{model_name}_{task}.jsonl"
+            done = _completed_keys(output_path)
+
+            for run_num in range(1, args.runs + 1):
+                n_ok, cost = run_evaluation(
+                    model_name=model_name,
+                    task=task,
+                    pairs=pairs,
+                    client=client,
+                    model_id=model_id,
+                    provider=provider,
+                    run_number=run_num,
+                    runs_total=args.runs,
+                    output_path=output_path,
+                    done=done,
+                )
+                total_cost += cost
+                print(f"  run {run_num}/{args.runs} done: {n_ok}/{len(pairs)} ok, cost=${cost:.4f}")
+
+    print(f"\nTotal estimated cost: ${total_cost:.4f}")
 
 
 if __name__ == "__main__":
