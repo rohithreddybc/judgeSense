@@ -16,11 +16,20 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
+# Manually load .env (python-dotenv has issues with find_dotenv())
+def _load_env_manual():
+    """Load .env file manually"""
+    try:
+        with open('.env', 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, val = line.split('=', 1)
+                    os.environ[key.strip()] = val.strip()
+    except FileNotFoundError:
+        pass
+
+_load_env_manual()
 
 
 def test_openai(model_name: str, api_key: str) -> tuple[bool, str]:

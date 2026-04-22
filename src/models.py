@@ -9,9 +9,17 @@ Supports:
   - Mistral (Mistral-7B)
 """
 
+import os
 from typing import Optional, Dict, Any
 from abc import ABC, abstractmethod
 import json
+
+# Load .env at module level to ensure API keys are available
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 # Supported models registry with exact model IDs
 SUPPORTED_MODELS = {
