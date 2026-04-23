@@ -34,6 +34,7 @@ SUPPORTED_MODELS = {
     "gpt-4o":        {"provider": "openai",      "model_id": "gpt-4o-2024-08-06",                 "key": "OPENAI_API_KEY"},
     "claude-haiku":  {"provider": "anthropic",   "model_id": "claude-haiku-4-5-20251001",         "key": "ANTHROPIC_API_KEY"},
     "claude-sonnet": {"provider": "anthropic",   "model_id": "claude-sonnet-4-5",                 "key": "ANTHROPIC_API_KEY"},
+    "gemini-flash":  {"provider": "google",      "model_id": "gemini-2.0-flash",                  "key": "GOOGLE_API_KEY"},
     "llama3-8b":     {"provider": "huggingface", "model_id": "meta-llama/Llama-3.1-8B-Instruct",  "key": "HF_TOKEN"},
     "llama3-70b":    {"provider": "huggingface", "model_id": "meta-llama/Llama-3.1-70B-Instruct", "key": "HF_TOKEN"},
     "mistral-7b":    {"provider": "mistral",     "model_id": "mistral-small-latest",              "key": "MISTRAL_API_KEY"},
@@ -151,6 +152,39 @@ class MistralJudge(JudgeModel):
         return f"MistralJudge(model={self.model_name}, temperature={self.temperature})"
 
 
+class GeminiJudge(JudgeModel):
+    """Judge using Google's Gemini 2.0 Flash model."""
+
+    def __init__(self, api_key: str, temperature: float = 0.0):
+        super().__init__(temperature)
+        self.api_key = api_key
+        self.model_name = "gemini-2.0-flash"
+        try:
+            import google.generativeai as genai
+            genai.configure(api_key=api_key)
+            self.model = genai.GenerativeModel(self.model_name)
+        except ImportError:
+            raise ImportError(
+                "google-generativeai is required. Install with: pip install google-generativeai"
+            )
+
+    def evaluate(self, prompt: str) -> str:
+        try:
+            response = self.model.generate_content(
+                prompt,
+                generation_config={
+                    "max_output_tokens": 20,
+                    "temperature": self.temperature,
+                },
+            )
+            return response.text.strip()
+        except Exception as e:
+            return f"ERROR: {str(e)}"
+
+    def __repr__(self) -> str:
+        return f"GeminiJudge(model={self.model_name}, temperature={self.temperature})"
+
+
 def normalize_decision(raw: str, task_type: str) -> str:
     """
     Extract clean decision from raw model output.
@@ -218,6 +252,7 @@ __all__ = [
     "GPT4oMiniJudge",
     "LlamaJudge",
     "MistralJudge",
+    "GeminiJudge",
     "create_judge",
     "normalize_decision",
 ]

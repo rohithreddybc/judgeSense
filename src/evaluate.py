@@ -48,6 +48,7 @@ _ALL_MODELS = list(SUPPORTED_MODELS.keys())  # 9 models
 _RATE_LIMIT = {
     "openai":       0.5,
     "anthropic":    0.5,
+    "google":       1.0,
     "huggingface":  1.0,
     "mistral":      0.5,
 }
@@ -61,6 +62,7 @@ _COST_PER_1K = {
     "gpt-4o":        0.002500,
     "claude-haiku":  0.000800,
     "claude-sonnet": 0.003000,
+    "gemini-flash":  0.0,
     "llama3-8b":     0.0,
     "llama3-70b":    0.0,
     "mistral-7b":    0.0,
@@ -156,6 +158,14 @@ def _call_huggingface(client, model_id: str, prompt: str) -> str:
     return response.choices[0].message.content.strip()
 
 
+def _call_google(client, model_id: str, prompt: str) -> str:
+    response = client.generate_content(
+        prompt,
+        generation_config={"max_output_tokens": _MAX_TOKENS, "temperature": 0.0},
+    )
+    return response.text.strip()
+
+
 def _call_mistral(client, model_id: str, prompt: str) -> str:
     response = client.chat.complete(
         model=model_id,
@@ -192,6 +202,14 @@ def _build_client(model_name: str):
             raise ImportError("pip install anthropic")
         return anthropic.Anthropic(api_key=api_key), model_id, provider
 
+    elif provider == "google":
+        try:
+            import google.generativeai as genai
+        except ImportError:
+            raise ImportError("pip install google-generativeai")
+        genai.configure(api_key=api_key)
+        return genai.GenerativeModel(model_id), model_id, provider
+
     elif provider == "huggingface":
         try:
             from huggingface_hub import InferenceClient
@@ -217,6 +235,7 @@ def _call(provider: str, client, model_id: str, prompt: str) -> str:
     dispatch = {
         "openai":      _call_openai,
         "anthropic":   _call_anthropic,
+        "google":      _call_google,
         "huggingface": _call_huggingface,
         "mistral":     _call_mistral,
     }
