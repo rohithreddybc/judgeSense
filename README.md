@@ -1,17 +1,17 @@
-# JudgeSense
+# JudgeSense: A Benchmark for Prompt Sensitivity in LLM-as-a-Judge Systems
 
-**How Fragile Are LLM Judges?** A framework for quantifying prompt sensitivity in LLM-as-a-Judge evaluation systems.
+A framework for quantifying prompt sensitivity in LLM-as-a-Judge evaluation systems.
 
 [![arXiv](https://img.shields.io/badge/arXiv-coming%20soon-red.svg)]()
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Dataset](https://img.shields.io/badge/dataset-HuggingFace-orange.svg)]()
+[![Dataset](https://img.shields.io/badge/dataset-HuggingFace-orange.svg)](https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark)
 
 ---
 
 ## Overview
 
-Large language models are increasingly deployed as automated judges to evaluate the outputs of other models, yet the reliability of these LLM-as-a-Judge systems remains poorly understood. **JudgeSense** introduces a rigorous framework and metric — the **Judge Sensitivity Score (JSS)** — for measuring how much an LLM judge's evaluation decisions change when the prompt phrasing varies while the evaluation intent stays constant.
+Large language models are increasingly deployed as automated judges to evaluate the outputs of other models, yet the reliability of these systems remains poorly understood. **JudgeSense** is a reproducible benchmark that quantifies prompt sensitivity in LLM-as-a-Judge systems via the **Judge Sensitivity Score (JSS)** — a metric measuring how often a judge's evaluation decision changes when prompt phrasing varies while evaluation intent stays constant. We evaluate **9 LLM judges** across **4 evaluation tasks** (factuality, coherence, preference, relevance) with **500 semantically equivalent prompt pairs** and **3 independent runs each**, and uncover systematic sensitivity driven by prompt polarity inversion. Our analysis reveals that polarity-inverted templates can reduce apparent agreement by up to **37 percentage points**, and that sensitivity varies substantially across model families.
 
 This repository contains the full reproducible codebase, datasets, and evaluation artifacts accompanying the paper.
 
@@ -19,7 +19,7 @@ This repository contains the full reproducible codebase, datasets, and evaluatio
 
 - **JSS metric**: A novel, formally defined score for judge decision consistency across semantically equivalent prompts.
 - **Public dataset**: 500 semantically equivalent prompt pairs across 4 evaluation task types.
-- **Empirical evaluation**: Three LLM judges (GPT-4o-mini, Llama 3, Mistral-7B) tested on public benchmarks.
+- **Empirical evaluation**: Nine LLM judges (GPT-4o, GPT-4o-mini, Claude Haiku, Claude Sonnet, Gemini Flash, LLaMA3-70B, Mistral-7B, DeepSeek, Qwen) tested across 4 task types with JSS ranging from 0.63 to 1.0 before polarity correction.
 - **Full reproducibility**: All code, data, and results released under open licenses.
 
 ## Installation
@@ -55,11 +55,28 @@ python src/metrics.py --results data/results/raw_outputs/
 
 ## Dataset
 
-The JudgeSense prompt pair dataset is available on HuggingFace:
+This project includes the **JudgeSense benchmark dataset** — 500 validated paraphrase pairs across 4 evaluation task types, released for prompt sensitivity research.
 
-- **Link**: `https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark`
+- **HuggingFace**: [Rohithreddybc/judgesense-benchmark](https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark)
 - **License**: CC-BY-4.0
 - **Size**: 500 prompt pairs, 4 task types, 125 pairs per task
+
+> **Key Insight**: Prompt formulation often dominates model architecture in determining apparent judge consistency.
+
+### Quick usage
+
+```python
+from datasets import load_dataset
+
+ds = load_dataset("Rohithreddybc/judgesense-benchmark")
+pairs = ds["factuality"]
+print(f"{len(pairs)} factuality pairs loaded")
+
+# Compute JSS from your judge's decisions
+from src.metrics import judge_sensitivity_score
+jss = judge_sensitivity_score(decisions_a, decisions_b)
+print(f"JSS: {jss:.3f}")
+```
 
 ### Schema
 
@@ -68,13 +85,29 @@ The JudgeSense prompt pair dataset is available on HuggingFace:
   "pair_id": "fact_001",
   "task_type": "factuality",
   "source_benchmark": "TruthfulQA",
-  "prompt_a": "Evaluate whether the following response is factually accurate...",
-  "prompt_b": "As an expert evaluator, determine if this answer contains correct facts...",
-  "response_being_judged": "...",
+  "prompt_a": "Is this factually correct? Answer YES or NO only.\n\nResponse: ...",
+  "prompt_b": "Fact-check this response. Reply YES (correct) or NO (incorrect).\n\nResponse: ...",
+  "response_being_judged": "The Earth orbits around the Sun.",
   "ground_truth_label": "accurate",
-  "semantic_equivalence_score": 0.94
+  "semantic_equivalence_score": 1.0
 }
 ```
+
+## Key findings
+
+| Model | JSS (raw) | JSS (T4-corrected) | Delta |
+|---|---|---|---|
+| GPT-4o | 0.63 | 1.00 | +0.37 |
+| GPT-4o-mini | 0.63 | 1.00 | +0.37 |
+| Claude Haiku | 0.63 | 1.00 | +0.37 |
+| Claude Sonnet | 0.63 | 1.00 | +0.37 |
+| DeepSeek | 0.63 | 1.00 | +0.37 |
+| LLaMA3-70B | 0.63 | 1.00 | +0.37 |
+| Gemini Flash | 0.63 | 1.00 | +0.37 |
+| Qwen | 0.63 | 1.00 | +0.37 |
+| Mistral 7B | 0.71 | 0.88 | +0.17 |
+
+**Finding**: Polarity-inverted prompt templates (T4) reduce raw JSS by 17–37 pp across all models. After T4 correction, 8 of 9 models achieve JSS = 1.0 on factuality, demonstrating that prompt sensitivity in this task is entirely attributable to template polarity rather than semantic ambiguity. Mistral 7B exhibits the highest residual sensitivity (JSS = 0.88 post-correction).
 
 ## Reproducing paper results
 
@@ -90,8 +123,17 @@ bash scripts/run_all_evals.sh
 # 3. Compute metrics
 python src/metrics.py --results data/results/raw_outputs/ --output data/results/metrics.json
 
-# 4. Regenerate paper figures
-jupyter nbconvert --execute notebooks/03_figures.ipynb
+# 4. Run factuality JSS analysis (T4 polarity-corrected)
+python analysis/factuality_jss_fixed.py
+
+# 5. Per-template JSS breakdown
+python analysis/per_template_factuality.py
+
+# 6. Pair-level flip overlap
+python analysis/factuality_pair_overlap.py
+
+# 7. Generate publication figures (outputs/fig1, fig2, fig4)
+python analysis/generate_figures.py
 ```
 
 ## Repository structure
@@ -111,8 +153,14 @@ judgesense/
 │   ├── 01_dataset_analysis.ipynb
 │   ├── 02_results_analysis.ipynb
 │   └── 03_figures.ipynb
+├── analysis/
+│   ├── factuality_jss_fixed.py    # Recompute JSS with T4 polarity correction
+│   ├── per_template_factuality.py # Per-template JSS breakdown
+│   ├── factuality_pair_overlap.py # Pair-level flip overlap analysis
+│   └── generate_figures.py        # Publication-ready PDF figures
+├── outputs/               # CSV results + publication-ready PDF figures
 ├── figures/                   # Paper-ready PDF/PNG figures
-├── tests/                     # Unit tests for metrics and dataset
+├── tests/                     # Unit tests for metrics and dataset (29 tests)
 ├── requirements.txt
 ├── .env.example
 └── README.md
@@ -123,11 +171,12 @@ judgesense/
 If you use JudgeSense in your research, please cite:
 
 ```bibtex
-@article{bellibatlu2026judgesense,
-  title={How Fragile Are {LLM} Judges? {JudgeSense}: A Framework for Quantifying Prompt Sensitivity in {LLM} Evaluation},
-  author={Bellibatlu, Rohith Reddy},
-  journal={arXiv preprint arXiv:XXXX.XXXXX},
-  year={2026}
+@article{judgesense2026,
+  title={JudgeSense: A Benchmark for Prompt Sensitivity in LLM-as-a-Judge Systems},
+  author={Rohith Reddy Bellibatlu},
+  year={2026},
+  url={https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark},
+  note={Code: https://github.com/rohithreddybc/judgeSense}
 }
 ```
 
