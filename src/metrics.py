@@ -14,6 +14,13 @@ from typing import Callable, Dict, List, Sequence, Tuple
 import numpy as np
 
 
+# Pairs excluded from analysis (non-equivalent prompt variants identified by GPT-4o-mini)
+EXCLUDED_PAIRS = {
+    "fact_040", "fact_045", "fact_050",
+    "fact_090", "fact_095", "fact_100",
+}
+
+
 def judge_sensitivity_score(
     decisions_a: Sequence[str],
     decisions_b: Sequence[str],
@@ -189,6 +196,9 @@ def compute_results_summary(results_dir: str | Path) -> Dict:
                 try:
                     rec = json.loads(line)
                 except json.JSONDecodeError:
+                    continue
+
+                if rec.get("pair_id") in EXCLUDED_PAIRS:
                     continue
 
                 if rec.get("error") is not None:

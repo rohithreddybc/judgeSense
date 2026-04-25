@@ -34,12 +34,12 @@ SUPPORTED_MODELS = {
     "gpt-4o":        {"provider": "openai",      "model_id": "gpt-4o-2024-08-06",                 "key": "OPENAI_API_KEY"},
     "claude-haiku":  {"provider": "anthropic",   "model_id": "claude-haiku-4-5-20251001",         "key": "ANTHROPIC_API_KEY"},
     "claude-sonnet": {"provider": "anthropic",   "model_id": "claude-sonnet-4-5",                 "key": "ANTHROPIC_API_KEY"},
-    "gemini-flash":  {"provider": "google",      "model_id": "gemini-2.0-flash",                  "key": "GOOGLE_API_KEY"},
+    "gemini-flash":  {"provider": "google",      "model_id": "gemini-2.5-flash",                  "key": "GOOGLE_API_KEY"},
     "llama3-8b":     {"provider": "huggingface", "model_id": "meta-llama/Llama-3.1-8B-Instruct",  "key": "HF_TOKEN"},
     "llama3-70b":    {"provider": "huggingface", "model_id": "meta-llama/Llama-3.1-70B-Instruct", "key": "HF_TOKEN"},
     "mistral-7b":    {"provider": "mistral",     "model_id": "mistral-small-latest",              "key": "MISTRAL_API_KEY"},
-    "qwen":          {"provider": "huggingface", "model_id": "Qwen/Qwen2.5-7B-Instruct",          "key": "HF_TOKEN"},
-    "deepseek":      {"provider": "huggingface", "model_id": "deepseek-ai/DeepSeek-V3",           "key": "HF_TOKEN"},
+    "qwen":          {"provider": "novita",       "model_id": "qwen/qwen-2.5-72b-instruct",        "key": "NOVITA_API_KEY"},
+    "deepseek":      {"provider": "novita",      "model_id": "deepseek/deepseek-r1",              "key": "NOVITA_API_KEY"},
 }
 
 
@@ -153,29 +153,31 @@ class MistralJudge(JudgeModel):
 
 
 class GeminiJudge(JudgeModel):
-    """Judge using Google's Gemini 2.0 Flash model."""
+    """Judge using Google's Gemini Flash model."""
 
     def __init__(self, api_key: str, temperature: float = 0.0):
         super().__init__(temperature)
         self.api_key = api_key
-        self.model_name = "gemini-2.0-flash"
+        self.model_name = "gemini-2.5-flash"
         try:
-            import google.generativeai as genai
-            genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel(self.model_name)
+            from google import genai
+            self.client = genai.Client(api_key=api_key)
         except ImportError:
             raise ImportError(
-                "google-generativeai is required. Install with: pip install google-generativeai"
+                "google-genai is required. Install with: pip install google-genai"
             )
 
     def evaluate(self, prompt: str) -> str:
         try:
-            response = self.model.generate_content(
-                prompt,
-                generation_config={
-                    "max_output_tokens": 20,
-                    "temperature": self.temperature,
-                },
+            from google.genai import types
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    max_output_tokens=20,
+                    temperature=self.temperature,
+                    thinking_config=types.ThinkingConfig(thinking_budget=0),
+                ),
             )
             return response.text.strip()
         except Exception as e:
@@ -206,10 +208,11 @@ def normalize_decision(raw: str, task_type: str) -> str:
         return "UNCLEAR"
 
     elif task_type in ["relevance", "preference"]:
-        if raw.startswith("A"):
-            return "A"
-        if raw.startswith("B"):
-            return "B"
+        import re
+        cleaned = re.sub(r'[*_]+', '', raw).strip()
+        m = re.search(r'\b([AB])\b', cleaned)
+        if m:
+            return m.group(1)
         return "UNCLEAR"
 
     elif task_type == "coherence":
