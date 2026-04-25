@@ -57,7 +57,7 @@ python src/metrics.py --results data/results/raw_outputs/
 
 The JudgeSense prompt pair dataset is available on HuggingFace:
 
-- **Link**: `https://huggingface.co/datasets/rohithreddybc/judgesense` *(coming soon)*
+- **Link**: `https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark`
 - **License**: CC-BY-4.0
 - **Size**: 500 prompt pairs, 4 task types, 125 pairs per task
 
