@@ -51,6 +51,7 @@ _RATE_LIMIT = {
     "google":       1.0,
     "huggingface":  1.0,
     "mistral":      0.5,
+    "novita":       0.5,
 }
 
 _TIMEOUT    = 30   # seconds per API call
@@ -110,14 +111,14 @@ def _append_jsonl(record: dict, path: Path) -> None:
 
 
 def _completed_keys(path: Path) -> Set[Tuple[str, int]]:
-    """Return set of (pair_id, run) tuples already written to output file."""
+    """Return set of (pair_id, run) tuples successfully completed (no error)."""
     if not path.exists():
         return set()
     keys: Set[Tuple[str, int]] = set()
     for rec in _load_jsonl(path):
         pid = rec.get("pair_id")
         run = rec.get("run")
-        if pid is not None and run is not None:
+        if pid is not None and run is not None and rec.get("error") is None:
             keys.add((pid, int(run)))
     return keys
 
@@ -159,9 +160,15 @@ def _call_huggingface(client, model_id: str, prompt: str) -> str:
 
 
 def _call_google(client, model_id: str, prompt: str) -> str:
-    response = client.generate_content(
-        prompt,
-        generation_config={"max_output_tokens": _MAX_TOKENS, "temperature": 0.0},
+    from google.genai import types
+    response = client.models.generate_content(
+        model=model_id,
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            max_output_tokens=_MAX_TOKENS,
+            temperature=0.0,
+            thinking_config=types.ThinkingConfig(thinking_budget=0),
+        ),
     )
     return response.text.strip()
 
@@ -204,11 +211,10 @@ def _build_client(model_name: str):
 
     elif provider == "google":
         try:
-            import google.generativeai as genai
+            from google import genai
         except ImportError:
-            raise ImportError("pip install google-generativeai")
-        genai.configure(api_key=api_key)
-        return genai.GenerativeModel(model_id), model_id, provider
+            raise ImportError("pip install google-genai")
+        return genai.Client(api_key=api_key), model_id, provider
 
     elif provider == "huggingface":
         try:
@@ -224,6 +230,16 @@ def _build_client(model_name: str):
             raise ImportError("pip install mistralai")
         return Mistral(api_key=api_key), model_id, provider
 
+    elif provider == "novita":
+        try:
+            from openai import OpenAI
+        except ImportError:
+            raise ImportError("pip install openai")
+        return OpenAI(
+            api_key=api_key,
+            base_url="https://api.novita.ai/v3/openai",
+        ), model_id, provider
+
     else:
         raise ValueError(f"Unknown provider: {provider}")
 
@@ -238,6 +254,7 @@ def _call(provider: str, client, model_id: str, prompt: str) -> str:
         "google":      _call_google,
         "huggingface": _call_huggingface,
         "mistral":     _call_mistral,
+        "novita":      _call_openai,  # OpenAI-compatible
     }
     fn = dispatch[provider]
     try:

@@ -1,22 +1,30 @@
 """
-Backfill missing fields in existing gpt-4o-mini result JSONL files.
+Backfill and re-normalize existing result JSONL files.
 
-Adds: normalized_a, normalized_b, flipped, error, run
-from existing: prompt_a_decision, prompt_b_decision, run_number
+Handles both old-schema records (prompt_a_decision_raw / run_number)
+and new-schema records (prompt_a_raw / run).
 
-Safe to rerun — only writes files with changes.
+Fixes:
+  - Maps prompt_a_decision_raw -> prompt_a_raw (old schema only)
+  - Re-applies normalize_decision() from the actual raw text
+  - Adds: normalized_a, normalized_b, flipped, error, run
+
+Safe to rerun — idempotent.
 """
 
 import json
+import sys
 from pathlib import Path
 
-RESULTS_DIR = Path(__file__).resolve().parent.parent / "data" / "results" / "raw_outputs"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
+from src.models import normalize_decision
 
-FIELDS_TO_ADD = {"normalized_a", "normalized_b", "flipped", "error", "run"}
+RESULTS_DIR = REPO_ROOT / "data" / "results" / "raw_outputs"
 
 
 def backfill_file(path: Path) -> int:
-    """Backfill one JSONL file. Returns number of records updated."""
+    """Backfill and re-normalize one JSONL file. Returns number of records updated."""
     records = []
     with open(path, encoding="utf-8") as fh:
         for line in fh:
@@ -27,26 +35,45 @@ def backfill_file(path: Path) -> int:
 
     updated = 0
     for rec in records:
-        missing = FIELDS_TO_ADD - rec.keys()
-        if not missing:
-            continue
+        task_type = rec.get("task_type", "")
+        changed = False
 
-        if "normalized_a" in missing:
-            rec["normalized_a"] = rec.get("prompt_a_decision", "UNCLEAR")
-        if "normalized_b" in missing:
-            rec["normalized_b"] = rec.get("prompt_b_decision", "UNCLEAR")
-        if "flipped" in missing:
-            rec["flipped"] = rec.get("normalized_a") != rec.get("normalized_b")
-        if "error" in missing:
-            raw_a = rec.get("prompt_a_decision_raw", "")
-            raw_b = rec.get("prompt_b_decision_raw", "")
-            err_a = raw_a.startswith("ERROR:") if isinstance(raw_a, str) else False
-            err_b = raw_b.startswith("ERROR:") if isinstance(raw_b, str) else False
-            rec["error"] = (raw_a if err_a else raw_b) if (err_a or err_b) else None
-        if "run" in missing:
+        # ── Migrate old raw field names to new schema ──────────────────────
+        if "prompt_a_raw" not in rec or not rec.get("prompt_a_raw"):
+            rec["prompt_a_raw"] = rec.get("prompt_a_decision_raw", "")
+            changed = True
+        if "prompt_b_raw" not in rec or not rec.get("prompt_b_raw"):
+            rec["prompt_b_raw"] = rec.get("prompt_b_decision_raw", "")
+            changed = True
+
+        # ── Migrate run field ──────────────────────────────────────────────
+        if "run" not in rec:
             rec["run"] = rec.get("run_number", 1)
+            changed = True
 
-        updated += 1
+        # ── Re-normalize from actual raw text ──────────────────────────────
+        raw_a = rec.get("prompt_a_raw", "")
+        raw_b = rec.get("prompt_b_raw", "")
+        err_a = isinstance(raw_a, str) and raw_a.startswith("ERROR:")
+        err_b = isinstance(raw_b, str) and raw_b.startswith("ERROR:")
+
+        new_a = "UNCLEAR" if err_a else normalize_decision(raw_a, task_type)
+        new_b = "UNCLEAR" if err_b else normalize_decision(raw_b, task_type)
+        new_flip = new_a != new_b
+        new_err = (raw_a if err_a else raw_b) if (err_a or err_b) else None
+
+        if (rec.get("normalized_a") != new_a or rec.get("normalized_b") != new_b
+                or rec.get("flipped") != new_flip or rec.get("error") != new_err):
+            rec["normalized_a"]      = new_a
+            rec["normalized_b"]      = new_b
+            rec["prompt_a_decision"] = new_a
+            rec["prompt_b_decision"] = new_b
+            rec["flipped"]           = new_flip
+            rec["error"]             = new_err
+            changed = True
+
+        if changed:
+            updated += 1
 
     if updated > 0:
         with open(path, "w", encoding="utf-8") as fh:
