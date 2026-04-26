@@ -3,6 +3,7 @@
 A framework for quantifying prompt sensitivity in LLM-as-a-Judge evaluation systems.
 
 [![arXiv](https://img.shields.io/badge/arXiv-coming%20soon-red.svg)]()
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19798166.svg)](https://doi.org/10.5281/zenodo.19798166)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Dataset](https://img.shields.io/badge/dataset-HuggingFace-orange.svg)](https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark)
@@ -30,6 +31,14 @@ cd judgesense
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+```
+
+Or install directly via pip (metrics only, minimal dependencies):
+
+```bash
+pip install judgesense
+# For full evaluation capabilities (API clients, datasets):
+pip install "judgesense[full]"
 ```
 
 ## Quickstart
@@ -73,8 +82,8 @@ pairs = ds["factuality"]
 print(f"{len(pairs)} factuality pairs loaded")
 
 # Compute JSS from your judge's decisions
-from src.metrics import judge_sensitivity_score
-jss = judge_sensitivity_score(decisions_a, decisions_b)
+from judgesense import compute_jss
+jss = compute_jss(decisions_a, decisions_b)
 print(f"JSS: {jss:.3f}")
 ```
 
@@ -171,11 +180,12 @@ judgesense/
 If you use JudgeSense in your research, please cite:
 
 ```bibtex
-@article{judgesense2026,
+@misc{judgesense2026,
   title={JudgeSense: A Benchmark for Prompt Sensitivity in LLM-as-a-Judge Systems},
   author={Rohith Reddy Bellibatlu},
   year={2026},
-  url={https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark},
+  doi={10.5281/zenodo.19798166},
+  url={https://doi.org/10.5281/zenodo.19798166},
   note={Code: https://github.com/rohithreddybc/judgeSense}
 }
 ```

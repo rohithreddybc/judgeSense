@@ -40,7 +40,7 @@ _load_env()
 
 # Import after env loading so keys are available
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from src.models import SUPPORTED_MODELS, normalize_decision
+from .models import SUPPORTED_MODELS, normalize_decision
 
 _ALL_MODELS = list(SUPPORTED_MODELS.keys())  # 9 models
 
