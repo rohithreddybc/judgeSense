@@ -198,7 +198,7 @@ If you use JudgeSense in your research, please cite:
 
 ## Contact
 
-Rohith Reddy Bellibatlu — ORCID [0009-0003-6083-0364](https://orcid.org/0009-0003-6083-0364)
+Rohith Reddy Bellibatlu - ORCID [0009-0003-6083-0364](https://orcid.org/0009-0003-6083-0364)
 
 ---
 
