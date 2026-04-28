@@ -2,7 +2,7 @@
 
 A framework for quantifying prompt sensitivity in LLM-as-a-Judge evaluation systems.
 
-[![arXiv](https://img.shields.io/badge/arXiv-coming%20soon-red.svg)]()
+[![arXiv](https://img.shields.io/badge/arXiv-2604.23478-red.svg)](https://arxiv.org/abs/2604.23478)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19798166.svg)](https://doi.org/10.5281/zenodo.19798166)
 [![Dataset](https://img.shields.io/badge/dataset-HuggingFace-orange.svg)](https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -180,13 +180,14 @@ judgesense/
 If you use JudgeSense in your research, please cite:
 
 ```bibtex
-@misc{judgesense2026,
-  title={JudgeSense: A Benchmark for Prompt Sensitivity in LLM-as-a-Judge Systems},
-  author={Rohith Reddy Bellibatlu},
-  year={2026},
-  doi={10.5281/zenodo.19798166},
-  url={https://doi.org/10.5281/zenodo.19798166},
-  note={Code: https://github.com/rohithreddybc/judgeSense}
+@misc{bellibatlu2026judgesense,
+      title={JudgeSense: A Benchmark for Prompt Sensitivity in LLM-as-a-Judge Systems}, 
+      author={Rohith Reddy Bellibatlu},
+      year={2026},
+      eprint={2604.23478},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2604.23478}, 
 }
 ```
 
