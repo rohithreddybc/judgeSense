@@ -37,6 +37,44 @@
       "n_flips": 0
     }
   },
+  "claude-opus-4-7": {
+    "coherence": {
+      "jss": 0.6987,
+      "flip_rate": 0.3013,
+      "cohens_kappa": 0.5758,
+      "ci_lower": 0.6533,
+      "ci_upper": 0.744,
+      "n_pairs": 375,
+      "n_flips": 113
+    },
+    "factuality": {
+      "jss": 0.6303,
+      "flip_rate": 0.3697,
+      "cohens_kappa": 0.242,
+      "ci_lower": 0.5798,
+      "ci_upper": 0.6779,
+      "n_pairs": 357,
+      "n_flips": 132
+    },
+    "preference": {
+      "jss": 1.0,
+      "flip_rate": 0.0,
+      "cohens_kappa": 1.0,
+      "ci_lower": 1.0,
+      "ci_upper": 1.0,
+      "n_pairs": 375,
+      "n_flips": 0
+    },
+    "relevance": {
+      "jss": 1.0,
+      "flip_rate": 0.0,
+      "cohens_kappa": 1.0,
+      "ci_lower": 1.0,
+      "ci_upper": 1.0,
+      "n_pairs": 375,
+      "n_flips": 0
+    }
+  },
   "claude-sonnet": {
     "coherence": {
       "jss": 0.992,
@@ -75,24 +113,62 @@
       "n_flips": 0
     }
   },
-  "deepseek": {
+  "deepseek-v4-flash": {
     "coherence": {
-      "jss": 0.6533,
-      "flip_rate": 0.3467,
-      "cohens_kappa": 0.4607,
-      "ci_lower": 0.6053,
-      "ci_upper": 0.7067,
+      "jss": 0.496,
+      "flip_rate": 0.504,
+      "cohens_kappa": 0.3498,
+      "ci_lower": 0.4453,
+      "ci_upper": 0.5441,
       "n_pairs": 375,
-      "n_flips": 130
+      "n_flips": 189
     },
     "factuality": {
-      "jss": 0.6303,
-      "flip_rate": 0.3697,
-      "cohens_kappa": 0.242,
-      "ci_lower": 0.5826,
-      "ci_upper": 0.6835,
+      "jss": 0.6218,
+      "flip_rate": 0.3782,
+      "cohens_kappa": 0.2225,
+      "ci_lower": 0.5742,
+      "ci_upper": 0.6751,
       "n_pairs": 357,
-      "n_flips": 132
+      "n_flips": 135
+    },
+    "preference": {
+      "jss": 1.0,
+      "flip_rate": 0.0,
+      "cohens_kappa": 1.0,
+      "ci_lower": 1.0,
+      "ci_upper": 1.0,
+      "n_pairs": 353,
+      "n_flips": 0
+    },
+    "relevance": {
+      "jss": 1.0,
+      "flip_rate": 0.0,
+      "cohens_kappa": 1.0,
+      "ci_lower": 1.0,
+      "ci_upper": 1.0,
+      "n_pairs": 340,
+      "n_flips": 0
+    }
+  },
+  "deepseek": {
+    "coherence": {
+      "jss": 0.5253,
+      "flip_rate": 0.4747,
+      "cohens_kappa": 0.326,
+      "ci_lower": 0.4747,
+      "ci_upper": 0.576,
+      "n_pairs": 375,
+      "n_flips": 178
+    },
+    "factuality": {
+      "jss": 0.6275,
+      "flip_rate": 0.3725,
+      "cohens_kappa": 0.2354,
+      "ci_lower": 0.577,
+      "ci_upper": 0.6779,
+      "n_pairs": 357,
+      "n_flips": 133
     },
     "preference": {
       "jss": 1.0,
@@ -227,6 +303,44 @@
       "n_flips": 0
     }
   },
+  "gpt-5.5": {
+    "coherence": {
+      "jss": 0.8267,
+      "flip_rate": 0.1733,
+      "cohens_kappa": 0.6937,
+      "ci_lower": 0.7893,
+      "ci_upper": 0.864,
+      "n_pairs": 375,
+      "n_flips": 65
+    },
+    "factuality": {
+      "jss": 0.6275,
+      "flip_rate": 0.3725,
+      "cohens_kappa": 0.1942,
+      "ci_lower": 0.577,
+      "ci_upper": 0.6835,
+      "n_pairs": 357,
+      "n_flips": 133
+    },
+    "preference": {
+      "jss": 1.0,
+      "flip_rate": 0.0,
+      "cohens_kappa": 1.0,
+      "ci_lower": 1.0,
+      "ci_upper": 1.0,
+      "n_pairs": 375,
+      "n_flips": 0
+    },
+    "relevance": {
+      "jss": 1.0,
+      "flip_rate": 0.0,
+      "cohens_kappa": 1.0,
+      "ci_lower": 1.0,
+      "ci_upper": 1.0,
+      "n_pairs": 375,
+      "n_flips": 0
+    }
+  },
   "llama3-70b": {
     "coherence": {
       "jss": 0.5538,
@@ -301,6 +415,44 @@
       "ci_upper": 0.9904,
       "n_pairs": 104,
       "n_flips": 5
+    }
+  },
+  "qwen-3.6-flash": {
+    "coherence": {
+      "jss": 0.512,
+      "flip_rate": 0.488,
+      "cohens_kappa": 0.3722,
+      "ci_lower": 0.4613,
+      "ci_upper": 0.56,
+      "n_pairs": 375,
+      "n_flips": 183
+    },
+    "factuality": {
+      "jss": 0.6303,
+      "flip_rate": 0.3697,
+      "cohens_kappa": 0.242,
+      "ci_lower": 0.5826,
+      "ci_upper": 0.6835,
+      "n_pairs": 357,
+      "n_flips": 132
+    },
+    "preference": {
+      "jss": 1.0,
+      "flip_rate": 0.0,
+      "cohens_kappa": 1.0,
+      "ci_lower": 1.0,
+      "ci_upper": 1.0,
+      "n_pairs": 375,
+      "n_flips": 0
+    },
+    "relevance": {
+      "jss": 1.0,
+      "flip_rate": 0.0,
+      "cohens_kappa": 1.0,
+      "ci_lower": 1.0,
+      "ci_upper": 1.0,
+      "n_pairs": 375,
+      "n_flips": 0
     }
   },
   "qwen": {

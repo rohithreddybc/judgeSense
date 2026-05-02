@@ -12,7 +12,7 @@ A framework for quantifying prompt sensitivity in LLM-as-a-Judge evaluation syst
 
 ## Overview
 
-Large language models are increasingly deployed as automated judges to evaluate the outputs of other models, yet the reliability of these systems remains poorly understood. **JudgeSense** is a reproducible benchmark that quantifies prompt sensitivity in LLM-as-a-Judge systems via the **Judge Sensitivity Score (JSS)** - a metric measuring how often a judge's evaluation decision changes when prompt phrasing varies while evaluation intent stays constant. We evaluate **9 LLM judges** across **4 evaluation tasks** (factuality, coherence, preference, relevance) with **500 semantically equivalent prompt pairs** and **3 independent runs each**, and uncover systematic sensitivity driven by prompt polarity inversion. Our analysis reveals that polarity-inverted templates can reduce apparent agreement by up to **37 percentage points**, and that sensitivity varies substantially across model families.
+Large language models are increasingly deployed as automated judges to evaluate the outputs of other models, yet the reliability of these systems remains poorly understood. **JudgeSense** is a reproducible benchmark that quantifies prompt sensitivity in LLM-as-a-Judge systems via the **Judge Sensitivity Score (JSS)**, a metric measuring how often a judge's evaluation decision changes when prompt phrasing varies while evaluation intent stays constant. We evaluate **13 LLM judges** across **4 evaluation tasks** (factuality, coherence, preference, relevance) with **500 hand-validated prompt pairs** and **3 independent runs each**, and uncover systematic sensitivity driven by prompt polarity inversion. Our analysis reveals that polarity-inverted templates can reduce apparent agreement by up to **37 percentage points**, that coherence JSS varies by more than **0.6 units** across judges (range 0.39 to 0.99), and that sensitivity does not track model scale or recency.
 
 This repository contains the full reproducible codebase, datasets, and evaluation artifacts accompanying the paper.
 
@@ -20,7 +20,8 @@ This repository contains the full reproducible codebase, datasets, and evaluatio
 
 - **JSS metric**: A novel, formally defined score for judge decision consistency across semantically equivalent prompts.
 - **Public dataset**: 500 semantically equivalent prompt pairs across 4 evaluation task types.
-- **Empirical evaluation**: Nine LLM judges (GPT-4o, GPT-4o-mini, Claude Haiku, Claude Sonnet, Gemini Flash, LLaMA3-70B, Mistral-7B, DeepSeek, Qwen) tested across 4 task types with JSS ranging from 0.63 to 1.0 before polarity correction.
+- **Empirical evaluation**: Thirteen LLM judges (GPT-5.5, GPT-4o, GPT-4o-mini, Claude Opus 4.7, Claude Sonnet 4.5, Claude Haiku 4.5, Gemini 2.5 Flash, LLaMA-3.1-70B, Mistral-7B, DeepSeek-R1, Qwen-2.5-72B, Qwen 3.6 Flash, DeepSeek-V4 Flash) tested across 4 task types; coherence JSS ranges from 0.39 to 0.99 and does not correlate with model scale or recency.
+- **Human validation**: All 500 prompt pairs hand-validated by a single annotator; 450 confirmed semantically equivalent, 50 involving polarity-inverted templates handled via label remapping.
 - **Full reproducibility**: All code, data, and results released under open licenses.
 
 ## Installation
@@ -104,19 +105,45 @@ print(f"JSS: {jss:.3f}")
 
 ## Key findings
 
+### Factuality (polarity-correction results)
+
 | Model | JSS (raw) | JSS (T4-corrected) | Delta |
 |---|---|---|---|
 | GPT-4o | 0.63 | 1.00 | +0.37 |
 | GPT-4o-mini | 0.63 | 1.00 | +0.37 |
-| Claude Haiku | 0.63 | 1.00 | +0.37 |
-| Claude Sonnet | 0.63 | 1.00 | +0.37 |
-| DeepSeek | 0.63 | 1.00 | +0.37 |
-| LLaMA3-70B | 0.63 | 1.00 | +0.37 |
-| Gemini Flash | 0.63 | 1.00 | +0.37 |
-| Qwen | 0.63 | 1.00 | +0.37 |
-| Mistral 7B | 0.71 | 0.88 | +0.17 |
+| Claude Haiku 4.5 | 0.63 | 1.00 | +0.37 |
+| Claude Sonnet 4.5 | 0.63 | 1.00 | +0.37 |
+| DeepSeek-R1 | 0.63 | 1.00 | +0.37 |
+| LLaMA-3.1-70B | 0.63 | 1.00 | +0.37 |
+| Gemini 2.5 Flash | 0.63 | 1.00 | +0.37 |
+| Qwen-2.5-72B | 0.63 | 1.00 | +0.37 |
+| Mistral-7B | 0.71 | 0.88 | +0.17 |
+| GPT-5.5 | 0.63 | 1.00 | +0.37 |
+| Claude Opus 4.7 | 0.63 | 1.00 | +0.37 |
+| Qwen 3.6 Flash | 0.63 | 1.00 | +0.37 |
+| DeepSeek-V4 Flash | 0.62 | 0.99 | +0.37 |
 
-**Finding**: Polarity-inverted prompt templates (T4) reduce raw JSS by 17–37 pp across all models. After T4 correction, 8 of 9 models achieve JSS = 1.0 on factuality, demonstrating that prompt sensitivity in this task is entirely attributable to template polarity rather than semantic ambiguity. Mistral 7B exhibits the highest residual sensitivity (JSS = 0.88 post-correction).
+**Finding**: Polarity-inverted prompt templates (T4) reduce raw JSS by 17 to 37 pp across all models. After T4 correction, 12 of 13 models achieve JSS = 1.0 on factuality, demonstrating that prompt sensitivity in this task is entirely attributable to template polarity rather than semantic ambiguity. Mistral-7B exhibits the highest residual sensitivity (JSS = 0.88 post-correction).
+
+### Coherence (most discriminating task)
+
+| Model | JSS (coherence) | Cohen's kappa |
+|---|---|---|
+| Claude Sonnet 4.5 | 0.99 | 0.986 |
+| Qwen-2.5-72B | 0.92 | 0.846 |
+| GPT-4o | 0.92 | 0.828 |
+| GPT-5.5 | 0.83 | 0.694 |
+| GPT-4o-mini | 0.78 | 0.627 |
+| Claude Haiku 4.5 | 0.73 | 0.583 |
+| Claude Opus 4.7 | 0.70 | 0.576 |
+| LLaMA-3.1-70B | 0.55 | 0.338 |
+| DeepSeek-R1 | 0.53 | 0.326 |
+| Qwen 3.6 Flash | 0.51 | 0.372 |
+| DeepSeek-V4 Flash | 0.50 | 0.350 |
+| Mistral-7B | 0.48 | -0.082 |
+| Gemini 2.5 Flash | 0.39 | -0.053 |
+
+**Finding**: Coherence JSS spans 0.6 units across 13 judges and does not track model scale or release recency. Claude Opus 4.7 (0.70) scores lower than Claude Haiku 4.5 (0.73); GPT-5.5 (0.83) scores lower than GPT-4o (0.92). Two judges (Mistral-7B and Gemini 2.5 Flash) produce negative kappa, indicating systematic anti-agreement.
 
 ## Reproducing paper results
 
@@ -126,7 +153,7 @@ Exact commands to replicate every number in the paper:
 # 1. Build the prompt pair dataset
 python src/dataset_builder.py --output data/prompt_pairs/
 
-# 2. Run evaluations on all three models
+# 2. Run evaluations on all models
 bash scripts/run_all_evals.sh
 
 # 3. Compute metrics
@@ -151,10 +178,11 @@ python analysis/generate_figures.py
 judgesense/
 ├── data/
 │   ├── prompt_pairs/          # 4 JSONL files, one per task type
-│   └── results/               # Raw judge outputs + computed metrics
+│   ├── results/               # Raw judge outputs + computed metrics
+│   └── validation/manual/     # Human annotation results (500 pairs, 4 tasks)
 ├── src/
 │   ├── dataset_builder.py     # Generates the prompt pair dataset
-│   ├── models.py              # API wrappers (OpenAI, HuggingFace, Mistral)
+│   ├── models.py              # API wrappers (OpenAI, Anthropic, Google, Alibaba Cloud, Novita AI, HuggingFace)
 │   ├── evaluate.py            # Main evaluation runner
 │   ├── metrics.py             # JSS + decision flip rate + Cohen's kappa
 │   └── utils.py               # Shared helpers
@@ -168,8 +196,8 @@ judgesense/
 │   ├── factuality_pair_overlap.py # Pair-level flip overlap analysis
 │   └── generate_figures.py        # Publication-ready PDF figures
 ├── outputs/               # CSV results + publication-ready PDF figures
-├── figures/                   # Paper-ready PDF/PNG figures
-├── tests/                     # Unit tests for metrics and dataset (29 tests)
+├── figures/               # Paper-ready PDF/PNG figures
+├── tests/                 # Unit tests for metrics and dataset (29 tests)
 ├── requirements.txt
 ├── .env.example
 └── README.md
@@ -198,7 +226,7 @@ If you use JudgeSense in your research, please cite:
 
 ## Contact
 
-Rohith Reddy Bellibatlu - ORCID [0009-0003-6083-0364](https://orcid.org/0009-0003-6083-0364)
+Rohith Reddy Bellibatlu — ORCID [0009-0003-6083-0364](https://orcid.org/0009-0003-6083-0364)
 
 ---
 

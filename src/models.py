@@ -28,18 +28,31 @@ def _load_env():
 _load_env()
 
 
-# Supported models registry with exact model IDs
+# Supported models registry.
+# `max_tokens` is per-model: non-reasoning instruction-tuned judges keep the
+# original 20-token cap (single-token answers); reasoning-tuned judges
+# (deepseek-r1, GPT-5.5, Claude Opus 4.7, Qwen 3.6 Flash, DeepSeek-V4 Flash)
+# get 1024 tokens so their internal chain can complete before emitting the answer.
 SUPPORTED_MODELS = {
-    "gpt-4o-mini":   {"provider": "openai",      "model_id": "gpt-4o-mini-2024-07-18",            "key": "OPENAI_API_KEY"},
-    "gpt-4o":        {"provider": "openai",      "model_id": "gpt-4o-2024-08-06",                 "key": "OPENAI_API_KEY"},
-    "claude-haiku":  {"provider": "anthropic",   "model_id": "claude-haiku-4-5-20251001",         "key": "ANTHROPIC_API_KEY"},
-    "claude-sonnet": {"provider": "anthropic",   "model_id": "claude-sonnet-4-5",                 "key": "ANTHROPIC_API_KEY"},
-    "gemini-flash":  {"provider": "google",      "model_id": "gemini-2.5-flash",                  "key": "GOOGLE_API_KEY"},
-    "llama3-8b":     {"provider": "huggingface", "model_id": "meta-llama/Llama-3.1-8B-Instruct",  "key": "HF_TOKEN"},
-    "llama3-70b":    {"provider": "huggingface", "model_id": "meta-llama/Llama-3.1-70B-Instruct", "key": "HF_TOKEN"},
-    "mistral-7b":    {"provider": "mistral",     "model_id": "mistral-small-latest",              "key": "MISTRAL_API_KEY"},
-    "qwen":          {"provider": "novita",       "model_id": "qwen/qwen-2.5-72b-instruct",        "key": "NOVITA_API_KEY"},
-    "deepseek":      {"provider": "novita",      "model_id": "deepseek/deepseek-r1",              "key": "NOVITA_API_KEY"},
+    # ── Existing 8 non-reasoning judges (unchanged, max_tokens=20) ──
+    "gpt-4o-mini":   {"provider": "openai",      "model_id": "gpt-4o-mini-2024-07-18",            "key": "OPENAI_API_KEY",    "max_tokens": 20},
+    "gpt-4o":        {"provider": "openai",      "model_id": "gpt-4o-2024-08-06",                 "key": "OPENAI_API_KEY",    "max_tokens": 20},
+    "claude-haiku":  {"provider": "anthropic",   "model_id": "claude-haiku-4-5-20251001",         "key": "ANTHROPIC_API_KEY", "max_tokens": 20},
+    "claude-sonnet": {"provider": "anthropic",   "model_id": "claude-sonnet-4-5",                 "key": "ANTHROPIC_API_KEY", "max_tokens": 20},
+    "gemini-flash":  {"provider": "google",      "model_id": "gemini-2.5-flash",                  "key": "GOOGLE_API_KEY",    "max_tokens": 20},
+    "llama3-8b":     {"provider": "huggingface", "model_id": "meta-llama/Llama-3.1-8B-Instruct",  "key": "HF_TOKEN",          "max_tokens": 20},
+    "llama3-70b":    {"provider": "huggingface", "model_id": "meta-llama/Llama-3.1-70B-Instruct", "key": "HF_TOKEN",          "max_tokens": 20},
+    "mistral-7b":    {"provider": "mistral",     "model_id": "mistral-small-latest",              "key": "MISTRAL_API_KEY",   "max_tokens": 20},
+    "qwen":          {"provider": "novita",      "model_id": "qwen/qwen-2.5-72b-instruct",        "key": "NOVITA_API_KEY",    "max_tokens": 20},
+
+    # ── Re-run at 1024 to retire the truncation caveat ──
+    "deepseek":      {"provider": "novita",      "model_id": "deepseek/deepseek-r1",              "key": "NOVITA_API_KEY",    "max_tokens": 1024},
+
+    # ── 4 new judges added in revision pass 2 (April 2026) ──
+    "gpt-5.5":            {"provider": "openai",    "model_id": "gpt-5.5",                        "key": "OPENAI_API_KEY",    "max_tokens": 1024},
+    "claude-opus-4-7":    {"provider": "anthropic", "model_id": "claude-opus-4-7",                "key": "ANTHROPIC_API_KEY", "max_tokens": 1024},
+    "qwen-3.6-flash":     {"provider": "dashscope", "model_id": "qwen3.6-35b-a3b",                "key": "DASHSCOPE_API_KEY", "max_tokens": 1024},
+    "deepseek-v4-flash":  {"provider": "novita",    "model_id": "deepseek/deepseek-v4-flash",     "key": "NOVITA_API_KEY",    "max_tokens": 1024},
 }
 
 

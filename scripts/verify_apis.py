@@ -32,21 +32,32 @@ def _load_env_manual():
 _load_env_manual()
 
 
+def _openai_token_param(model_name: str) -> str:
+    """GPT-5.x and o-series require 'max_completion_tokens'; older models use 'max_tokens'."""
+    m = model_name.lower()
+    if m.startswith("gpt-5") or m.startswith("o1") or m.startswith("o3") or m.startswith("o4"):
+        return "max_completion_tokens"
+    return "max_tokens"
+
+
 def test_openai(model_name: str, api_key: str) -> tuple[bool, str]:
     """Test OpenAI model."""
     try:
         from openai import OpenAI
         client = OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model=model_name,
-            messages=[
+        kwargs = {
+            "model": model_name,
+            "messages": [
                 {"role": "system", "content": "Reply with only the word OK."},
-                {"role": "user", "content": "Reply with the word OK only."}
+                {"role": "user", "content": "Reply with the word OK only."},
             ],
-            temperature=0.0,
-            max_tokens=20,
-        )
-        text = response.choices[0].message.content.strip()
+            _openai_token_param(model_name): 1024,
+        }
+        # GPT-5.x rejects custom temperature; only pass it for older models
+        if not model_name.lower().startswith("gpt-5"):
+            kwargs["temperature"] = 0.0
+        response = client.chat.completions.create(**kwargs)
+        text = (response.choices[0].message.content or "").strip()
         return True, text
     except Exception as exc:
         return False, str(exc)
@@ -72,19 +83,21 @@ def test_anthropic(model_name: str, api_key: str) -> tuple[bool, str]:
 
 
 def test_google(model_name: str, api_key: str) -> tuple[bool, str]:
-    """Test Google Gemini model."""
+    """Test Google Gemini model via the current google.genai SDK."""
     try:
-        import google.generativeai as genai
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(model_name)
-        response = model.generate_content(
-            "Reply with the word OK only.",
-            generation_config={
-                "max_output_tokens": 20,
-                "temperature": 0.0,
-            }
+        from google import genai
+        from google.genai import types
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model=model_name,
+            contents="Reply with the word OK only.",
+            config=types.GenerateContentConfig(
+                max_output_tokens=1024,
+                temperature=0.0,
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
+            ),
         )
-        text = response.text.strip()
+        text = (response.text or "").strip()
         return True, text
     except Exception as exc:
         return False, str(exc)
@@ -128,18 +141,66 @@ def test_mistral(model_name: str, api_key: str) -> tuple[bool, str]:
         return False, str(exc)
 
 
+def test_novita(model_name: str, api_key: str) -> tuple[bool, str]:
+    """Test Novita-hosted model (OpenAI-compatible)."""
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=api_key, base_url="https://api.novita.ai/v3/openai")
+        response = client.chat.completions.create(
+            model=model_name,
+            messages=[
+                {"role": "user", "content": "Reply with the word OK only."}
+            ],
+            temperature=0.0,
+            max_tokens=1024,
+        )
+        text = response.choices[0].message.content.strip()
+        return True, text
+    except Exception as exc:
+        return False, str(exc)
+
+
+def test_dashscope(model_name: str, api_key: str) -> tuple[bool, str]:
+    """Test Alibaba Cloud Model Studio (DashScope) — OpenAI-compatible mode."""
+    try:
+        from openai import OpenAI
+        base_url = os.environ.get(
+            "DASHSCOPE_BASE_URL",
+            "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+        )
+        client = OpenAI(api_key=api_key, base_url=base_url)
+        response = client.chat.completions.create(
+            model=model_name,
+            messages=[
+                {"role": "user", "content": "Reply with the word OK only."}
+            ],
+            temperature=0.0,
+            max_tokens=1024,
+        )
+        text = response.choices[0].message.content.strip()
+        return True, text
+    except Exception as exc:
+        return False, str(exc)
+
+
 # Model registry with exact model IDs from src/models.py
 MODELS = {
-    "gpt-4o-mini":   ("gpt-4o-mini-2024-07-18",        "OPENAI_API_KEY", test_openai),
-    "gpt-4o":        ("gpt-4o-2024-08-06",             "OPENAI_API_KEY", test_openai),
-    "claude-haiku":  ("claude-haiku-4-5-20251001",     "ANTHROPIC_API_KEY", test_anthropic),
-    "claude-sonnet": ("claude-sonnet-4-5",             "ANTHROPIC_API_KEY", test_anthropic),
-    "gemini-flash":  ("gemini-2.0-flash",              "GOOGLE_API_KEY", test_google),
-    "llama3-8b":     ("meta-llama/Llama-3.1-8B-Instruct", "HF_TOKEN", test_huggingface),
-    "llama3-70b":    ("meta-llama/Llama-3.1-70B-Instruct", "HF_TOKEN", test_huggingface),
-    "mistral-7b":    ("mistral-small-latest",         "MISTRAL_API_KEY", test_mistral),
-    "qwen":          ("Qwen/Qwen2.5-7B-Instruct",      "HF_TOKEN", test_huggingface),
-    "deepseek":      ("deepseek-ai/DeepSeek-V3",       "HF_TOKEN", test_huggingface),
+    "gpt-4o-mini":      ("gpt-4o-mini-2024-07-18",            "OPENAI_API_KEY",    test_openai),
+    "gpt-4o":           ("gpt-4o-2024-08-06",                 "OPENAI_API_KEY",    test_openai),
+    "claude-haiku":     ("claude-haiku-4-5-20251001",         "ANTHROPIC_API_KEY", test_anthropic),
+    "claude-sonnet":    ("claude-sonnet-4-5",                 "ANTHROPIC_API_KEY", test_anthropic),
+    "gemini-flash":     ("gemini-2.5-flash",                  "GOOGLE_API_KEY",    test_google),
+    "llama3-8b":        ("meta-llama/Llama-3.1-8B-Instruct",  "HF_TOKEN",          test_huggingface),
+    "llama3-70b":       ("meta-llama/Llama-3.1-70B-Instruct", "HF_TOKEN",          test_huggingface),
+    "mistral-7b":       ("mistral-small-latest",              "MISTRAL_API_KEY",   test_mistral),
+    "qwen":             ("Qwen/Qwen2.5-7B-Instruct",          "HF_TOKEN",          test_huggingface),
+    "deepseek":         ("deepseek-ai/DeepSeek-V3",           "HF_TOKEN",          test_huggingface),
+
+    # ── Pass-2 additions (April 2026): confirm exact SKUs against provider docs ──
+    "gpt-5.5":            ("gpt-5.5",                         "OPENAI_API_KEY",    test_openai),
+    "claude-opus-4-7":    ("claude-opus-4-7",                 "ANTHROPIC_API_KEY", test_anthropic),
+    "qwen-3.6-flash":     ("qwen3.6-35b-a3b",                 "DASHSCOPE_API_KEY", test_dashscope),
+    "deepseek-v4-flash":  ("deepseek/deepseek-v4-flash",      "NOVITA_API_KEY",    test_novita),
 }
 
 

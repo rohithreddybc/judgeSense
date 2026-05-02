@@ -38,20 +38,30 @@ matplotlib.rcParams.update({
 })
 
 MODELS = [
-    "claude-haiku", "claude-sonnet", "deepseek", "gemini-flash",
+    # Existing 8 (max_tokens=20)
+    "claude-haiku", "claude-sonnet", "gemini-flash",
     "gpt-4o-mini", "gpt-4o", "llama3-70b", "mistral-7b", "qwen",
+    # Re-run at max_tokens=1024 to retire the truncation caveat
+    "deepseek",
+    # 4 new judges (max_tokens=1024) added in revision pass 2
+    "gpt-5.5", "claude-opus-4-7", "qwen-3.6-flash", "deepseek-v4-flash",
 ]
 
 DISPLAY = {
-    "claude-haiku":  "Claude Haiku",
-    "claude-sonnet": "Claude Sonnet",
-    "deepseek":      "DeepSeek",
-    "gemini-flash":  "Gemini Flash",
-    "gpt-4o-mini":   "GPT-4o-mini",
-    "gpt-4o":        "GPT-4o",
-    "llama3-70b":    "LLaMA3-70B",
-    "mistral-7b":    "Mistral 7B",
-    "qwen":          "Qwen",
+    "claude-haiku":       "Claude Haiku",
+    "claude-sonnet":      "Claude Sonnet",
+    "deepseek":           "DeepSeek-R1",
+    "gemini-flash":       "Gemini Flash",
+    "gpt-4o-mini":        "GPT-4o-mini",
+    "gpt-4o":             "GPT-4o",
+    "llama3-70b":         "LLaMA3-70B",
+    "mistral-7b":         "Mistral 7B",
+    "qwen":               "Qwen 2.5-72B",
+    # Pass-2 additions
+    "gpt-5.5":            "GPT-5.5",
+    "claude-opus-4-7":    "Claude Opus 4.7",
+    "qwen-3.6-flash":     "Qwen 3.6 Flash",
+    "deepseek-v4-flash":  "DeepSeek-V4 Flash",
 }
 
 

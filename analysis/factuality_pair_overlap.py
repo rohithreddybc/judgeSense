@@ -34,6 +34,8 @@ TEMPLATES = {
 MODELS = [
     "claude-haiku", "claude-sonnet", "deepseek", "gemini-flash",
     "gpt-4o-mini", "gpt-4o", "llama3-70b", "mistral-7b", "qwen",
+    # Pass-2 additions (April 2026)
+    "gpt-5.5", "claude-opus-4-7", "qwen-3.6-flash", "deepseek-v4-flash",
 ]
 
 

@@ -38,9 +38,16 @@ _load_env()
 
 # ── Model registry ────────────────────────────────────────────────────────────
 
-# Import after env loading so keys are available
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from .models import SUPPORTED_MODELS, normalize_decision
+# Import after env loading so keys are available.
+# Support both invocation styles:
+#   python -m src.evaluate ...     (relative import works)
+#   python src/evaluate.py ...     (relative import fails; fall back to absolute)
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # repo root  -> 'src.models'
+sys.path.insert(0, str(Path(__file__).resolve().parent))         # src dir    -> 'models'
+try:
+    from .models import SUPPORTED_MODELS, normalize_decision
+except ImportError:
+    from models import SUPPORTED_MODELS, normalize_decision  # type: ignore
 
 _ALL_MODELS = list(SUPPORTED_MODELS.keys())  # 9 models
 
@@ -52,23 +59,28 @@ _RATE_LIMIT = {
     "huggingface":  1.0,
     "mistral":      0.5,
     "novita":       0.5,
+    "dashscope":    0.5,
 }
 
-_TIMEOUT    = 30   # seconds per API call
-_MAX_TOKENS = 20   # judges output single tokens (YES/NO/A/B/1-5)
+_TIMEOUT          = 60   # seconds per API call (raised from 30 to accommodate reasoning models)
+_DEFAULT_MAX_TOKENS = 20  # fallback if SUPPORTED_MODELS entry omits max_tokens
 
 # Cost per 1K tokens (input + output blended estimate) — 0 for free tiers
 _COST_PER_1K = {
-    "gpt-4o-mini":   0.000150,
-    "gpt-4o":        0.002500,
-    "claude-haiku":  0.000800,
-    "claude-sonnet": 0.003000,
-    "gemini-flash":  0.0,
-    "llama3-8b":     0.0,
-    "llama3-70b":    0.0,
-    "mistral-7b":    0.0,
-    "qwen":          0.0,
-    "deepseek":      0.0,
+    "gpt-4o-mini":      0.000150,
+    "gpt-4o":           0.002500,
+    "claude-haiku":     0.000800,
+    "claude-sonnet":    0.003000,
+    "gemini-flash":     0.0,
+    "llama3-8b":        0.0,
+    "llama3-70b":       0.0,
+    "mistral-7b":       0.0,
+    "qwen":             0.0,
+    "deepseek":         0.005000,  # reasoning model — output-heavy
+    "gpt-5.5":            0.012000,  # placeholder; update from OpenAI pricing
+    "claude-opus-4-7":    0.015000,  # placeholder; update from Anthropic pricing
+    "qwen-3.6-flash":     0.0,        # update from Alibaba Model Studio pricing
+    "deepseek-v4-flash":  0.001000,  # placeholder; update from Novita pricing
 }
 
 _SYSTEM_PROMPT = "You are an evaluation assistant. Give only the requested answer with no explanation."
@@ -125,47 +137,58 @@ def _completed_keys(path: Path) -> Set[Tuple[str, int]]:
 
 # ── Provider call functions ───────────────────────────────────────────────────
 
-def _call_openai(client, model_id: str, prompt: str) -> str:
-    response = client.chat.completions.create(
-        model=model_id,
-        messages=[
+def _openai_token_param(model_id: str) -> str:
+    """GPT-5.x / o-series require 'max_completion_tokens'; older models use 'max_tokens'."""
+    m = model_id.lower()
+    if m.startswith("gpt-5") or m.startswith("o1") or m.startswith("o3") or m.startswith("o4"):
+        return "max_completion_tokens"
+    return "max_tokens"
+
+
+def _call_openai(client, model_id: str, prompt: str, max_tokens: int) -> str:
+    kwargs = {
+        "model": model_id,
+        "messages": [
             {"role": "system", "content": _SYSTEM_PROMPT},
             {"role": "user",   "content": prompt},
         ],
-        temperature=0.0,
-        max_tokens=_MAX_TOKENS,
-        timeout=_TIMEOUT,
-    )
-    return response.choices[0].message.content.strip()
+        "timeout": _TIMEOUT,
+        _openai_token_param(model_id): max_tokens,
+    }
+    # GPT-5.x rejects custom temperature; only pass it for older models
+    if not model_id.lower().startswith("gpt-5"):
+        kwargs["temperature"] = 0.0
+    response = client.chat.completions.create(**kwargs)
+    return (response.choices[0].message.content or "").strip()
 
 
-def _call_anthropic(client, model_id: str, prompt: str) -> str:
+def _call_anthropic(client, model_id: str, prompt: str, max_tokens: int) -> str:
     response = client.messages.create(
         model=model_id,
-        max_tokens=_MAX_TOKENS,
+        max_tokens=max_tokens,
         system=_SYSTEM_PROMPT,
         messages=[{"role": "user", "content": prompt}],
     )
     return response.content[0].text.strip()
 
 
-def _call_huggingface(client, model_id: str, prompt: str) -> str:
+def _call_huggingface(client, model_id: str, prompt: str, max_tokens: int) -> str:
     response = client.chat.completions.create(
         model=model_id,
         messages=[{"role": "user", "content": prompt}],
-        max_tokens=_MAX_TOKENS,
+        max_tokens=max_tokens,
         temperature=0.01,  # some HF endpoints reject 0.0
     )
     return response.choices[0].message.content.strip()
 
 
-def _call_google(client, model_id: str, prompt: str) -> str:
+def _call_google(client, model_id: str, prompt: str, max_tokens: int) -> str:
     from google.genai import types
     response = client.models.generate_content(
         model=model_id,
         contents=prompt,
         config=types.GenerateContentConfig(
-            max_output_tokens=_MAX_TOKENS,
+            max_output_tokens=max_tokens,
             temperature=0.0,
             thinking_config=types.ThinkingConfig(thinking_budget=0),
         ),
@@ -173,12 +196,12 @@ def _call_google(client, model_id: str, prompt: str) -> str:
     return response.text.strip()
 
 
-def _call_mistral(client, model_id: str, prompt: str) -> str:
+def _call_mistral(client, model_id: str, prompt: str, max_tokens: int) -> str:
     response = client.chat.complete(
         model=model_id,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.0,
-        max_tokens=_MAX_TOKENS,
+        max_tokens=max_tokens,
     )
     return response.choices[0].message.content.strip()
 
@@ -240,13 +263,27 @@ def _build_client(model_name: str):
             base_url="https://api.novita.ai/v3/openai",
         ), model_id, provider
 
+    elif provider == "dashscope":
+        # Alibaba Cloud Model Studio (DashScope) — OpenAI-compatible mode.
+        # Defaults to the international endpoint; override with DASHSCOPE_BASE_URL
+        # to use the China endpoint instead.
+        try:
+            from openai import OpenAI
+        except ImportError:
+            raise ImportError("pip install openai")
+        base_url = os.environ.get(
+            "DASHSCOPE_BASE_URL",
+            "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+        )
+        return OpenAI(api_key=api_key, base_url=base_url), model_id, provider
+
     else:
         raise ValueError(f"Unknown provider: {provider}")
 
 
 # ── Single call with one retry ────────────────────────────────────────────────
 
-def _call(provider: str, client, model_id: str, prompt: str) -> str:
+def _call(provider: str, client, model_id: str, prompt: str, max_tokens: int) -> str:
     """Route to correct provider function; retry once on failure."""
     dispatch = {
         "openai":      _call_openai,
@@ -255,14 +292,15 @@ def _call(provider: str, client, model_id: str, prompt: str) -> str:
         "huggingface": _call_huggingface,
         "mistral":     _call_mistral,
         "novita":      _call_openai,  # OpenAI-compatible
+        "dashscope":   _call_openai,  # OpenAI-compatible
     }
     fn = dispatch[provider]
     try:
-        return fn(client, model_id, prompt)
+        return fn(client, model_id, prompt, max_tokens)
     except Exception as exc:
         time.sleep(5)
         try:
-            return fn(client, model_id, prompt)
+            return fn(client, model_id, prompt, max_tokens)
         except Exception as exc2:
             return f"ERROR:{exc2}"
 
@@ -287,6 +325,7 @@ def run_evaluation(
     """
     rate_sec   = _RATE_LIMIT.get(provider, 0.5)
     cost_1k    = _COST_PER_1K.get(model_name, 0.0)
+    max_tokens = SUPPORTED_MODELS[model_name].get("max_tokens", _DEFAULT_MAX_TOKENS)
     total_tok  = 0
     n_ok       = 0
 
@@ -299,14 +338,14 @@ def run_evaluation(
         if (pair_id, run_number) in done:
             continue
 
-        print(f"{model_name} | {task} | pair {i}/{len(pairs)} | run {run_number}/{runs_total}")
+        print(f"{model_name} | {task} | pair {i}/{len(pairs)} | run {run_number}/{runs_total} | max_tokens={max_tokens}")
 
         # Call A
-        raw_a = _call(provider, client, model_id, prompt_a)
+        raw_a = _call(provider, client, model_id, prompt_a, max_tokens)
         time.sleep(rate_sec)
 
         # Call B
-        raw_b = _call(provider, client, model_id, prompt_b)
+        raw_b = _call(provider, client, model_id, prompt_b, max_tokens)
         time.sleep(rate_sec)
 
         error_a = raw_a.startswith("ERROR:") if isinstance(raw_a, str) else False
@@ -336,7 +375,7 @@ def run_evaluation(
 
         if not has_error:
             n_ok += 1
-            total_tok += (50 + _MAX_TOKENS) * 2
+            total_tok += (50 + max_tokens) * 2
 
     estimated_cost = (total_tok / 1000.0) * cost_1k
     return n_ok, estimated_cost
