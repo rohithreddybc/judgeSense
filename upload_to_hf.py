@@ -1,8 +1,11 @@
 # Setup:
 #   pip install huggingface_hub
-#   huggingface-cli login
 #
-# Run:
+# Run (preferred — no interactive login needed):
+#   HF_TOKEN=hf_xxx python upload_to_hf.py
+#
+# Or log in once and run without the env var:
+#   huggingface-cli login
 #   python upload_to_hf.py
 
 import os
@@ -60,7 +63,10 @@ def main():
         print(f"  {f.relative_to(FOLDER_PATH)}")
     print()
 
-    api = HfApi()
+    token = os.environ.get("HF_TOKEN") or None
+    if not token:
+        print("Tip: set HF_TOKEN env var to skip interactive login.")
+    api = HfApi(token=token)
 
     try:
         api.create_repo(repo_id=REPO_ID, repo_type=REPO_TYPE, exist_ok=True)
