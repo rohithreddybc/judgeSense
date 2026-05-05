@@ -41,7 +41,7 @@ SUPPORTED_MODELS = {
     "claude-sonnet": {"provider": "anthropic",   "model_id": "claude-sonnet-4-5",                 "key": "ANTHROPIC_API_KEY", "max_tokens": 20},
     "gemini-flash":  {"provider": "google",      "model_id": "gemini-2.5-flash",                  "key": "GOOGLE_API_KEY",    "max_tokens": 20},
     "llama3-8b":     {"provider": "huggingface", "model_id": "meta-llama/Llama-3.1-8B-Instruct",  "key": "HF_TOKEN",          "max_tokens": 20},
-    "llama3-70b":    {"provider": "huggingface", "model_id": "meta-llama/Llama-3.1-70B-Instruct", "key": "HF_TOKEN",          "max_tokens": 20},
+    "llama3-70b":    {"provider": "groq",        "model_id": "llama-3.1-70b-versatile",           "key": "GROQ_API_KEY",      "max_tokens": 20},  # HF endpoint broken; Novita lacks 3.1 70B; using Groq
     "mistral-7b":    {"provider": "mistral",     "model_id": "mistral-small-latest",              "key": "MISTRAL_API_KEY",   "max_tokens": 20},
     "qwen":          {"provider": "novita",      "model_id": "qwen/qwen-2.5-72b-instruct",        "key": "NOVITA_API_KEY",    "max_tokens": 20},
 

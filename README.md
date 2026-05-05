@@ -109,41 +109,41 @@ print(f"JSS: {jss:.3f}")
 
 | Model | JSS (raw) | JSS (T4-corrected) | Delta |
 |---|---|---|---|
-| GPT-4o | 0.63 | 1.00 | +0.37 |
-| GPT-4o-mini | 0.63 | 1.00 | +0.37 |
-| Claude Haiku 4.5 | 0.63 | 1.00 | +0.37 |
-| Claude Sonnet 4.5 | 0.63 | 1.00 | +0.37 |
-| DeepSeek-R1 | 0.63 | 1.00 | +0.37 |
-| LLaMA-3.1-70B | 0.63 | 1.00 | +0.37 |
-| Gemini 2.5 Flash | 0.63 | 1.00 | +0.37 |
-| Qwen-2.5-72B | 0.63 | 1.00 | +0.37 |
-| Mistral-7B | 0.71 | 0.88 | +0.17 |
-| GPT-5.5 | 0.63 | 1.00 | +0.37 |
-| Claude Opus 4.7 | 0.63 | 1.00 | +0.37 |
-| Qwen 3.6 Flash | 0.63 | 1.00 | +0.37 |
-| DeepSeek-V4 Flash | 0.62 | 0.99 | +0.37 |
+| GPT-4o | 0.63 | 0.98 | +0.35 |
+| GPT-4o-mini | 0.63 | 0.96 | +0.33 |
+| Claude Haiku 4.5 | 0.63 | 0.97 | +0.34 |
+| Claude Sonnet 4.5 | 0.63 | 0.97 | +0.34 |
+| DeepSeek-R1 | 0.63 | 0.96 | +0.33 |
+| LLaMA-3.1-70B | 0.63 | 0.99 | +0.36 |
+| Gemini 2.5 Flash | 0.63 | 0.98 | +0.35 |
+| Qwen-2.5-72B | 0.63 | 0.98 | +0.35 |
+| Mistral-7B | 0.71 | 0.89 | +0.18 |
+| GPT-5.5 | 0.63 | 0.98 | +0.35 |
+| Claude Opus 4.7 | 0.63 | 0.99 | +0.36 |
+| Qwen 3.6 Flash | 0.63 | 0.97 | +0.34 |
+| DeepSeek-V4 Flash | 0.62 | 0.95 | +0.33 |
 
-**Finding**: Polarity-inverted prompt templates (T4) reduce raw JSS by 17 to 37 pp across all models. After T4 correction, 12 of 13 models achieve JSS = 1.0 on factuality, demonstrating that prompt sensitivity in this task is entirely attributable to template polarity rather than semantic ambiguity. Mistral-7B exhibits the highest residual sensitivity (JSS = 0.88 post-correction).
+**Finding**: Polarity-inverted prompt templates (T4) reduce raw JSS by 18 to 36 pp across all models. After T4 correction, all 13 judges achieve factuality JSS in [0.89, 0.99], demonstrating that prompt sensitivity in this task is primarily attributable to template polarity. Mistral-7B exhibits the highest residual sensitivity (JSS = 0.89 post-correction).
 
 ### Coherence (most discriminating task)
 
 | Model | JSS (coherence) | Cohen's kappa |
 |---|---|---|
 | Claude Sonnet 4.5 | 0.99 | 0.986 |
-| Qwen-2.5-72B | 0.92 | 0.846 |
-| GPT-4o | 0.92 | 0.828 |
+| Qwen-2.5-72B | 0.92 | 0.842 |
+| GPT-4o | 0.91 | 0.828 |
 | GPT-5.5 | 0.83 | 0.694 |
 | GPT-4o-mini | 0.78 | 0.627 |
 | Claude Haiku 4.5 | 0.73 | 0.583 |
-| Claude Opus 4.7 | 0.70 | 0.576 |
+| Claude Opus 4.7 | 0.70 | 0.580 |
 | LLaMA-3.1-70B | 0.55 | 0.338 |
-| DeepSeek-R1 | 0.53 | 0.326 |
+| DeepSeek-R1 | 0.53 | 0.332 |
 | Qwen 3.6 Flash | 0.51 | 0.372 |
-| DeepSeek-V4 Flash | 0.50 | 0.350 |
+| DeepSeek-V4 Flash | 0.50 | 0.349 |
 | Mistral-7B | 0.48 | -0.082 |
-| Gemini 2.5 Flash | 0.39 | -0.053 |
+| Gemini 2.5 Flash | 0.39 | -0.057 |
 
-**Finding**: Coherence JSS spans 0.6 units across 13 judges and does not track model scale or release recency. Claude Opus 4.7 (0.70) scores lower than Claude Haiku 4.5 (0.73); GPT-5.5 (0.83) scores lower than GPT-4o (0.92). Two judges (Mistral-7B and Gemini 2.5 Flash) produce negative kappa, indicating systematic anti-agreement.
+**Finding**: Coherence JSS spans 0.605 units across 13 judges and does not track model scale or release recency. Claude Opus 4.7 (0.70) scores lower than Claude Haiku 4.5 (0.73); GPT-5.5 (0.83) scores lower than GPT-4o (0.91). Two judges (Mistral-7B and Gemini 2.5 Flash) produce negative kappa, indicating systematic anti-agreement.
 
 ## Reproducing paper results
 
@@ -157,7 +157,7 @@ python src/dataset_builder.py --output data/prompt_pairs/
 bash scripts/run_all_evals.sh
 
 # 3. Compute metrics
-python src/metrics.py --results data/results/raw_outputs/ --output data/results/metrics.json
+python src/metrics.py --summarize
 
 # 4. Run factuality JSS analysis (T4 polarity-corrected)
 python analysis/factuality_jss_fixed.py

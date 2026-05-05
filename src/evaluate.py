@@ -58,8 +58,9 @@ _RATE_LIMIT = {
     "google":       1.0,
     "huggingface":  1.0,
     "mistral":      0.5,
-    "novita":       0.5,
-    "dashscope":    0.5,
+    "novita":       1.5,   # 45 req/min limit → 1 req per 1.33s; use 1.5s for safety
+    "dashscope":    1.5,   # rate limit safety margin matching Novita
+    "groq":         2.0,   # ~30 req/min for Llama 3.1 70B free tier; 2s is safe
 }
 
 _TIMEOUT          = 60   # seconds per API call (raised from 30 to accommodate reasoning models)
@@ -277,6 +278,17 @@ def _build_client(model_name: str):
         )
         return OpenAI(api_key=api_key, base_url=base_url), model_id, provider
 
+    elif provider == "groq":
+        # Groq — OpenAI-compatible endpoint; very fast inference.
+        try:
+            from openai import OpenAI
+        except ImportError:
+            raise ImportError("pip install openai")
+        return OpenAI(
+            api_key=api_key,
+            base_url="https://api.groq.com/openai/v1",
+        ), model_id, provider
+
     else:
         raise ValueError(f"Unknown provider: {provider}")
 
@@ -293,6 +305,7 @@ def _call(provider: str, client, model_id: str, prompt: str, max_tokens: int) ->
         "mistral":     _call_mistral,
         "novita":      _call_openai,  # OpenAI-compatible
         "dashscope":   _call_openai,  # OpenAI-compatible
+        "groq":        _call_openai,  # OpenAI-compatible
     }
     fn = dispatch[provider]
     try:

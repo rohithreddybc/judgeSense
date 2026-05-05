@@ -10,7 +10,7 @@
 
 **JudgeSense** is a benchmark dataset of **500 hand-validated prompt pairs** for measuring prompt sensitivity in LLM-as-a-Judge evaluation systems. Each pair contains two differently phrased but semantically equivalent judge prompts applied to the same response, enabling rigorous measurement of how much a judge's decision changes due to prompt wording alone.
 
-All 500 pairs were validated by a human annotator: 450 confirmed semantically equivalent; 50 pairs involving Template 4 (polarity-inverted) are flagged and handled via label remapping in the evaluation code.
+All 500 pairs were validated by a human annotator: 500 confirmed semantically equivalent; 50 pairs involving Template 4 (polarity-inverted) were excluded before publication (see Appendix B of the paper).
 
 The dataset covers four evaluation task types:
 
@@ -71,7 +71,8 @@ Each JSONL record has eight fields:
   "prompt_b": "Fact-check this response. Reply YES (correct) or NO (incorrect).\n\nResponse: ...",
   "response_being_judged": "The Earth orbits around the Sun.",
   "ground_truth_label": "accurate",
-  "semantic_equivalence_score": 1.0
+  "semantic_equivalence_score": 1.0,
+  "ab_swapped": false
 }
 ```
 
@@ -99,36 +100,36 @@ A high flip rate (= 1 - JSS) indicates the judge's apparent decisions are largel
 | Model | JSS | Cohen's kappa |
 |---|---|---|
 | Claude Sonnet 4.5 | 0.99 | 0.986 |
-| Qwen-2.5-72B | 0.92 | 0.846 |
-| GPT-4o | 0.92 | 0.828 |
+| Qwen-2.5-72B | 0.92 | 0.842 |
+| GPT-4o | 0.91 | 0.828 |
 | GPT-5.5 | 0.83 | 0.694 |
 | GPT-4o-mini | 0.78 | 0.627 |
 | Claude Haiku 4.5 | 0.73 | 0.583 |
-| Claude Opus 4.7 | 0.70 | 0.576 |
+| Claude Opus 4.7 | 0.70 | 0.580 |
 | LLaMA-3.1-70B | 0.55 | 0.338 |
-| DeepSeek-R1 | 0.53 | 0.326 |
+| DeepSeek-R1 | 0.53 | 0.332 |
 | Qwen 3.6 Flash | 0.51 | 0.372 |
-| DeepSeek-V4 Flash | 0.50 | 0.350 |
+| DeepSeek-V4 Flash | 0.50 | 0.349 |
 | Mistral-7B | 0.48 | -0.082 |
-| Gemini 2.5 Flash | 0.39 | -0.053 |
+| Gemini 2.5 Flash | 0.39 | -0.057 |
 
 ### Factuality (after T4 polarity correction)
 
 | Model | JSS (raw) | JSS (corrected) | Delta |
 |---|---|---|---|
-| GPT-4o | 0.63 | 1.00 | +0.37 |
-| GPT-4o-mini | 0.63 | 1.00 | +0.37 |
-| Claude Haiku 4.5 | 0.63 | 1.00 | +0.37 |
-| Claude Sonnet 4.5 | 0.63 | 1.00 | +0.37 |
-| DeepSeek-R1 | 0.63 | 1.00 | +0.37 |
-| LLaMA-3.1-70B | 0.63 | 1.00 | +0.37 |
-| Gemini 2.5 Flash | 0.63 | 1.00 | +0.37 |
-| Qwen-2.5-72B | 0.63 | 1.00 | +0.37 |
-| Mistral-7B | 0.71 | 0.88 | +0.17 |
-| GPT-5.5 | 0.63 | 1.00 | +0.37 |
-| Claude Opus 4.7 | 0.63 | 1.00 | +0.37 |
-| Qwen 3.6 Flash | 0.63 | 1.00 | +0.37 |
-| DeepSeek-V4 Flash | 0.62 | 0.99 | +0.37 |
+| GPT-4o | 0.63 | 0.98 | +0.35 |
+| GPT-4o-mini | 0.63 | 0.96 | +0.33 |
+| Claude Haiku 4.5 | 0.63 | 0.97 | +0.34 |
+| Claude Sonnet 4.5 | 0.63 | 0.97 | +0.34 |
+| DeepSeek-R1 | 0.63 | 0.96 | +0.33 |
+| LLaMA-3.1-70B | 0.63 | 0.99 | +0.36 |
+| Gemini 2.5 Flash | 0.63 | 0.98 | +0.35 |
+| Qwen-2.5-72B | 0.63 | 0.98 | +0.35 |
+| Mistral-7B | 0.71 | 0.89 | +0.18 |
+| GPT-5.5 | 0.63 | 0.98 | +0.35 |
+| Claude Opus 4.7 | 0.63 | 0.99 | +0.36 |
+| Qwen 3.6 Flash | 0.63 | 0.97 | +0.34 |
+| DeepSeek-V4 Flash | 0.62 | 0.95 | +0.33 |
 
 ---
 
@@ -136,7 +137,7 @@ A high flip rate (= 1 - JSS) indicates the judge's apparent decisions are largel
 
 > **Coherence JSS varies by more than 0.6 units across 13 judges and does not track model scale or recency.**
 
-- Claude Opus 4.7 (0.70) scores lower than Claude Haiku 4.5 (0.73); GPT-5.5 (0.83) scores lower than GPT-4o (0.92)
+- Claude Opus 4.7 (0.70) scores lower than Claude Haiku 4.5 (0.73); GPT-5.5 (0.83) scores lower than GPT-4o (0.91)
 - Factuality sensitivity is entirely driven by Template 4 polarity inversion, not by model-level inconsistency
 - Preference and relevance JSS are degenerate (12 of 13 judges always select option A)
 - Total API cost for the 13-model sweep: Novita AI $3.67, Alibaba Cloud $1.00, Anthropic $2.07, OpenAI $3.36
