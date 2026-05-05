@@ -10,7 +10,7 @@
 
 **JudgeSense** is a benchmark dataset of **500 hand-validated prompt pairs** for measuring prompt sensitivity in LLM-as-a-Judge evaluation systems. Each pair contains two differently phrased but semantically equivalent judge prompts applied to the same response, enabling rigorous measurement of how much a judge's decision changes due to prompt wording alone.
 
-All 500 pairs were validated by a human annotator: 500 confirmed semantically equivalent; 50 pairs involving Template 4 (polarity-inverted) were excluded before publication (see Appendix B of the paper).
+All 500 pairs were independently validated by two human annotators with full agreement: 500 confirmed semantically equivalent; 50 pairs involving Template 4 (polarity-inverted) were labeled non-equivalent by both annotators and excluded before publication (see Appendix B of the paper).
 
 The dataset covers four evaluation task types:
 

@@ -21,7 +21,7 @@ This repository contains the full reproducible codebase, datasets, and evaluatio
 - **JSS metric**: A novel, formally defined score for judge decision consistency across semantically equivalent prompts.
 - **Public dataset**: 500 semantically equivalent prompt pairs across 4 evaluation task types.
 - **Empirical evaluation**: Thirteen LLM judges (GPT-5.5, GPT-4o, GPT-4o-mini, Claude Opus 4.7, Claude Sonnet 4.5, Claude Haiku 4.5, Gemini 2.5 Flash, LLaMA-3.1-70B, Mistral-7B, DeepSeek-R1, Qwen-2.5-72B, Qwen 3.6 Flash, DeepSeek-V4 Flash) tested across 4 task types; coherence JSS ranges from 0.39 to 0.99 and does not correlate with model scale or recency.
-- **Human validation**: All 500 prompt pairs hand-validated by a single annotator; 450 confirmed semantically equivalent, 50 involving polarity-inverted templates handled via label remapping.
+- **Human validation**: All 500 prompt pairs hand-validated by a primary annotator and independently re-reviewed by a second annotator with full agreement; 50 polarity-inverted Template 4 pairs labeled non-equivalent by both annotators and excluded from the published dataset.
 - **Full reproducibility**: All code, data, and results released under open licenses.
 
 ## Installation
