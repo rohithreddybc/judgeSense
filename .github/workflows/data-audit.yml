@@ -51,6 +51,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Install dependencies
+        # generate_counts.py imports src.metrics (via src/__init__.py),
+        # which requires numpy.
+        run: pip install numpy
       - name: Verify data/counts.json matches the data on disk
         run: |
           python scripts/generate_counts.py --output /tmp/counts_fresh.json
