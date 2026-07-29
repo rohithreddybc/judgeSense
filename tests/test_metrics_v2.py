@@ -201,3 +201,54 @@ def test_compute_all_metrics_v2_shape():
     assert "quadratic_weighted_kappa" in out
     assert "mean_absolute_flip" in out
     assert "decision_entropy_bits" in out
+
+
+# ── kappa: UNCLEAR must not enter the chance baseline ────────────────────────
+# Observed agreement never credits an UNCLEAR row, so leaving UNCLEAR in the
+# marginals would inflate expected agreement with mass the observed term can
+# never realise — depressing kappa in proportion to a judge's malformed rate
+# rather than its inconsistency.
+
+def test_kappa_ignores_unclear_rows_in_marginals():
+    base = [rec("A", "A", f"i{i}") for i in range(10)] + \
+           [rec("B", "B", f"i{i}") for i in range(10, 20)]
+    k_clean = chance_corrected_jss(base, "disagree")
+    padded = base + [rec("UNCLEAR", "UNCLEAR", f"u{i}") for i in range(10)]
+    k_padded = chance_corrected_jss(padded, "disagree")
+    assert k_clean == pytest.approx(k_padded), (
+        "adding unparseable rows changed kappa; UNCLEAR is leaking into the "
+        "chance baseline"
+    )
+
+
+def test_kappa_matches_between_policies_on_parseable_support():
+    recs = [rec("A", "A", f"i{i}") for i in range(8)] + \
+           [rec("B", "A", f"i{i}") for i in range(8, 12)] + \
+           [rec("UNCLEAR", "B", f"u{i}") for i in range(4)]
+    assert chance_corrected_jss(recs, "disagree") == pytest.approx(
+        chance_corrected_jss(recs, "drop")
+    )
+
+
+def test_degenerate_single_label_judge_scores_zero_kappa():
+    recs = [rec("A", "A", f"i{i}") for i in range(30)]
+    assert chance_corrected_jss(recs, "disagree") == 0.0
+
+
+# ── suite robustness ─────────────────────────────────────────────────────────
+
+def test_compute_all_metrics_survives_all_unclear():
+    recs = [rec("UNCLEAR", "UNCLEAR", f"i{i}") for i in range(12)]
+    out = compute_all_metrics_v2(recs, cluster_unit="item", n_bootstrap=50)
+    assert out["jss_drop"] is None
+    assert out["jss_strict"]["estimate"] == 0.0
+
+
+def test_chance_corrected_jss_carries_a_clustered_ci():
+    recs = [rec("A", "A", f"i{i}") for i in range(10)] + \
+           [rec("A", "B", f"i{i}") for i in range(10, 20)]
+    out = compute_all_metrics_v2(recs, cluster_unit="item", n_bootstrap=200)
+    cc = out["chance_corrected_jss"]
+    assert isinstance(cc, dict), "chance-corrected score must ship with uncertainty"
+    assert cc["cluster_unit"] == "item"
+    assert cc["ci_lower"] <= cc["estimate"] <= cc["ci_upper"]

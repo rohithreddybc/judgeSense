@@ -79,11 +79,30 @@ def chance_corrected_jss(records: Sequence[dict], unclear_policy: str = "disagre
     da, db, valid = _apply_unclear_policy(records, unclear_policy)
     if not da:
         raise ValueError("No records to score (all dropped or empty input).")
-    n = len(da)
-    p_o = sum(1 for a, b, v in zip(da, db, valid) if v and a == b) / n
-    labels = set(da) | set(db)
+
+    # Kappa is computed over PARSEABLE decisions only, under both policies.
+    #
+    # Rationale: observed agreement never credits an UNCLEAR row (an
+    # unparseable answer is not evidence of a consistent judgment). If UNCLEAR
+    # were nonetheless left in the marginals, expected agreement would carry
+    # UNCLEAR x UNCLEAR mass that observed agreement can never realise, so
+    # kappa would be depressed in proportion to a judge's malformed-output
+    # rate rather than its inconsistency — worst exactly where the rate is
+    # highest (v1: Mistral-7B at 15.7%). Scoring both terms on the same
+    # support keeps the correction measuring what it claims to measure.
+    #
+    # The malformed rate is a real quality signal, but it is reported by
+    # `jss(..., "disagree")` and `label_histogram`, not folded into kappa.
+    pa = [a for a, v in zip(da, valid) if v]
+    pb = [b for b, v in zip(db, valid) if v]
+    n = len(pa)
+    if n == 0:
+        raise ValueError("No parseable decision pairs to chance-correct.")
+
+    p_o = sum(1 for a, b in zip(pa, pb) if a == b) / n
+    labels = set(pa) | set(pb)
     p_e = sum(
-        (sum(d == lab for d in da) / n) * (sum(d == lab for d in db) / n)
+        (sum(d == lab for d in pa) / n) * (sum(d == lab for d in pb) / n)
         for lab in labels
     )
     if abs(1.0 - p_e) < 1e-12:
@@ -289,10 +308,29 @@ def compute_all_metrics_v2(
         records, lambda r: jss(r, "disagree"), cluster_unit,
         n_bootstrap=n_bootstrap, seed=seed,
     )
+    # The chance-corrected score is the headline answer to the "JSS rewards
+    # compressed output distributions" critique, so it carries a clustered CI
+    # too — a point estimate without uncertainty is what the v1 review faulted.
+    try:
+        chance = cluster_bootstrap_ci(
+            records, lambda r: chance_corrected_jss(r, "disagree"), cluster_unit,
+            n_bootstrap=n_bootstrap, seed=seed,
+        )
+    except ValueError:
+        # No parseable decision pairs (in the full set or in some resample);
+        # chance correction is undefined rather than zero.
+        chance = None
+    # `jss(..., "drop")` raises when every row is UNCLEAR (e.g. a judge that
+    # never emits a parseable decision). That is a legitimate, reportable
+    # state, not a reason to abort the whole suite.
+    try:
+        jss_drop = jss(records, "drop")
+    except ValueError:
+        jss_drop = None
     out = {
         "jss_strict": strict,
-        "jss_drop": jss(records, "drop"),
-        "chance_corrected_jss": chance_corrected_jss(records, "disagree"),
+        "jss_drop": jss_drop,
+        "chance_corrected_jss": chance,
         "label_histogram": label_histogram(records),
         "decision_entropy_bits": decision_entropy(records),
         "cluster_unit": cluster_unit,

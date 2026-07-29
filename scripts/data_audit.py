@@ -157,15 +157,21 @@ def check_annotation_timing(validation_dir: Path, cfg: dict) -> List[dict]:
     floor = cfg["min_seconds_per_decision"]
     files = sorted(validation_dir.glob("*.jsonl")) if validation_dir.exists() else []
     if not files:
+        # A declared validation_dir IS the claim that human validation happened.
+        # If the records are absent, that claim is unverifiable, and an
+        # unverifiable claim must fail the gate rather than pass it silently.
+        # (Deleting or moving the records is otherwise a way to turn CI green.)
         return [{
             "check": "annotation_timing",
             "split": None,
             "observed": None,
             "threshold": floor,
-            "passed": True,
-            "detail": f"no human-validation files under {validation_dir}; "
-                      "check skipped (nothing to validate is not a failure, "
-                      "but claiming validation without files would be)",
+            "passed": False,
+            "detail": f"config declares validation_dir={validation_dir} but no "
+                      "*.jsonl human-validation records were found there. The "
+                      "gate cannot verify a validation claim with no evidence; "
+                      "remove validation_dir from the config if no human "
+                      "validation is being claimed.",
         }]
     for f in files:
         records = load_jsonl(f)
@@ -175,13 +181,27 @@ def check_annotation_timing(validation_dir: Path, cfg: dict) -> List[dict]:
         )
         gaps = [(b - a).total_seconds() for a, b in zip(stamps, stamps[1:])]
         median_gap = statistics.median(gaps) if gaps else None
-        passed = median_gap is None or median_gap >= floor
+        if median_gap is None:
+            # Records exist but carry no usable timestamps: timing is
+            # unverifiable. Same principle as above — fail, do not skip,
+            # otherwise stripping the timestamp field turns the check green.
+            results.append({
+                "check": "annotation_timing",
+                "split": f.name,
+                "observed": None,
+                "threshold": floor,
+                "passed": False,
+                "detail": f"{len(records)} records in {f.name} but fewer than two "
+                          "carry a parseable 'timestamp'; per-decision timing "
+                          "cannot be verified.",
+            })
+            continue
         results.append({
             "check": "annotation_timing",
             "split": f.name,
-            "observed": round(median_gap, 3) if median_gap is not None else None,
+            "observed": round(median_gap, 3),
             "threshold": floor,
-            "passed": passed,
+            "passed": median_gap >= floor,
             "detail": f"median inter-decision gap {median_gap!r}s over "
                       f"{len(records)} decisions; floor is {floor}s "
                       "(a human reading and judging two full prompts cannot "

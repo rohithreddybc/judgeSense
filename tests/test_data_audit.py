@@ -229,3 +229,42 @@ def test_gate_fails_on_shipped_v1_data():
     failing = {r["check"] for r in report["results"] if not r["passed"]}
     assert {"unique_items", "duplicate_rows", "provenance",
             "effective_sample_size", "annotation_timing"} <= failing
+
+
+# ── evidence-absence must fail, not skip ─────────────────────────────────────
+# A declared validation_dir is the claim that human validation happened. If the
+# evidence is missing or untimestamped the gate cannot verify that claim, and an
+# unverifiable claim must fail — otherwise deleting the records turns CI green.
+
+def test_declared_validation_dir_with_no_records_fails(tmp_path):
+    vdir = tmp_path / "manual"
+    vdir.mkdir()
+    report = run_audit(tmp_path, [good_record(i) for i in range(20)],
+                       validation_dir=vdir)
+    checks = by_check(report, "annotation_timing")
+    assert len(checks) == 1
+    assert not checks[0]["passed"], "empty validation dir must fail, not skip"
+    assert not report["passed"]
+
+
+def test_declared_validation_dir_that_does_not_exist_fails(tmp_path):
+    report = run_audit(tmp_path, [good_record(i) for i in range(20)],
+                       validation_dir=tmp_path / "does_not_exist")
+    checks = by_check(report, "annotation_timing")
+    assert len(checks) == 1
+    assert not checks[0]["passed"]
+    assert not report["passed"]
+
+
+def test_validation_records_without_timestamps_fail(tmp_path):
+    vdir = tmp_path / "manual"
+    vdir.mkdir()
+    with open(vdir / "coherence_manual.jsonl", "w") as fh:
+        for i in range(25):
+            fh.write(json.dumps({"pair_id": f"p{i}", "manual_label": "YES"}) + "\n")
+    report = run_audit(tmp_path, [good_record(i) for i in range(20)],
+                       validation_dir=vdir)
+    checks = [r for r in by_check(report, "annotation_timing") if r["split"]]
+    assert len(checks) == 1
+    assert not checks[0]["passed"], "stripping timestamps must not turn the check green"
+    assert checks[0]["observed"] is None
