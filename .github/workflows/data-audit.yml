@@ -52,9 +52,16 @@ jobs:
         with:
           python-version: "3.11"
       - name: Run data-audit gate on the v2 dataset
-        # Gates the rebuilt dataset under data/prompt_pairs_v2/ (built from
-        # real sources by src/dataset_builder_v2.py). This job must be GREEN:
-        # the v2 data is release-gated and any regression in it must fail CI.
+        # Gates the rebuilt dataset under data/v2/ (built from real sources by
+        # src/dataset_builder_v2.py). This job must be GREEN: the v2 data is
+        # release-gated and any regression in it must fail CI.
+        #
+        # Note the deliberate asymmetry with the data-audit job above, which is
+        # RED by design: red there means the dataset the repo currently ships is
+        # defective, green here means its replacement is sound. Point
+        # data/audit_config.json at data/v2 to retire the red job — but only
+        # together with republishing the dataset, since audit_config.json
+        # describes what is actually shipped.
         run: python scripts/data_audit.py --config data/audit_config_v2.json
 
   counts-consistency:
