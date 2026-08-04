@@ -1,6 +1,6 @@
 {
   "_comment": "Audit gate config for the v2 dataset built from real sources by src/dataset_builder_v2.py. This dataset MUST pass every check before any release.",
-  "dataset_dir": "data/prompt_pairs_v2",
+  "dataset_dir": "data/v2",
   "splits": [
     "factuality",
     "coherence",

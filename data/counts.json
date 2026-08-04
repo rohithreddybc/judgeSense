@@ -1,6 +1,6 @@
 {
   "generated_by": "scripts/generate_counts.py",
-  "generated_at": "2026-07-28T03:42:48.502985+00:00",
+  "generated_at": "2026-08-04T23:56:28.877165+00:00",
   "dataset_v1": {
     "factuality": {
       "rows": 125,
@@ -53,11 +53,67 @@
       "rows": 500,
       "unique_items": 75,
       "unique_prompt_pairs": 202,
-      "rows_after_exclusions": 494,
-      "n_excluded_pairs": 6
+      "rows_after_exclusions": 500,
+      "n_excluded_pairs": 0,
+      "n_excluded_pairs_configured": 6
     }
   },
-  "dataset_v2": "not built (data/v2/ absent); build with src/dataset_builder_v2.py",
+  "dataset_v2": {
+    "factuality": {
+      "rows": 250,
+      "unique_items": 250,
+      "unique_prompt_pairs": 250,
+      "unique_prompt_texts": 500,
+      "label_histogram": {
+        "accurate": 125,
+        "inaccurate": 125
+      },
+      "excluded_pairs": []
+    },
+    "coherence": {
+      "rows": 250,
+      "unique_items": 250,
+      "unique_prompt_pairs": 250,
+      "unique_prompt_texts": 495,
+      "label_histogram": {
+        "1": 6,
+        "2": 45,
+        "3": 72,
+        "4": 86,
+        "5": 41
+      },
+      "excluded_pairs": []
+    },
+    "relevance": {
+      "rows": 500,
+      "unique_items": 250,
+      "unique_prompt_pairs": 250,
+      "unique_prompt_texts": 1000,
+      "label_histogram": {
+        "candidate_relevant": 500
+      },
+      "excluded_pairs": []
+    },
+    "preference": {
+      "rows": 500,
+      "unique_items": 250,
+      "unique_prompt_pairs": 250,
+      "unique_prompt_texts": 978,
+      "label_histogram": {
+        "candidate_1": 252,
+        "candidate_2": 248
+      },
+      "excluded_pairs": []
+    },
+    "_totals": {
+      "rows": 1500,
+      "unique_items": 1000,
+      "unique_prompt_pairs": 1000,
+      "rows_after_exclusions": 1500,
+      "n_excluded_pairs": 0,
+      "n_excluded_pairs_configured": 6
+    }
+  },
   "human_validation": {
     "coherence_manual.jsonl": {
       "decisions": 125,
@@ -136,7 +192,7 @@
     "api_calls_per_run_all_rows": 1000,
     "api_calls_3_runs_all_rows_1_judge": 3000,
     "api_calls_3_runs_all_rows_all_judges": 42000,
-    "rows_used_in_metrics_after_exclusions": 494,
-    "note": "The 494-vs-500 discrepancy is rows minus the 6 pairs in src.metrics.EXCLUDED_PAIRS. judges_in_registry counts src.models.SUPPORTED_MODELS entries as committed (14); documents citing a different judge count (9 or 13) must reconcile against this registry, which is the only machine-checkable roster in the repository."
+    "rows_used_in_metrics_after_exclusions": 500,
+    "note": "The 494-vs-500 discrepancy is rows minus the 0 pairs in src.metrics.EXCLUDED_PAIRS. judges_in_registry counts src.models.SUPPORTED_MODELS entries as committed (14); documents citing a different judge count (9 or 13) must reconcile against this registry, which is the only machine-checkable roster in the repository."
   }
 }

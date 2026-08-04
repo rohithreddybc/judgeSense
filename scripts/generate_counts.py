@@ -61,12 +61,20 @@ def dataset_counts(data_dir: Path) -> dict:
             ),
         }
     present = [c for c in out.values() if c]
+    # Count only the exclusions actually PRESENT in this dataset. EXCLUDED_PAIRS
+    # holds v1 pair ids (fact_040, ...); v2 ids are cohe_v2_0001-style and match
+    # none of them. Subtracting len(EXCLUDED_PAIRS) unconditionally reported v2
+    # as 1494 of 1500 rows — a count contradicting the data, which is precisely
+    # the drift this file exists to eliminate.
+    n_excluded = sum(len(c["excluded_pairs"]) for c in present)
+    total_rows = sum(c["rows"] for c in present)
     out["_totals"] = {
-        "rows": sum(c["rows"] for c in present),
+        "rows": total_rows,
         "unique_items": sum(c["unique_items"] for c in present),
         "unique_prompt_pairs": sum(c["unique_prompt_pairs"] for c in present),
-        "rows_after_exclusions": sum(c["rows"] for c in present) - len(EXCLUDED_PAIRS),
-        "n_excluded_pairs": len(EXCLUDED_PAIRS),
+        "rows_after_exclusions": total_rows - n_excluded,
+        "n_excluded_pairs": n_excluded,
+        "n_excluded_pairs_configured": len(EXCLUDED_PAIRS),
     }
     return out
 
