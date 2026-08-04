@@ -36,7 +36,11 @@ def make_item(task, idx, **extra_kwargs):
     labels = {
         "factuality": "accurate",
         "coherence": "3",
-        "relevance": "relevant_candidate",
+        # Must match a key in the `extras` candidate map above. This previously
+        # read "relevant_candidate" (words transposed), mirroring the same bug
+        # in the real loader — so the fixture agreed with the defect and the
+        # builder contract went untested until a real build failed.
+        "relevance": "candidate_relevant",
         "preference": "candidate_1",
     }
     return SourceItem(
@@ -120,3 +124,47 @@ def test_coherence_carries_raw_expert_score():
     records = build_task_records("coherence", [make_item("coherence", 0)])
     assert records[0]["ground_truth_raw"] == pytest.approx(3.4)
     assert records[0]["ground_truth_label"] == "3"
+
+
+# ── ground-truth label must resolve against the candidate map ────────────────
+# Regression: the real relevance loader emitted "relevant_candidate" while the
+# builder's candidate keys were ("candidate_relevant", "candidate_nonrelevant").
+# The fixture above carried the same transposition, so every test agreed with
+# the defect and a real build was the first thing to fail. This asserts the
+# contract directly instead of trusting a fixture string.
+
+def test_pairwise_ground_truth_label_is_a_candidate_key():
+    from src.dataset_builder_v2 import _CANDIDATE_KEYS
+    for task, keys in _CANDIDATE_KEYS.items():
+        item = make_item(task, 0)
+        assert item.ground_truth_label in keys, (
+            f"{task}: ground_truth_label {item.ground_truth_label!r} is not one of "
+            f"the candidate keys {keys}; the builder cannot resolve it to a position"
+        )
+
+
+def test_unresolvable_ground_truth_label_raises():
+    """A transposed/unknown label must fail loudly, not silently mislabel."""
+    from src.dataset_builder_v2 import build_task_records
+    bad = make_item("relevance", 0)
+    bad.ground_truth_label = "relevant_candidate"  # the historical bug value
+    with pytest.raises(ValueError, match="not in candidate_map"):
+        build_task_records("relevance", [bad])
+
+
+def test_real_loader_labels_match_builder_candidate_keys():
+    """The live loaders must satisfy the same contract as the fixtures.
+
+    Skips when the HF hub is unreachable — an offline CI run should not fail
+    here, but it must not silently pass as if the contract were checked.
+    """
+    from src.dataset_builder_v2 import _CANDIDATE_KEYS
+    from src import data_sources as ds
+    loaders = {"relevance": ds.load_relevance_items, "preference": ds.load_preference_items}
+    for task, loader in loaders.items():
+        try:
+            items = loader(limit=5) if "limit" in loader.__code__.co_varnames else loader()
+        except Exception as exc:  # network/hub unavailable
+            pytest.skip(f"{task} source unavailable: {type(exc).__name__}")
+        assert items, f"{task}: loader returned no items"
+        assert items[0].ground_truth_label in _CANDIDATE_KEYS[task]

@@ -309,7 +309,11 @@ def load_relevance_items(
                 item_id=f"relv_scifact_{qid}",
                 task_type="relevance",
                 text=query,
-                ground_truth_label="relevant_candidate",
+                # Must name one of the `extra` candidate keys below: the builder
+                # resolves the ground truth to a display position by matching this
+                # value against candidate_map. "relevant_candidate" transposes the
+                # words and matches nothing.
+                ground_truth_label="candidate_relevant",
                 source=SourceRecord(
                     source_dataset=corpus_id,
                     source_config="corpus+queries",

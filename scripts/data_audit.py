@@ -108,22 +108,53 @@ def check_provenance(records: List[dict], cfg: dict) -> dict:
 
 
 def check_label_degeneracy(records: List[dict], cfg: dict) -> dict:
+    """
+    Guards the question "could a judge score well by always answering the same
+    thing?" — so it must inspect the label in the JUDGE'S DECISION SPACE.
+
+    For a pairwise task built with the A/B swap design, that is
+    `ground_truth_position` (which side the correct candidate is displayed on),
+    not `ground_truth_label` (which candidate is correct by content). The
+    content label is constant there by construction — in relevance the
+    qrels-positive document is always the relevant one, there is no alternative
+    — while position is balanced, so an always-"A" judge scores ~50%, not 100%.
+    Scoring the content label would fail a sound dataset.
+
+    Where no positional field exists (factuality, coherence) the content label
+    IS the decision, and it is used directly. The content histogram is always
+    reported so a genuinely degenerate construction stays visible.
+    """
+    positional = [r for r in records if r.get("ground_truth_position") is not None]
+    use_position = len(positional) == len(records) and records
+    field = "ground_truth_position" if use_position else "ground_truth_label"
+
     labels: Dict[str, int] = {}
+    content: Dict[str, int] = {}
     for rec in records:
-        lab = str(rec.get("ground_truth_label"))
+        lab = str(rec.get(field))
         labels[lab] = labels.get(lab, 0) + 1
+        clab = str(rec.get("ground_truth_label"))
+        content[clab] = content.get(clab, 0) + 1
+
     total = sum(labels.values())
     top_share = max(labels.values()) / total if total else 1.0
     distinct = len(labels)
     max_share = cfg["max_label_share"]
     min_distinct = cfg["min_distinct_labels"]
     passed = top_share <= max_share and distinct >= min_distinct
+    detail = f"scored on '{field}'; histogram {labels}"
+    if use_position:
+        detail += f"; content-label histogram {content} (constant by construction is expected here)"
     return {
         "check": "label_degeneracy",
-        "observed": {"top_share": round(top_share, 4), "distinct": distinct},
+        "observed": {
+            "top_share": round(top_share, 4),
+            "distinct": distinct,
+            "scored_field": field,
+        },
         "threshold": {"max_label_share": max_share, "min_distinct_labels": min_distinct},
         "passed": passed,
-        "detail": f"label histogram {labels}",
+        "detail": detail,
     }
 
 

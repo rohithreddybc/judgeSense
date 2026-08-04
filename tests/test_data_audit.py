@@ -268,3 +268,47 @@ def test_validation_records_without_timestamps_fail(tmp_path):
     assert len(checks) == 1
     assert not checks[0]["passed"], "stripping timestamps must not turn the check green"
     assert checks[0]["observed"] is None
+
+
+# ── label degeneracy scores the JUDGE'S decision space ───────────────────────
+# For a swap-design pairwise task the content label is constant by construction
+# (in relevance the qrels-positive document is always the relevant one), while
+# the scored decision is positional and balanced. Scoring the content label
+# would fail a sound dataset; scoring position must still catch a real one.
+
+def pairwise_record(i, position):
+    rec = good_record(i)
+    rec["task_type"] = "relevance"
+    rec["ground_truth_label"] = "candidate_relevant"   # constant by construction
+    rec["ground_truth_position"] = position
+    return rec
+
+
+def test_balanced_position_passes_despite_constant_content_label(tmp_path):
+    records = [pairwise_record(i, "A" if i % 2 == 0 else "B") for i in range(20)]
+    report = run_audit(tmp_path, records, split="relevance")
+    checks = by_check(report, "label_degeneracy")
+    assert checks[0]["passed"], checks[0]
+    assert checks[0]["observed"]["scored_field"] == "ground_truth_position"
+
+
+def test_degenerate_position_still_fails(tmp_path):
+    records = [pairwise_record(i, "A") for i in range(20)]
+    report = run_audit(tmp_path, records, split="relevance")
+    checks = by_check(report, "label_degeneracy")
+    assert not checks[0]["passed"], "always-A ground truth must still be caught"
+    assert checks[0]["observed"]["scored_field"] == "ground_truth_position"
+
+
+def test_pointwise_still_scored_on_content_label(tmp_path):
+    report = run_audit(tmp_path, [good_record(i) for i in range(20)])
+    checks = by_check(report, "label_degeneracy")
+    assert checks[0]["observed"]["scored_field"] == "ground_truth_label"
+
+
+def test_degenerate_pointwise_label_fails(tmp_path):
+    records = [good_record(i) for i in range(20)]
+    for r in records:
+        r["ground_truth_label"] = "accurate"
+    report = run_audit(tmp_path, records)
+    assert not by_check(report, "label_degeneracy")[0]["passed"]
