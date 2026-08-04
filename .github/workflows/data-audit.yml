@@ -44,6 +44,19 @@ jobs:
         # this job.
         run: python scripts/data_audit.py --config data/audit_config.json
 
+  data-audit-v2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run data-audit gate on the v2 dataset
+        # Gates the rebuilt dataset under data/prompt_pairs_v2/ (built from
+        # real sources by src/dataset_builder_v2.py). This job must be GREEN:
+        # the v2 data is release-gated and any regression in it must fail CI.
+        run: python scripts/data_audit.py --config data/audit_config_v2.json
+
   counts-consistency:
     runs-on: ubuntu-latest
     steps:
