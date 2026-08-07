@@ -158,6 +158,62 @@ def check_label_degeneracy(records: List[dict], cfg: dict) -> dict:
     }
 
 
+def check_ground_truth_consistency(records: List[dict], cfg: dict) -> dict:
+    """
+    No two records may present identical judged content with different correct
+    answers, and no content may appear twice at all.
+
+    A contradiction is unsatisfiable: a judge answering the same displayed text
+    the same way is scored right once and wrong once, so the item measures
+    nothing. Real instances found in the v2 build before this check existed:
+
+      - SummEval ships byte-identical machine summaries carrying different
+        expert coherence ratings (labels 4 and 5 for one identical summary).
+      - MT-Bench contains both (model_a=X, model_b=Y) and the swapped row for
+        the same question; keyed by ordered pair they became two items whose
+        positional ground truth pointed opposite ways on identical text.
+
+    Plain duplication without contradiction is also failed: it inflates the item
+    count without adding information, which is the v1 defect in miniature.
+    """
+    by_content: Dict[str, set] = {}
+    counts: Dict[str, int] = {}
+    for rec in records:
+        content = str(rec.get("response_being_judged"))
+        answer = rec.get("ground_truth_position") or rec.get("ground_truth_label")
+        by_content.setdefault(content, set()).add(str(answer))
+        counts[content] = counts.get(content, 0) + 1
+
+    # Pairwise tasks legitimately emit each content block once per A/B ordering,
+    # and the two orderings render different text, so any exact repeat is still
+    # a duplicate regardless of task shape.
+    contradictions = sorted(c for c, answers in by_content.items() if len(answers) > 1)
+    duplicates = sorted(c for c, n in counts.items() if n > 1)
+
+    passed = not contradictions and not duplicates
+    detail = "no duplicated or contradictory judged content"
+    if contradictions:
+        detail = (
+            f"{len(contradictions)} judged text(s) carry more than one correct "
+            f"answer, e.g. {contradictions[0][:70]!r}"
+        )
+    elif duplicates:
+        detail = (
+            f"{len(duplicates)} judged text(s) appear more than once, e.g. "
+            f"{duplicates[0][:70]!r}"
+        )
+    return {
+        "check": "ground_truth_consistency",
+        "observed": {
+            "n_contradictions": len(contradictions),
+            "n_duplicated_content": len(duplicates),
+        },
+        "threshold": {"n_contradictions": 0, "n_duplicated_content": 0},
+        "passed": passed,
+        "detail": detail,
+    }
+
+
 def check_effective_sample_size(records: List[dict], cfg: dict) -> dict:
     unit = cfg["cluster_unit"]
     key = {"item": "item_id", "prompt_pair": "prompt_pair_id", "row": None}.get(unit, unit)
@@ -267,6 +323,7 @@ def audit(config_path: Path) -> dict:
             check_provenance(records, split_cfg),
             check_label_degeneracy(records, split_cfg),
             check_effective_sample_size(records, split_cfg),
+            check_ground_truth_consistency(records, split_cfg),
         ):
             result["split"] = split
             all_results.append(result)

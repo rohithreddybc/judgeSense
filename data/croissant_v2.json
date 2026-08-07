@@ -27,7 +27,7 @@
       "description": "250 records over 250 unique source items for the factuality task. Every record carries a per-item provenance chain (source dataset, config, split, record id).",
       "contentUrl": "data/factuality.jsonl",
       "encodingFormat": "application/jsonlines",
-      "sha256": "6e05b3ca969883e8cd4d31b65597d18391c29d43d0367517ad9529b672d87537"
+      "sha256": "8c593fcae8d3beb81be669359c0de8b135952739601a49bf51da158bd0aee406"
     },
     {
       "@type": "cr:FileObject",
@@ -36,7 +36,7 @@
       "description": "250 records over 250 unique source items for the coherence task. Every record carries a per-item provenance chain (source dataset, config, split, record id).",
       "contentUrl": "data/coherence.jsonl",
       "encodingFormat": "application/jsonlines",
-      "sha256": "039f6bb384ad0e3155023a6f78497d3d214b5405ebbe07ee9b3d67df6a483589"
+      "sha256": "2485c92a2643efec4d8e372111c018882614e0f831e6806ea7495a99987b2ac8"
     },
     {
       "@type": "cr:FileObject",
@@ -45,7 +45,7 @@
       "description": "500 records over 250 unique source items for the relevance task. Every record carries a per-item provenance chain (source dataset, config, split, record id).",
       "contentUrl": "data/relevance.jsonl",
       "encodingFormat": "application/jsonlines",
-      "sha256": "6570a2285f1c204d80bc3ee58c248caf65c6c0002687c7e95e3569cff6559176"
+      "sha256": "768fa47e95f68c1bd84ae6d195b5a70672a4b44c585bbf40b35ff8c14cbd28e4"
     },
     {
       "@type": "cr:FileObject",
@@ -54,7 +54,7 @@
       "description": "500 records over 250 unique source items for the preference task. Every record carries a per-item provenance chain (source dataset, config, split, record id).",
       "contentUrl": "data/preference.jsonl",
       "encodingFormat": "application/jsonlines",
-      "sha256": "f76035b63fd074a77b7255e465fbd585f53ce7ede405538bc57266edff9ab216"
+      "sha256": "c3db9d0f47f2e9446110a27781cabef80c0aab09f7e4235a920f6f4cbefcf1fb"
     }
   ],
   "recordSet": [

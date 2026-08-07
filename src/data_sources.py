@@ -213,6 +213,38 @@ def load_coherence_items(
         for sum_idx, (summary, score) in enumerate(zip(summaries, scores)):
             if summary and summary.strip():
                 candidates.append((row_idx, sum_idx, summary.strip(), float(score)))
+
+    # Distinct SummEval system summaries are sometimes byte-identical while
+    # carrying different expert coherence ratings. Left alone, that ships the
+    # same text twice under different item_ids — once with contradictory ground
+    # truth (observed: labels 4 and 5 for one identical summary), which no judge
+    # can satisfy on both. Group by exact text and keep one representative;
+    # where the rounded expert labels disagree there is no defensible single
+    # ground truth, so the text is dropped rather than arbitrated.
+    by_text: Dict[str, List[tuple]] = {}
+    for cand in candidates:
+        by_text.setdefault(cand[2], []).append(cand)
+
+    deduped: List[tuple] = []
+    n_dropped_conflict = 0
+    n_merged = 0
+    for text, group in by_text.items():
+        if len(group) == 1:
+            deduped.append(group[0])
+            continue
+        labels = {int(min(5, max(1, round(c[3])))) for c in group}
+        if len(labels) > 1:
+            n_dropped_conflict += 1
+            continue
+        n_merged += 1
+        deduped.append(sorted(group, key=lambda c: (c[0], c[1]))[0])
+
+    if n_dropped_conflict or n_merged:
+        print(
+            f"  [coherence] deduplicated identical summaries: {n_merged} merged, "
+            f"{n_dropped_conflict} dropped for conflicting expert labels"
+        )
+    candidates = deduped
     rng.shuffle(candidates)
 
     if len(candidates) < n_items:
@@ -376,13 +408,32 @@ def load_preference_items(
         row = ds[row_idx]
         if int(row["turn"]) != 1:
             continue
-        key = (str(row["question_id"]), str(row["model_a"]), str(row["model_b"]))
+        qid = str(row["question_id"])
+        model_a, model_b = str(row["model_a"]), str(row["model_b"])
+
+        # MT-Bench contains BOTH (model_a=X, model_b=Y) and (X and Y swapped)
+        # rows for the same question. Keyed by ordered pair those become two
+        # separate items encoding the SAME comparison — and because the winner
+        # is recorded positionally, the two items carry OPPOSITE ground truth
+        # for byte-identical candidate text. Canonicalize to an unordered model
+        # pair, flipping the winner and the response texts for rows that arrive
+        # in non-canonical order, so each comparison is one item with its votes
+        # pooled across both presentation orders.
+        flipped = model_a > model_b
+        first, second = (model_b, model_a) if flipped else (model_a, model_b)
+        key = (qid, first, second)
+
         winner = str(row["winner"])
+        if flipped:
+            winner = {"model_a": "model_b", "model_b": "model_a"}.get(winner, winner)
+
         votes.setdefault(key, {})
         votes[key][winner] = votes[key].get(winner, 0) + 1
         if key not in texts:
             ra = _first_assistant(row["conversation_a"])
             rb = _first_assistant(row["conversation_b"])
+            if flipped:
+                ra, rb = rb, ra
             question = ""
             for msg in row["conversation_a"] or []:
                 if msg.get("role") == "user":
@@ -397,6 +448,8 @@ def load_preference_items(
     retrieved_at = _now_iso()
     items: List[SourceItem] = []
     n_excluded_tie = 0
+    n_excluded_duplicate = 0
+    seen_content: set = set()
     for key in keys:
         if len(items) >= n_items:
             break
@@ -413,6 +466,18 @@ def load_preference_items(
         question, ra, rb, row_idx = texts[key]
         if not question or not ra or not rb:
             continue
+
+        # Two different model pairs can produce byte-identical responses for the
+        # same question (observed on mt_bench question 135, where both pairs
+        # returned the same structured answer). The judge sees content, not
+        # model names, so those are one comparison and shipping both would
+        # inflate the item count with a duplicate.
+        content_signature = (question, ra, rb)
+        if content_signature in seen_content:
+            n_excluded_duplicate += 1
+            continue
+        seen_content.add(content_signature)
+
         label = "candidate_1" if winners[0] == "model_a" else "candidate_2"
         qid, model_a, model_b = key
         items.append(
@@ -441,7 +506,8 @@ def load_preference_items(
         raise DataSourceSchemaError(
             f"MT-Bench human judgments yielded only {len(items)} usable "
             f"majority-labeled pairs (requested {n_items}, "
-            f"{n_excluded_tie} excluded as tie/no-majority); refusing to pad."
+            f"{n_excluded_tie} excluded as tie/no-majority, "
+            f"{n_excluded_duplicate} as duplicate content); refusing to pad."
         )
     return items
 

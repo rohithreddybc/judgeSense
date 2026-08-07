@@ -1,6 +1,6 @@
 {
   "generated_by": "scripts/generate_counts.py",
-  "generated_at": "2026-08-04T23:56:28.877165+00:00",
+  "generated_at": "2026-08-07T04:54:45.651798+00:00",
   "dataset_v1": {
     "factuality": {
       "rows": 125,
@@ -74,13 +74,13 @@
       "rows": 250,
       "unique_items": 250,
       "unique_prompt_pairs": 250,
-      "unique_prompt_texts": 495,
+      "unique_prompt_texts": 500,
       "label_histogram": {
-        "1": 6,
-        "2": 45,
-        "3": 72,
-        "4": 86,
-        "5": 41
+        "1": 5,
+        "2": 55,
+        "3": 71,
+        "4": 87,
+        "5": 32
       },
       "excluded_pairs": []
     },
@@ -98,10 +98,10 @@
       "rows": 500,
       "unique_items": 250,
       "unique_prompt_pairs": 250,
-      "unique_prompt_texts": 978,
+      "unique_prompt_texts": 1000,
       "label_histogram": {
-        "candidate_1": 252,
-        "candidate_2": 248
+        "candidate_1": 250,
+        "candidate_2": 250
       },
       "excluded_pairs": []
     },

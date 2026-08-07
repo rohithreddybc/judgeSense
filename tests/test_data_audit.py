@@ -312,3 +312,35 @@ def test_degenerate_pointwise_label_fails(tmp_path):
         r["ground_truth_label"] = "accurate"
     report = run_audit(tmp_path, records)
     assert not by_check(report, "label_degeneracy")[0]["passed"]
+
+
+# ── ground-truth consistency ─────────────────────────────────────────────────
+# Identical judged content with different correct answers is unsatisfiable: a
+# judge answering the same displayed text the same way is scored right once and
+# wrong once. Both real instances came from upstream data, not from our code.
+
+def test_contradictory_ground_truth_fails(tmp_path):
+    records = [good_record(i) for i in range(20)]
+    records[1]["response_being_judged"] = records[0]["response_being_judged"]
+    records[1]["ground_truth_label"] = "inaccurate"
+    records[0]["ground_truth_label"] = "accurate"
+    report = run_audit(tmp_path, records)
+    check = by_check(report, "ground_truth_consistency")[0]
+    assert not check["passed"]
+    assert check["observed"]["n_contradictions"] == 1
+
+
+def test_duplicated_content_fails_even_when_labels_agree(tmp_path):
+    records = [good_record(i) for i in range(20)]
+    records[1]["response_being_judged"] = records[0]["response_being_judged"]
+    records[1]["ground_truth_label"] = records[0]["ground_truth_label"]
+    report = run_audit(tmp_path, records)
+    check = by_check(report, "ground_truth_consistency")[0]
+    assert not check["passed"]
+    assert check["observed"]["n_contradictions"] == 0
+    assert check["observed"]["n_duplicated_content"] == 1
+
+
+def test_distinct_content_passes(tmp_path):
+    report = run_audit(tmp_path, [good_record(i) for i in range(20)])
+    assert by_check(report, "ground_truth_consistency")[0]["passed"]
