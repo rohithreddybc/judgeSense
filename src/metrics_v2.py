@@ -6,8 +6,13 @@ remain reproducible; this module supersedes it for all new analysis.
 
 Key contracts (docs/V2_ARCHITECTURE.md §2):
 - Confidence intervals require an EXPLICIT `cluster_unit` ("row",
-  "prompt_pair", "item"); there is no default that silently assumes
-  independent rows, and the declared unit is echoed in every result.
+  "structural_pair", "prompt_pair", "item"); there is no default that
+  silently assumes independent rows, and the declared unit is echoed in
+  every result. On the structural axis "item" is mandatory, not merely
+  conservative: all five structural pairs for an item share its single S0
+  arm (docs/V2_1_STRUCTURAL_AXIS.md §4).
+- Class N (intervention) variants must never be scored as JSS; see
+  `assert_jss_eligible` and `structural_shift_rate`.
 - All agreement metrics take an `unclear_policy`: "drop" reproduces v1
   behavior; "disagree" (strict) counts malformed/UNCLEAR output as
   disagreement and is the v2 headline mode.
@@ -24,7 +29,9 @@ from typing import Callable, Dict, List, Optional, Sequence, Tuple
 import numpy as np
 
 UNCLEAR = "UNCLEAR"
-CLUSTER_UNITS = ("row", "prompt_pair", "item")
+# Nesting: item contains either prompt_pair (instruction axis) or
+# structural_pair (structural axis), each of which contains rows (A/B orderings).
+CLUSTER_UNITS = ("row", "structural_pair", "prompt_pair", "item")
 
 # ── Record helpers ───────────────────────────────────────────────────────────
 # A "record" is a dict with at least: decision_a, decision_b, and (for
@@ -215,7 +222,11 @@ def cluster_bootstrap_ci(
     if cluster_unit == "row":
         clusters: List[List[dict]] = [[r] for r in records]
     else:
-        key = "prompt_pair_id" if cluster_unit == "prompt_pair" else "item_id"
+        key = {
+            "prompt_pair": "prompt_pair_id",
+            "structural_pair": "structural_pair_id",
+            "item": "item_id",
+        }[cluster_unit]
         grouped: Dict[str, List[dict]] = {}
         for rec in records:
             if key not in rec:
@@ -339,3 +350,144 @@ def compute_all_metrics_v2(
         out["quadratic_weighted_kappa"] = quadratic_weighted_kappa(records, unclear_policy="disagree")
         out["mean_absolute_flip"] = mean_absolute_flip(records, unclear_policy="disagree")
     return out
+
+
+# ── Structural axis: Class N interventions ───────────────────────────────────
+# Chain-of-thought and expert-persona arms plausibly change the judgment
+# process rather than merely rewording the request, so disagreement between
+# them and S0 is NOT judge instability. Reporting it as JSS would be measuring
+# that CoT is a different task. These arms get Structural Shift Rate instead.
+# See docs/V2_1_STRUCTURAL_AXIS.md section 1.
+
+
+class MetricContractError(ValueError):
+    """Raised when a metric is applied to a variant class it must not describe."""
+
+
+def _variant_classes(records: Sequence[dict]) -> set:
+    return {r.get("variant_class") for r in records if r.get("variant_class") is not None}
+
+
+def assert_jss_eligible(records: Sequence[dict]) -> None:
+    """
+    Refuse to compute JSS over Class N records.
+
+    This is the one pooling the structural design forbids, so it is enforced in
+    code rather than left to reviewer discipline. Records with no
+    `variant_class` (the instruction axis) are unaffected.
+    """
+    classes = _variant_classes(records)
+    forbidden = classes & {"N"}
+    if forbidden:
+        raise MetricContractError(
+            "JSS is not defined over Class N (intervention) variants: "
+            f"found {sorted(classes)}. Use structural_shift_rate() instead — "
+            "disagreement between an intervention arm and S0 is a shift in "
+            "verdicts, not judge instability."
+        )
+
+
+def structural_shift_rate(
+    records: Sequence[dict],
+    unclear_policy: str = "disagree",
+) -> dict:
+    """
+    Structural Shift Rate for a Class N arm: how far the intervention moves
+    verdicts relative to the S0 baseline, with directional decomposition.
+
+    `records` carry `decision_a` (S0) and `decision_b` (the variant arm).
+    Returns the shift rate, the transition counts S0-label -> variant-label,
+    and the net per-label flow, so a result can say which direction the
+    intervention pushes rather than only how much it perturbs.
+    """
+    da, db, valid = _apply_unclear_policy(records, unclear_policy)
+    if not da:
+        raise ValueError("No records to score (all dropped or empty input).")
+
+    transitions: Counter = Counter()
+    shifted = 0
+    for a, b, v in zip(da, db, valid):
+        transitions[(a, b)] += 1
+        if not v or a != b:
+            shifted += 1
+
+    labels = sorted(set(da) | set(db))
+    net: Dict[str, int] = {}
+    for label in labels:
+        gained = sum(n for (a, b), n in transitions.items() if b == label and a != label)
+        lost = sum(n for (a, b), n in transitions.items() if a == label and b != label)
+        net[label] = gained - lost
+
+    return {
+        "structural_shift_rate": shifted / len(da),
+        "n_rows": len(da),
+        "n_shifted": shifted,
+        "transitions": {f"{a}->{b}": n for (a, b), n in sorted(transitions.items())},
+        "net_flow": net,
+        "unclear_policy": unclear_policy,
+    }
+
+
+def mean_likert_shift(
+    records: Sequence[dict],
+    categories: Sequence[str] = ("1", "2", "3", "4", "5"),
+) -> dict:
+    """
+    Signed mean shift on the Likert scale for a Class N arm (variant minus S0).
+
+    Direction is the point: a persona that systematically rates one point
+    harsher is a different finding from one that adds symmetric noise, and an
+    unsigned rate cannot tell them apart. Unparseable rows are excluded and
+    counted rather than charged a distance, since a signed magnitude has no
+    defensible value for them.
+    """
+    index = {c: i for i, c in enumerate(categories)}
+    deltas: List[int] = []
+    n_unparseable = 0
+    for rec in records:
+        ia = index.get(str(rec["decision_a"]))
+        ib = index.get(str(rec["decision_b"]))
+        if ia is None or ib is None:
+            n_unparseable += 1
+            continue
+        deltas.append(ib - ia)
+    if not deltas:
+        raise ValueError("No parseable Likert pairs.")
+    return {
+        "mean_shift": float(np.mean(deltas)),
+        "n_scored": len(deltas),
+        "n_unparseable": n_unparseable,
+        "harsher": sum(1 for d in deltas if d < 0),
+        "more_lenient": sum(1 for d in deltas if d > 0),
+        "unchanged": sum(1 for d in deltas if d == 0),
+    }
+
+
+def repeat_baseline_jss(records: Sequence[dict], unclear_policy: str = "disagree") -> float:
+    """
+    Noise ceiling: JSS between two calls of the SAME prompt (S0 issued twice).
+
+    Every structural and instruction-axis result should be read as a delta from
+    this. v1 had no such control, so its JSS numbers conflate prompt
+    sensitivity with ordinary decoding variance and no published figure can
+    separate the two.
+    """
+    return jss(records, unclear_policy=unclear_policy)
+
+
+def format_failure_rate(records: Sequence[dict], side: str = "b") -> dict:
+    """
+    Share of arm outputs that failed to parse — a first-class result, not a
+    dropped row.
+
+    S1 (JSON) and S4 (FINAL: marker) impose format contracts a judge can break
+    while still "answering". v1 excluded unparseable output from JSS entirely,
+    which hides prompt-induced failure exactly where it matters most (Mistral-7B
+    reached 15.7%).
+    """
+    key = f"decision_{side}"
+    total = len(records)
+    if total == 0:
+        raise ValueError("No records.")
+    failed = sum(1 for r in records if r.get(key) in (None, UNCLEAR))
+    return {"format_failure_rate": failed / total, "n_failed": failed, "n_rows": total}
