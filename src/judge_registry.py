@@ -1,0 +1,227 @@
+"""
+JudgeSense v2 judge registry — families, sizes, and matched token budgets.
+
+`src/models.py` (v1) is left untouched so published runs stay reproducible.
+This module adds the metadata three reviewer points require, none of which the
+v1 registry carried:
+
+  xmQT W1, qkzU Q3   token budgets differed by judge class (20 for
+                     instruction-tuned, 1024 for reasoning-tuned), so any
+                     difference between those classes confounds architecture
+                     with inference configuration. Fixed by making the budget an
+                     explicit run-level policy, so a matched-budget control is a
+                     configuration rather than a code change.
+
+  WjHn W5, Q4        scale effects were compared across unrelated architectures
+                     and training regimes. Fixed by declaring `family` and
+                     `size_b`, and exposing the within-family ladders that make
+                     a scale comparison meaningful.
+
+  xmQT Limitations   no purpose-built judge models were evaluated, though those
+                     are built precisely to resist the failures under study.
+
+`verified` records whether a checkpoint identifier has been confirmed against
+the provider. Entries added from documentation but not yet exercised are marked
+False and are excluded from run selection unless explicitly requested — an
+unverified model id must fail loudly at selection time rather than at call time
+in the middle of a paid run.
+"""
+
+from __future__ import annotations
+
+from typing import Dict, List, Optional
+
+REASONING = "reasoning"
+INSTRUCT = "instruct"
+PURPOSE_BUILT = "purpose_built"
+
+# Budget policies. "native" reproduces the v1 asymmetry; "matched" is the
+# control the reviewers asked for.
+BUDGET_POLICIES = ("native", "matched")
+MATCHED_BUDGET_TOKENS = 1024
+
+
+JUDGES: Dict[str, dict] = {
+    # ── instruction-tuned ───────────────────────────────────────────────────
+    "gpt-4o-mini": dict(provider="openai", model_id="gpt-4o-mini-2024-07-18",
+                        key="OPENAI_API_KEY", kind=INSTRUCT, family="gpt-4o",
+                        size_b=None, native_max_tokens=20, verified=True),
+    "gpt-4o": dict(provider="openai", model_id="gpt-4o-2024-08-06",
+                   key="OPENAI_API_KEY", kind=INSTRUCT, family="gpt-4o",
+                   size_b=None, native_max_tokens=20, verified=True),
+    "claude-haiku": dict(provider="anthropic", model_id="claude-haiku-4-5-20251001",
+                         key="ANTHROPIC_API_KEY", kind=INSTRUCT, family="claude-4-5",
+                         size_b=None, native_max_tokens=20, verified=True),
+    "claude-sonnet": dict(provider="anthropic", model_id="claude-sonnet-4-5",
+                          key="ANTHROPIC_API_KEY", kind=INSTRUCT, family="claude-4-5",
+                          size_b=None, native_max_tokens=20, verified=True),
+    "gemini-flash": dict(provider="google", model_id="gemini-2.5-flash",
+                         key="GOOGLE_API_KEY", kind=INSTRUCT, family="gemini-2.5",
+                         size_b=None, native_max_tokens=20, verified=True),
+    "llama3-8b": dict(provider="huggingface", model_id="meta-llama/Llama-3.1-8B-Instruct",
+                      key="HF_TOKEN", kind=INSTRUCT, family="llama-3.1",
+                      size_b=8, native_max_tokens=20, verified=True),
+    "llama3-70b": dict(provider="groq", model_id="llama-3.1-70b-versatile",
+                       key="GROQ_API_KEY", kind=INSTRUCT, family="llama-3.1",
+                       size_b=70, native_max_tokens=20, verified=True),
+    "mistral-7b": dict(provider="mistral", model_id="mistral-small-latest",
+                       key="MISTRAL_API_KEY", kind=INSTRUCT, family="mistral",
+                       size_b=7, native_max_tokens=20, verified=True),
+    "qwen": dict(provider="novita", model_id="qwen/qwen-2.5-72b-instruct",
+                 key="NOVITA_API_KEY", kind=INSTRUCT, family="qwen-2.5",
+                 size_b=72, native_max_tokens=20, verified=True),
+
+    # ── reasoning-tuned ─────────────────────────────────────────────────────
+    "deepseek": dict(provider="novita", model_id="deepseek/deepseek-r1",
+                     key="NOVITA_API_KEY", kind=REASONING, family="deepseek-r1",
+                     size_b=None, native_max_tokens=1024, verified=True),
+    "deepseek-v4-flash": dict(provider="novita", model_id="deepseek/deepseek-v4-flash",
+                              key="NOVITA_API_KEY", kind=REASONING, family="deepseek-v4",
+                              size_b=None, native_max_tokens=1024, verified=True),
+    "gpt-5.5": dict(provider="openai", model_id="gpt-5.5",
+                    key="OPENAI_API_KEY", kind=REASONING, family="gpt-5",
+                    size_b=None, native_max_tokens=1024, verified=True),
+    "claude-opus-4-7": dict(provider="anthropic", model_id="claude-opus-4-7",
+                            key="ANTHROPIC_API_KEY", kind=REASONING, family="claude-4-7",
+                            size_b=None, native_max_tokens=1024, verified=True),
+    "qwen-3.6-flash": dict(provider="dashscope", model_id="qwen3.6-35b-a3b",
+                           key="DASHSCOPE_API_KEY", kind=REASONING, family="qwen-3.6",
+                           size_b=35, native_max_tokens=1024, verified=True),
+
+    # ── purpose-built judges (xmQT Limitations) ─────────────────────────────
+    # Model identifiers taken from published model cards and NOT yet exercised
+    # against the provider, so they are marked unverified and are excluded from
+    # selection until confirmed. Verify before spending a run on them.
+    "prometheus-2-7b": dict(provider="huggingface", model_id="prometheus-eval/prometheus-7b-v2.0",
+                            key="HF_TOKEN", kind=PURPOSE_BUILT, family="prometheus-2",
+                            size_b=7, native_max_tokens=1024, verified=False),
+    "prometheus-2-8x7b": dict(provider="huggingface", model_id="prometheus-eval/prometheus-8x7b-v2.0",
+                              key="HF_TOKEN", kind=PURPOSE_BUILT, family="prometheus-2",
+                              size_b=47, native_max_tokens=1024, verified=False),
+    "nemotron-70b": dict(provider="huggingface", model_id="nvidia/Llama-3.1-Nemotron-70B-Instruct-HF",
+                         key="HF_TOKEN", kind=PURPOSE_BUILT, family="nemotron",
+                         size_b=70, native_max_tokens=1024, verified=False),
+}
+
+
+class RegistryError(ValueError):
+    """Raised on an unknown judge or an unusable selection."""
+
+
+def max_tokens_for(judge: str, budget_policy: str = "native") -> int:
+    """
+    Token budget for one judge under a run-level policy.
+
+    "native"  reproduces the v1 setting (20 for instruction-tuned, 1024 for
+              reasoning-tuned) and therefore reproduces its confound.
+    "matched" gives every judge MATCHED_BUDGET_TOKENS, so a difference between
+              judge classes can no longer be explained by the budget. This is
+              the control xmQT W1 and qkzU Q3 asked for.
+    """
+    if judge not in JUDGES:
+        raise RegistryError(f"unknown judge {judge!r}")
+    if budget_policy not in BUDGET_POLICIES:
+        raise RegistryError(
+            f"unknown budget_policy {budget_policy!r}; expected one of {BUDGET_POLICIES}"
+        )
+    if budget_policy == "matched":
+        return MATCHED_BUDGET_TOKENS
+    return JUDGES[judge]["native_max_tokens"]
+
+
+def family_ladders(min_rungs: int = 2, verified_only: bool = True) -> Dict[str, List[str]]:
+    """
+    Within-family judge groups differing only in parameter count.
+
+    A scale claim needs these: comparing a 7B of one family against a 70B of
+    another confounds size with architecture and training data, which is what
+    WjHn W5 objected to. Only families with a declared `size_b` on at least
+    `min_rungs` members qualify.
+    """
+    grouped: Dict[str, List[str]] = {}
+    for name, spec in JUDGES.items():
+        if verified_only and not spec["verified"]:
+            continue
+        if spec["size_b"] is None:
+            continue
+        grouped.setdefault(spec["family"], []).append(name)
+    return {
+        family: sorted(members, key=lambda n: JUDGES[n]["size_b"])
+        for family, members in grouped.items()
+        if len(members) >= min_rungs
+    }
+
+
+def reasoning_judges(verified_only: bool = True) -> List[str]:
+    """
+    Reasoning-tuned judges available.
+
+    WjHn W3 objected that the "reasoning traces reduce consistency" claim rested
+    on DeepSeek-R1 alone. That was a claim scoped to one model, not a shortage of
+    models — the registry carries several, so the fix is to test across them or
+    drop the claim.
+    """
+    return sorted(
+        name for name, spec in JUDGES.items()
+        if spec["kind"] == REASONING and (spec["verified"] or not verified_only)
+    )
+
+
+def purpose_built_judges(verified_only: bool = True) -> List[str]:
+    """Judges trained specifically for evaluation (xmQT Limitations)."""
+    return sorted(
+        name for name, spec in JUDGES.items()
+        if spec["kind"] == PURPOSE_BUILT and (spec["verified"] or not verified_only)
+    )
+
+
+# Pre-registered subset for the structural axis: 2 frontier, 2 mid, 2 small,
+# families disjoint. Fixed here rather than chosen after seeing results.
+STRUCTURAL_AXIS_JUDGES = (
+    "gpt-5.5", "claude-opus-4-7",   # frontier
+    "gpt-4o", "qwen",               # mid
+    "mistral-7b", "llama3-8b",      # small
+)
+
+
+def select_judges(names: Optional[List[str]] = None, allow_unverified: bool = False) -> List[str]:
+    """
+    Resolve a judge selection, rejecting unknown or unverified entries.
+
+    Unverified checkpoints fail here rather than mid-run: discovering a bad model
+    id after paying for half a sweep is the expensive way to learn it.
+    """
+    selection = list(names) if names is not None else [
+        n for n, s in JUDGES.items() if s["verified"]
+    ]
+    unknown = [n for n in selection if n not in JUDGES]
+    if unknown:
+        raise RegistryError(f"unknown judge(s): {sorted(unknown)}")
+    if not allow_unverified:
+        unverified = [n for n in selection if not JUDGES[n]["verified"]]
+        if unverified:
+            raise RegistryError(
+                f"unverified model id(s): {sorted(unverified)}. Confirm the "
+                "checkpoint against the provider and set verified=True, or pass "
+                "allow_unverified=True to run them deliberately."
+            )
+    if not selection:
+        raise RegistryError("empty judge selection")
+    return selection
+
+
+def run_plan(n_calls_per_judge: int, judges: Optional[List[str]] = None,
+             budget_policy: str = "native") -> dict:
+    """
+    Call-count plan for a sweep, so budget is stated before it is spent rather
+    than discovered afterwards.
+    """
+    selection = select_judges(judges)
+    return {
+        "judges": selection,
+        "n_judges": len(selection),
+        "calls_per_judge": n_calls_per_judge,
+        "total_calls": n_calls_per_judge * len(selection),
+        "budget_policy": budget_policy,
+        "max_tokens": {j: max_tokens_for(j, budget_policy) for j in selection},
+    }
