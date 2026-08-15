@@ -1,0 +1,19 @@
+{
+  "_comment": "Audit gate config for the v2 dataset built from real sources by src/dataset_builder_v2.py. This dataset MUST pass every check before any release.",
+  "dataset_dir": "data/v2",
+  "splits": [
+    "factuality",
+    "coherence",
+    "relevance",
+    "preference"
+  ],
+  "thresholds": {
+    "min_unique_items": 200,
+    "max_duplicate_row_ratio": 0.05,
+    "max_label_share": 0.9,
+    "min_distinct_labels": 2,
+    "cluster_unit": "item",
+    "min_clusters": 100,
+    "min_seconds_per_decision": 2.0
+  }
+}

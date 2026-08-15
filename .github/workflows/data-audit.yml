@@ -1,0 +1,93 @@
+name: tests-and-data-audit
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install numpy scipy scikit-learn pytest
+      - name: Run unit tests
+        # The four ignored legacy test files require per-model raw API
+        # outputs (data/results/raw_outputs/*.jsonl) that are not committed
+        # to the repository; they cannot run from a fresh clone.
+        run: |
+          python -m pytest tests/ -q \
+            --ignore=tests/test_factuality_jss.py \
+            --ignore=tests/test_pair_overlap.py \
+            --ignore=tests/test_per_template.py \
+            --ignore=tests/test_t4_audit.py
+
+  data-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run data-audit gate
+        # This job gates the dataset the repository currently ships
+        # (data/audit_config.json -> dataset_dir). It FAILS on the v1 data
+        # in data/prompt_pairs/ by design: the shipped dataset has
+        # duplicated rows, too few unique items, unbacked source_benchmark
+        # claims, and implausible annotation timing. It must only turn
+        # green once a dataset passing every integrity check is committed
+        # and the config points at it. Do NOT weaken thresholds to silence
+        # this job.
+        run: python scripts/data_audit.py --config data/audit_config.json
+
+  data-audit-v2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run data-audit gate on the v2 dataset
+        # Gates the rebuilt dataset under data/v2/ (built from real sources by
+        # src/dataset_builder_v2.py). This job must be GREEN: the v2 data is
+        # release-gated and any regression in it must fail CI.
+        #
+        # Note the deliberate asymmetry with the data-audit job above, which is
+        # RED by design: red there means the dataset the repo currently ships is
+        # defective, green here means its replacement is sound. Point
+        # data/audit_config.json at data/v2 to retire the red job — but only
+        # together with republishing the dataset, since audit_config.json
+        # describes what is actually shipped.
+        run: python scripts/data_audit.py --config data/audit_config_v2.json
+
+  counts-consistency:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        # generate_counts.py imports src.metrics (via src/__init__.py),
+        # which requires numpy.
+        run: pip install numpy
+      - name: Verify data/counts.json matches the data on disk
+        run: |
+          python scripts/generate_counts.py --output /tmp/counts_fresh.json
+          python - <<'EOF'
+          import json
+          committed = json.load(open("data/counts.json"))
+          fresh = json.load(open("/tmp/counts_fresh.json"))
+          committed.pop("generated_at", None)
+          fresh.pop("generated_at", None)
+          if committed != fresh:
+              raise SystemExit(
+                  "data/counts.json is stale: regenerate it with "
+                  "'python scripts/generate_counts.py' and commit the result."
+              )
+          print("counts.json matches the data on disk")
+          EOF

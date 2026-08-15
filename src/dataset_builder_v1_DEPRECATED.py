@@ -1,7 +1,17 @@
 """
-JudgeSense Dataset Builder v2
+DEPRECATED — JudgeSense Dataset Builder v1. Do not use.
 
-Usage:
+Kept intact, unmodified below this header, for provenance only.
+
+This builder does not load data from any external source: every item below
+is a hardcoded Python literal, while each emitted record carries a
+`source_benchmark` field naming TruthfulQA / SummEval / BEIR / MT-Bench.
+Those labels are not backed by any per-item source record. The v2 pipeline
+(`src/data_sources.py` + `src/dataset_builder_v2.py`) replaces this module
+with real loaders and a mandatory provenance chain, and the CI data-audit
+gate (`scripts/data_audit.py`) rejects datasets built this way.
+
+Usage (historical):
     python src/dataset_builder.py --output data/prompt_pairs/
 """
 

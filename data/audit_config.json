@@ -1,0 +1,15 @@
+{
+  "_comment": "CI data-audit gate configuration (scripts/data_audit.py). dataset_dir points at the dataset the repository currently ships. It is EXPECTED to fail on the v1 data in data/prompt_pairs/ — that is the gate catching the audited defects. When the v2 dataset is built (src/dataset_builder_v2.py -> data/v2/), point dataset_dir there; the gate must pass before any release.",
+  "dataset_dir": "data/prompt_pairs",
+  "validation_dir": "data/validation/manual",
+  "splits": ["factuality", "coherence", "relevance", "preference"],
+  "thresholds": {
+    "min_unique_items": 200,
+    "max_duplicate_row_ratio": 0.05,
+    "max_label_share": 0.9,
+    "min_distinct_labels": 2,
+    "cluster_unit": "item",
+    "min_clusters": 100,
+    "min_seconds_per_decision": 2.0
+  }
+}

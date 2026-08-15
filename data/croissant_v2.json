@@ -1,0 +1,109 @@
+{
+  "@context": {
+    "@language": "en",
+    "@vocab": "https://schema.org/",
+    "cr": "http://mlcommons.org/croissant/",
+    "rai": "http://mlcommons.org/croissant/RAI/",
+    "dct": "http://purl.org/dc/terms/",
+    "sc": "https://schema.org/",
+    "conformsTo": "dct:conformsTo"
+  },
+  "@type": "sc:Dataset",
+  "conformsTo": "http://mlcommons.org/croissant/1.1",
+  "name": "JudgeSense-v2",
+  "description": "JudgeSense v2: prompt-paraphrase pairs for measuring prompt sensitivity in LLM-as-a-Judge systems. All judged items are loaded from public source datasets with per-item provenance; pairwise tasks present both candidate orderings by design.",
+  "version": "2.0-rebuild",
+  "license": "https://creativecommons.org/licenses/by/4.0/",
+  "creator": {
+    "@type": "Person",
+    "name": "Anonymous Author"
+  },
+  "isLiveDataset": false,
+  "distribution": [
+    {
+      "@type": "cr:FileObject",
+      "@id": "factuality-v2-jsonl",
+      "name": "factuality.jsonl",
+      "description": "250 records over 250 unique source items for the factuality task. Every record carries a per-item provenance chain (source dataset, config, split, record id).",
+      "contentUrl": "data/factuality.jsonl",
+      "encodingFormat": "application/jsonlines",
+      "sha256": "8c593fcae8d3beb81be669359c0de8b135952739601a49bf51da158bd0aee406"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "coherence-v2-jsonl",
+      "name": "coherence.jsonl",
+      "description": "250 records over 250 unique source items for the coherence task. Every record carries a per-item provenance chain (source dataset, config, split, record id).",
+      "contentUrl": "data/coherence.jsonl",
+      "encodingFormat": "application/jsonlines",
+      "sha256": "2485c92a2643efec4d8e372111c018882614e0f831e6806ea7495a99987b2ac8"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "relevance-v2-jsonl",
+      "name": "relevance.jsonl",
+      "description": "500 records over 250 unique source items for the relevance task. Every record carries a per-item provenance chain (source dataset, config, split, record id).",
+      "contentUrl": "data/relevance.jsonl",
+      "encodingFormat": "application/jsonlines",
+      "sha256": "768fa47e95f68c1bd84ae6d195b5a70672a4b44c585bbf40b35ff8c14cbd28e4"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "preference-v2-jsonl",
+      "name": "preference.jsonl",
+      "description": "500 records over 250 unique source items for the preference task. Every record carries a per-item provenance chain (source dataset, config, split, record id).",
+      "contentUrl": "data/preference.jsonl",
+      "encodingFormat": "application/jsonlines",
+      "sha256": "c3db9d0f47f2e9446110a27781cabef80c0aab09f7e4235a920f6f4cbefcf1fb"
+    }
+  ],
+  "recordSet": [
+    {
+      "@type": "cr:RecordSet",
+      "@id": "factuality-v2-records",
+      "name": "factuality prompt-paraphrase records (v2)",
+      "description": "250 records, 250 unique items, label space ['accurate', 'inaccurate'].",
+      "source": {
+        "fileObject": {
+          "@id": "factuality-v2-jsonl"
+        }
+      }
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "coherence-v2-records",
+      "name": "coherence prompt-paraphrase records (v2)",
+      "description": "250 records, 250 unique items, label space ['1', '2', '3', '4', '5'].",
+      "source": {
+        "fileObject": {
+          "@id": "coherence-v2-jsonl"
+        }
+      }
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "relevance-v2-records",
+      "name": "relevance prompt-paraphrase records (v2)",
+      "description": "500 records, 250 unique items, label space ['candidate_relevant'].",
+      "source": {
+        "fileObject": {
+          "@id": "relevance-v2-jsonl"
+        }
+      }
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "preference-v2-records",
+      "name": "preference prompt-paraphrase records (v2)",
+      "description": "500 records, 250 unique items, label space ['candidate_1', 'candidate_2'].",
+      "source": {
+        "fileObject": {
+          "@id": "preference-v2-jsonl"
+        }
+      }
+    }
+  ],
+  "rai:hasSyntheticData": true,
+  "rai:syntheticDataExplanation": "The judged texts include machine-generated content drawn verbatim from the source benchmarks (SummEval machine summaries; MT-Bench model responses). Judge prompt templates are author-written paraphrases. Item texts and ground-truth labels are taken verbatim from the source datasets \u2014 none are authored in this repository. Source datasets present in the built data: ['BeIR/scifact', 'lmsys/mt_bench_human_judgments', 'mteb/summeval', 'truthful_qa'].",
+  "rai:dataCollection": "Items are loaded programmatically from public datasets on the Hugging Face Hub by src/data_sources.py; every record carries the source dataset id, config, split, and per-record id. The build fails if any source is unavailable \u2014 no items are authored or synthesized by the builder."
+}

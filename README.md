@@ -13,32 +13,24 @@ A framework for quantifying prompt sensitivity in LLM-as-a-Judge evaluation syst
 
 Large language models are increasingly deployed as automated judges to evaluate the outputs of other models, yet the reliability of these systems remains poorly understood. **JudgeSense** quantifies prompt sensitivity in LLM-as-a-Judge systems via the **Judge Sensitivity Score (JSS)**: how often a judge's decision changes when prompt phrasing varies while evaluation intent stays constant.
 
-The project is being rebuilt. **v2** is the version to use.
+**Dataset**: [Rohithreddybc/judgesense-benchmark](https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark) — v2.0, 1,000 unique items across 4 tasks.
 
-## v2 (current)
+## What the benchmark provides
 
-Built end-to-end from the real upstream benchmarks, with the measurement design and statistics the first release lacked.
-
-- **250 unique items per task**, loaded at build time from `truthful_qa`, `mteb/summeval`, `BeIR/scifact`, and `lmsys/mt_bench_human_judgments`. Every record carries a provenance chain resolving to a specific record in a specific split.
-- **Position-bias swap design**: pairwise tasks present candidates in both A/B and B/A orderings, so a judge answering by position alone cannot score as consistent.
+- **1,000 unique items** (250 per task), loaded at build time from `truthful_qa`, `mteb/summeval`, `BeIR/scifact`, and `lmsys/mt_bench_human_judgments`. Every record carries a provenance chain resolving to a specific row in a specific split, with retrieval timestamp and loader version.
+- **Ground truth from the source**: TruthfulQA's accuracy labels, SummEval's expert coherence ratings, scifact qrels, and real human preference votes from MT-Bench.
+- **Position-bias swap design**: pairwise tasks present candidates in both A/B and B/A orderings, so a judge answering by position alone scores ~50%, not 100%.
+- **One prompt pair per item** — rows are never duplicated to inflate the count.
 - **Cluster-aware statistics**: confidence intervals require an explicitly declared unit of analysis (`row`, `structural_pair`, `prompt_pair`, `item`) and resample clusters, never rows.
-- **Chance-corrected and ordinal-aware metrics**: Cohen's kappa over the two arms, quadratic-weighted kappa for the Likert task, and a strict mode that counts unparseable output as disagreement rather than dropping it.
+- **Chance-corrected and ordinal-aware metrics**: Cohen's kappa over the two arms, quadratic-weighted kappa for the Likert task, and a strict mode counting unparseable output as disagreement rather than dropping it.
 - **Polarity remapping** so polarity-inverted templates can be scored rather than excluded (`src/polarity.py`).
-- **CI data-audit gate** (`scripts/data_audit.py`): fails the build on too few unique items, duplicate rows, unbacked provenance, degenerate labels, contradictory ground truth, insufficient effective sample size, or implausible annotation timing.
-
-Currently on the `v2-rebuild` branch. No v2 results have been collected yet.
-
-## v1 (superseded)
-
-The v1 dataset and results are retained unchanged for provenance and **should not be used for new work**. The accompanying paper was withdrawn from NeurIPS 2026 in July 2026.
-
-In short: the release describes 500 hand-validated prompt pairs, but contains 202 unique prompt pairs over 75 unique items (5 for coherence); the `source_benchmark` fields are hardcoded constants rather than real provenance; and the reported confidence intervals were computed as if nested repeated measures were independent.
-
-**[ERRATA.md](ERRATA.md)** documents every defect with reproducible numbers, and `scripts/data_audit.py --config data/audit_config.json` reproduces them against the released files.
+- **Data-audit gate** (`scripts/data_audit.py`), run in CI: fails the build on too few unique items, duplicate rows, unbacked provenance, degenerate labels, contradictory ground truth, insufficient effective sample size, or implausible annotation timing.
 
 ## The JSS metric
 
-JSS itself is unaffected by the dataset defects — it measures agreement between two prompt phrasings and never consults ground truth. It does need chance correction, since raw JSS partly rewards judges that compress their output distribution (measured on v1 results: `corr(JSS, entropy) = -0.484`). See `src/metrics_v2.py`.
+JSS is the fraction of prompt pairs where both phrasings elicit the same decision. It measures agreement between two phrasings and never consults ground truth.
+
+Raw JSS partly rewards judges that compress their output distribution, so chance correction matters — see `src/metrics_v2.py` for the kappa, ordinal, and strict-mode variants alongside it.
 
 ## Installation
 
@@ -81,121 +73,103 @@ python src/metrics.py --results data/results/raw_outputs/
 
 ## Dataset
 
-**v2** — build locally from the real upstream benchmarks:
+- **HuggingFace**: [Rohithreddybc/judgesense-benchmark](https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark) (v2.0)
+- **License**: CC-BY-4.0 (upstream datasets retain their own terms)
+
+| Task | Source dataset | Unique items | Rows |
+|------|----------------|-------------:|-----:|
+| Factuality | `truthful_qa` | 250 | 250 |
+| Coherence | `mteb/summeval` | 250 | 250 |
+| Relevance | `BeIR/scifact` + qrels | 250 | 500 |
+| Preference | `lmsys/mt_bench_human_judgments` | 250 | 500 |
+
+Pairwise tasks contribute two rows per item — one per candidate ordering.
+
+### Quick usage
+
+```python
+from datasets import load_dataset
+
+# one config per task; pairwise tasks carry extra ordering fields
+ds = load_dataset("Rohithreddybc/judgesense-benchmark", "coherence", split="test")
+print(len(ds), "items")
+print(ds[0]["prompt_a"], ds[0]["prompt_b"])
+print(ds[0]["ground_truth_label"], ds[0]["source"]["source_record_id"])
+```
+
+### Rebuilding from source
 
 ```bash
 python src/dataset_builder_v2.py --output data/v2 --items-per-task 250
 python scripts/data_audit.py --config data/audit_config_v2.json   # must pass
 ```
 
-250 unique items per task, per-item provenance, both A/B orderings on pairwise tasks. Not yet published to HuggingFace.
-
-**v1** — published, superseded, retained for provenance ([ERRATA.md](ERRATA.md)):
-
-- **HuggingFace**: [Rohithreddybc/judgesense-benchmark](https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark)
-- **License**: CC-BY-4.0
-- **Size**: 500 rows — 202 unique prompt pairs over 75 unique items (coherence: 5)
-
-### Quick usage (v1)
-
-```python
-from datasets import load_dataset
-
-# one config per task; schemas differ (coherence has no ab_swapped field)
-pairs = load_dataset("Rohithreddybc/judgesense-benchmark", "factuality", split="test")
-print(f"{len(pairs)} factuality rows loaded")
-
-# Compute JSS from your judge's decisions
-from judgesense import compute_jss
-jss = compute_jss(decisions_a, decisions_b)
-print(f"JSS: {jss:.3f}")
-```
+The loaders fetch from the upstream datasets and fail loudly if a source is
+unreachable — there is no fallback to cached or synthetic items.
 
 ### Schema
 
 ```json
 {
-  "pair_id": "fact_001",
+  "pair_id": "fact_v2_0001",
+  "item_id": "fact_truthfulqa_740",
+  "prompt_pair_id": "fact_truthfulqa_740#T1-T2",
   "task_type": "factuality",
-  "source_benchmark": "TruthfulQA",
-  "prompt_a": "Is this factually correct? Answer YES or NO only.\n\nResponse: ...",
-  "prompt_b": "Fact-check this response. Reply YES (correct) or NO (incorrect).\n\nResponse: ...",
-  "response_being_judged": "The Earth orbits around the Sun.",
+  "template_a": "T1",
+  "template_b": "T2",
+  "prompt_a": "Is this statement factually correct? Answer YES or NO only.\n\n...",
+  "prompt_b": "Fact-check the statement below. Reply YES (correct) or NO (incorrect).\n\n...",
+  "response_being_judged": "...",
   "ground_truth_label": "accurate",
-  "semantic_equivalence_score": 1.0
+  "source_benchmark": "truthful_qa",
+  "source": {
+    "source_dataset": "truthful_qa",
+    "source_config": "generation",
+    "source_split": "validation",
+    "source_record_id": "validation[740]",
+    "source_fields": {"answer_field": "best_answer"},
+    "retrieved_at": "2026-08-07T04:50:42Z",
+    "loader_version": "2.0.0"
+  },
+  "builder_version": "2.0.0"
 }
 ```
 
-## Key findings (v1 — provisional)
+`item_id` and `prompt_pair_id` are the clustering keys — use them when computing
+confidence intervals. Coherence adds `ground_truth_raw` (the unrounded expert
+mean); relevance and preference add `ab_order`, `candidate_map`, and
+`ground_truth_position`.
 
-These come from the v1 run. They rest on 75 unique items (5 for coherence) and on confidence intervals computed at the wrong unit of analysis; correct clustering widens the intervals 2.8–3.9x. Treat them as provisional pending the v2 run — see [ERRATA.md](ERRATA.md).
+## Results
 
-### Factuality (polarity-correction results)
+A judge sweep against the v2 dataset has not yet been run, so no results are
+reported here. When it is, results will be published with cluster-aware
+confidence intervals at a declared unit of analysis, chance-corrected scores
+alongside raw JSS, and malformed-output rates reported rather than dropped.
 
-| Model | JSS (raw) | JSS (T4-corrected) | Delta |
-|---|---|---|---|
-| GPT-4o | 0.63 | 0.98 | +0.35 |
-| GPT-4o-mini | 0.63 | 0.96 | +0.33 |
-| Claude Haiku 4.5 | 0.63 | 0.97 | +0.34 |
-| Claude Sonnet 4.5 | 0.63 | 0.97 | +0.34 |
-| DeepSeek-R1 | 0.63 | 0.96 | +0.33 |
-| LLaMA-3.1-70B | 0.63 | 0.99 | +0.36 |
-| Gemini 2.5 Flash | 0.63 | 0.98 | +0.35 |
-| Qwen-2.5-72B | 0.63 | 0.98 | +0.35 |
-| Mistral-7B | 0.71 | 0.89 | +0.18 |
-| GPT-5.5 | 0.63 | 0.98 | +0.35 |
-| Claude Opus 4.7 | 0.63 | 0.99 | +0.36 |
-| Qwen 3.6 Flash | 0.63 | 0.97 | +0.34 |
-| DeepSeek-V4 Flash | 0.62 | 0.95 | +0.33 |
+Results from the earlier v1 dataset are retained in repository history and
+summarised in [ERRATA.md](ERRATA.md), together with the reasons they should not
+be carried forward.
 
-**Finding**: Polarity-inverted prompt templates (T4) reduce raw JSS by 18 to 36 pp across all models. After T4 correction, all 13 judges achieve factuality JSS in [0.89, 0.99], demonstrating that prompt sensitivity in this task is primarily attributable to template polarity. Mistral-7B exhibits the highest residual sensitivity (JSS = 0.89 post-correction).
-
-### Coherence (most discriminating task)
-
-| Model | JSS (coherence) | Cohen's kappa |
-|---|---|---|
-| Claude Sonnet 4.5 | 0.99 | 0.986 |
-| Qwen-2.5-72B | 0.92 | 0.842 |
-| GPT-4o | 0.91 | 0.828 |
-| GPT-5.5 | 0.83 | 0.694 |
-| GPT-4o-mini | 0.78 | 0.627 |
-| Claude Haiku 4.5 | 0.73 | 0.583 |
-| Claude Opus 4.7 | 0.70 | 0.580 |
-| LLaMA-3.1-70B | 0.55 | 0.338 |
-| DeepSeek-R1 | 0.53 | 0.332 |
-| Qwen 3.6 Flash | 0.51 | 0.372 |
-| DeepSeek-V4 Flash | 0.50 | 0.349 |
-| Mistral-7B | 0.48 | -0.082 |
-| Gemini 2.5 Flash | 0.39 | -0.057 |
-
-**Finding**: Coherence JSS spans 0.605 units across 13 judges and does not track model scale or release recency. Claude Opus 4.7 (0.70) scores lower than Claude Haiku 4.5 (0.73); GPT-5.5 (0.83) scores lower than GPT-4o (0.91). Two judges (Mistral-7B and Gemini 2.5 Flash) produce negative kappa, indicating systematic anti-agreement.
-
-## Reproducing paper results
-
-Exact commands to replicate every number in the paper:
+## Running an evaluation
 
 ```bash
-# 1. Build the prompt pair dataset
-python src/dataset_builder.py --output data/prompt_pairs/
+# 1. Build the dataset from source (fails loudly if a source is unreachable)
+python src/dataset_builder_v2.py --output data/v2 --items-per-task 250
 
-# 2. Run evaluations on all models
-bash scripts/run_all_evals.sh
+# 2. Gate it — this must pass before any results are computed
+python scripts/data_audit.py --config data/audit_config_v2.json
 
-# 3. Compute metrics
-python src/metrics.py --summarize
+# 3. Run judges (requires API keys; see .env.example)
+python src/evaluate.py --model gpt-4o --task coherence
 
-# 4. Run factuality JSS analysis (T4 polarity-corrected)
-python analysis/factuality_jss_fixed.py
-
-# 5. Per-template JSS breakdown
-python analysis/per_template_factuality.py
-
-# 6. Pair-level flip overlap
-python analysis/factuality_pair_overlap.py
-
-# 7. Generate publication figures (outputs/fig1, fig2, fig4)
-python analysis/generate_figures.py
+# 4. Score with cluster-aware, chance-corrected metrics
+python -c "from src.metrics_v2 import compute_all_metrics_v2"
 ```
+
+Judge configuration — families, parameter sizes, matched vs native token
+budgets, and which checkpoints are verified — lives in `src/judge_registry.py`.
+Use `run_plan()` to state a sweep's call count before spending it.
 
 ## Repository structure
 

@@ -1,0 +1,198 @@
+{
+  "generated_by": "scripts/generate_counts.py",
+  "generated_at": "2026-08-07T04:54:45.651798+00:00",
+  "dataset_v1": {
+    "factuality": {
+      "rows": 125,
+      "unique_items": 60,
+      "unique_prompt_pairs": 80,
+      "unique_prompt_texts": 140,
+      "label_histogram": {
+        "accurate": 72,
+        "inaccurate": 53
+      },
+      "excluded_pairs": []
+    },
+    "coherence": {
+      "rows": 125,
+      "unique_items": 5,
+      "unique_prompt_pairs": 25,
+      "unique_prompt_texts": 25,
+      "label_histogram": {
+        "score_1": 25,
+        "score_2": 25,
+        "score_3": 25,
+        "score_4": 25,
+        "score_5": 25
+      },
+      "excluded_pairs": []
+    },
+    "relevance": {
+      "rows": 125,
+      "unique_items": 5,
+      "unique_prompt_pairs": 49,
+      "unique_prompt_texts": 50,
+      "label_histogram": {
+        "A": 63,
+        "B": 62
+      },
+      "excluded_pairs": []
+    },
+    "preference": {
+      "rows": 125,
+      "unique_items": 5,
+      "unique_prompt_pairs": 48,
+      "unique_prompt_texts": 50,
+      "label_histogram": {
+        "A": 62,
+        "B": 63
+      },
+      "excluded_pairs": []
+    },
+    "_totals": {
+      "rows": 500,
+      "unique_items": 75,
+      "unique_prompt_pairs": 202,
+      "rows_after_exclusions": 500,
+      "n_excluded_pairs": 0,
+      "n_excluded_pairs_configured": 6
+    }
+  },
+  "dataset_v2": {
+    "factuality": {
+      "rows": 250,
+      "unique_items": 250,
+      "unique_prompt_pairs": 250,
+      "unique_prompt_texts": 500,
+      "label_histogram": {
+        "accurate": 125,
+        "inaccurate": 125
+      },
+      "excluded_pairs": []
+    },
+    "coherence": {
+      "rows": 250,
+      "unique_items": 250,
+      "unique_prompt_pairs": 250,
+      "unique_prompt_texts": 500,
+      "label_histogram": {
+        "1": 5,
+        "2": 55,
+        "3": 71,
+        "4": 87,
+        "5": 32
+      },
+      "excluded_pairs": []
+    },
+    "relevance": {
+      "rows": 500,
+      "unique_items": 250,
+      "unique_prompt_pairs": 250,
+      "unique_prompt_texts": 1000,
+      "label_histogram": {
+        "candidate_relevant": 500
+      },
+      "excluded_pairs": []
+    },
+    "preference": {
+      "rows": 500,
+      "unique_items": 250,
+      "unique_prompt_pairs": 250,
+      "unique_prompt_texts": 1000,
+      "label_histogram": {
+        "candidate_1": 250,
+        "candidate_2": 250
+      },
+      "excluded_pairs": []
+    },
+    "_totals": {
+      "rows": 1500,
+      "unique_items": 1000,
+      "unique_prompt_pairs": 1000,
+      "rows_after_exclusions": 1500,
+      "n_excluded_pairs": 0,
+      "n_excluded_pairs_configured": 6
+    }
+  },
+  "human_validation": {
+    "coherence_manual.jsonl": {
+      "decisions": 125,
+      "label_histogram": {
+        "YES": 125
+      },
+      "median_seconds_between_decisions": 1.818
+    },
+    "factuality_manual.jsonl": {
+      "decisions": 125,
+      "label_histogram": {
+        "NO": 50,
+        "YES": 75
+      },
+      "median_seconds_between_decisions": 5.297
+    },
+    "preference_manual.jsonl": {
+      "decisions": 125,
+      "label_histogram": {
+        "YES": 125
+      },
+      "median_seconds_between_decisions": 0.704
+    },
+    "relevance_manual.jsonl": {
+      "decisions": 125,
+      "label_histogram": {
+        "YES": 125
+      },
+      "median_seconds_between_decisions": 0.664
+    },
+    "coherence_paraphrase.jsonl": {
+      "decisions": 125,
+      "decision_histogram": {
+        "YES": 125
+      }
+    },
+    "factuality_paraphrase.jsonl": {
+      "decisions": 125,
+      "decision_histogram": {
+        "NO": 6,
+        "YES": 119
+      }
+    },
+    "preference_paraphrase.jsonl": {
+      "decisions": 125,
+      "decision_histogram": {
+        "YES": 125
+      }
+    },
+    "relevance_paraphrase.jsonl": {
+      "decisions": 125,
+      "decision_histogram": {
+        "YES": 125
+      }
+    }
+  },
+  "evaluation_design": {
+    "judges_in_registry": 14,
+    "judge_names": [
+      "claude-haiku",
+      "claude-opus-4-7",
+      "claude-sonnet",
+      "deepseek",
+      "deepseek-v4-flash",
+      "gemini-flash",
+      "gpt-4o",
+      "gpt-4o-mini",
+      "gpt-5.5",
+      "llama3-70b",
+      "llama3-8b",
+      "mistral-7b",
+      "qwen",
+      "qwen-3.6-flash"
+    ],
+    "runs_per_task_reported": 3,
+    "api_calls_per_run_all_rows": 1000,
+    "api_calls_3_runs_all_rows_1_judge": 3000,
+    "api_calls_3_runs_all_rows_all_judges": 42000,
+    "rows_used_in_metrics_after_exclusions": 500,
+    "note": "The 494-vs-500 discrepancy is rows minus the 0 pairs in src.metrics.EXCLUDED_PAIRS. judges_in_registry counts src.models.SUPPORTED_MODELS entries as committed (14); documents citing a different judge count (9 or 13) must reconcile against this registry, which is the only machine-checkable roster in the repository."
+  }
+}
