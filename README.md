@@ -9,47 +9,36 @@ A framework for quantifying prompt sensitivity in LLM-as-a-Judge evaluation syst
 
 ---
 
-> ## ⚠️ Do not use the v1 dataset — see [ERRATA.md](ERRATA.md)
->
-> The accompanying paper was **withdrawn from NeurIPS 2026** in July 2026 after
-> defects were verified against this released artifact. In summary:
->
-> - The dataset is described as 500 prompt pairs. It contains **202 unique
->   prompt pairs over 75 unique items**. The headline coherence task rests on
->   **5 texts**.
-> - `source_benchmark` fields naming TruthfulQA, SummEval, BEIR and MT-Bench are
->   **hardcoded constants**. The builder contains no data-loading code and the
->   items are not drawn from those benchmarks.
-> - Coherence `ground_truth_label` values are **enumeration indices**, not
->   coherence ratings. (They never enter JSS, but are unusable for accuracy work.)
-> - The claim of **independent re-review by a second annotator is withdrawn** —
->   all 500 annotation records carry a single annotator.
-> - **Ten items carry contradictory ground truth** (identical content, opposite
->   correct answers).
-> - Reported confidence intervals treated nested repeated measures as
->   independent; correct clustering **widens them 2.8–3.9x** and removes the
->   claimed GPT-5.5 / GPT-4o separation.
->
-> [ERRATA.md](ERRATA.md) documents each item with reproducible numbers. A
-> rebuilt v2 dataset is in progress on the `v2-rebuild` branch.
-
----
-
 ## Overview
 
-Large language models are increasingly deployed as automated judges to evaluate the outputs of other models, yet the reliability of these systems remains poorly understood. **JudgeSense** quantifies prompt sensitivity in LLM-as-a-Judge systems via the **Judge Sensitivity Score (JSS)**, a metric measuring how often a judge's evaluation decision changes when prompt phrasing varies while evaluation intent stays constant. The v1 release evaluated **13 LLM judges** across **4 evaluation tasks** (factuality, coherence, preference, relevance).
+Large language models are increasingly deployed as automated judges to evaluate the outputs of other models, yet the reliability of these systems remains poorly understood. **JudgeSense** quantifies prompt sensitivity in LLM-as-a-Judge systems via the **Judge Sensitivity Score (JSS)**: how often a judge's decision changes when prompt phrasing varies while evaluation intent stays constant.
 
-**The v1 empirical claims should not be cited.** They rest on 75 unique items (5 for coherence), on provenance fields that do not describe the data, and on confidence intervals computed at the wrong unit of analysis. See [ERRATA.md](ERRATA.md).
+The project is being rebuilt. **v2** is the version to use.
 
-This repository contains the codebase and artifacts as released, retained unchanged for provenance, alongside the v2 rebuild.
+## v2 (current)
 
-## Key contributions
+Built end-to-end from the real upstream benchmarks, with the measurement design and statistics the first release lacked.
 
-- **JSS metric**: A formally defined score for judge decision consistency across semantically equivalent prompts. The metric itself is unaffected by the dataset defects, though it needs chance correction — see `src/metrics_v2.py`.
-- **Public dataset**: 500 rows spanning **202 unique prompt pairs over 75 unique underlying items**, across 4 evaluation task types. Per-task unique item counts are in [ERRATA.md](ERRATA.md).
-- **Empirical evaluation**: Thirteen LLM judges (GPT-5.5, GPT-4o, GPT-4o-mini, Claude Opus 4.7, Claude Sonnet 4.5, Claude Haiku 4.5, Gemini 2.5 Flash, LLaMA-3.1-70B, Mistral-7B, DeepSeek-R1, Qwen-2.5-72B, Qwen 3.6 Flash, DeepSeek-V4 Flash) across 4 task types. The observed coherence JSS spread (0.39–0.99) is large, but rests on 5 unique items and should be treated as provisional.
-- **Human validation**: All 500 prompt pairs were reviewed for paraphrase equivalence by **a single annotator**; 450 were labelled equivalent and 50 polarity-inverted Template 4 pairs non-equivalent. A previous version of this README claimed independent re-review by a second annotator; that claim is **not supported by the repository's annotation records and is withdrawn**.
-- **Reproducibility**: All code, data, and results released under open licenses. `scripts/data_audit.py` reproduces every figure in [ERRATA.md](ERRATA.md).
+- **250 unique items per task**, loaded at build time from `truthful_qa`, `mteb/summeval`, `BeIR/scifact`, and `lmsys/mt_bench_human_judgments`. Every record carries a provenance chain resolving to a specific record in a specific split.
+- **Position-bias swap design**: pairwise tasks present candidates in both A/B and B/A orderings, so a judge answering by position alone cannot score as consistent.
+- **Cluster-aware statistics**: confidence intervals require an explicitly declared unit of analysis (`row`, `structural_pair`, `prompt_pair`, `item`) and resample clusters, never rows.
+- **Chance-corrected and ordinal-aware metrics**: Cohen's kappa over the two arms, quadratic-weighted kappa for the Likert task, and a strict mode that counts unparseable output as disagreement rather than dropping it.
+- **Polarity remapping** so polarity-inverted templates can be scored rather than excluded (`src/polarity.py`).
+- **CI data-audit gate** (`scripts/data_audit.py`): fails the build on too few unique items, duplicate rows, unbacked provenance, degenerate labels, contradictory ground truth, insufficient effective sample size, or implausible annotation timing.
+
+Currently on the `v2-rebuild` branch. No v2 results have been collected yet.
+
+## v1 (superseded)
+
+The v1 dataset and results are retained unchanged for provenance and **should not be used for new work**. The accompanying paper was withdrawn from NeurIPS 2026 in July 2026.
+
+In short: the release describes 500 hand-validated prompt pairs, but contains 202 unique prompt pairs over 75 unique items (5 for coherence); the `source_benchmark` fields are hardcoded constants rather than real provenance; and the reported confidence intervals were computed as if nested repeated measures were independent.
+
+**[ERRATA.md](ERRATA.md)** documents every defect with reproducible numbers, and `scripts/data_audit.py --config data/audit_config.json` reproduces them against the released files.
+
+## The JSS metric
+
+JSS itself is unaffected by the dataset defects — it measures agreement between two prompt phrasings and never consults ground truth. It does need chance correction, since raw JSS partly rewards judges that compress their output distribution (measured on v1 results: `corr(JSS, entropy) = -0.484`). See `src/metrics_v2.py`.
 
 ## Installation
 
@@ -92,22 +81,29 @@ python src/metrics.py --results data/results/raw_outputs/
 
 ## Dataset
 
-This project includes the **JudgeSense benchmark dataset** — 500 validated paraphrase pairs across 4 evaluation task types, released for prompt sensitivity research.
+**v2** — build locally from the real upstream benchmarks:
+
+```bash
+python src/dataset_builder_v2.py --output data/v2 --items-per-task 250
+python scripts/data_audit.py --config data/audit_config_v2.json   # must pass
+```
+
+250 unique items per task, per-item provenance, both A/B orderings on pairwise tasks. Not yet published to HuggingFace.
+
+**v1** — published, superseded, retained for provenance ([ERRATA.md](ERRATA.md)):
 
 - **HuggingFace**: [Rohithreddybc/judgesense-benchmark](https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark)
 - **License**: CC-BY-4.0
-- **Size**: 500 prompt pairs, 4 task types, 125 pairs per task
+- **Size**: 500 rows — 202 unique prompt pairs over 75 unique items (coherence: 5)
 
-> **Key Insight**: Prompt formulation often dominates model architecture in determining apparent judge consistency.
-
-### Quick usage
+### Quick usage (v1)
 
 ```python
 from datasets import load_dataset
 
-ds = load_dataset("Rohithreddybc/judgesense-benchmark")
-pairs = ds["factuality"]
-print(f"{len(pairs)} factuality pairs loaded")
+# one config per task; schemas differ (coherence has no ab_swapped field)
+pairs = load_dataset("Rohithreddybc/judgesense-benchmark", "factuality", split="test")
+print(f"{len(pairs)} factuality rows loaded")
 
 # Compute JSS from your judge's decisions
 from judgesense import compute_jss
@@ -130,7 +126,9 @@ print(f"JSS: {jss:.3f}")
 }
 ```
 
-## Key findings
+## Key findings (v1 — provisional)
+
+These come from the v1 run. They rest on 75 unique items (5 for coherence) and on confidence intervals computed at the wrong unit of analysis; correct clustering widens the intervals 2.8–3.9x. Treat them as provisional pending the v2 run — see [ERRATA.md](ERRATA.md).
 
 ### Factuality (polarity-correction results)
 
