@@ -9,19 +9,47 @@ A framework for quantifying prompt sensitivity in LLM-as-a-Judge evaluation syst
 
 ---
 
+> ## ⚠️ Do not use the v1 dataset — see [ERRATA.md](ERRATA.md)
+>
+> The accompanying paper was **withdrawn from NeurIPS 2026** in July 2026 after
+> defects were verified against this released artifact. In summary:
+>
+> - The dataset is described as 500 prompt pairs. It contains **202 unique
+>   prompt pairs over 75 unique items**. The headline coherence task rests on
+>   **5 texts**.
+> - `source_benchmark` fields naming TruthfulQA, SummEval, BEIR and MT-Bench are
+>   **hardcoded constants**. The builder contains no data-loading code and the
+>   items are not drawn from those benchmarks.
+> - Coherence `ground_truth_label` values are **enumeration indices**, not
+>   coherence ratings. (They never enter JSS, but are unusable for accuracy work.)
+> - The claim of **independent re-review by a second annotator is withdrawn** —
+>   all 500 annotation records carry a single annotator.
+> - **Ten items carry contradictory ground truth** (identical content, opposite
+>   correct answers).
+> - Reported confidence intervals treated nested repeated measures as
+>   independent; correct clustering **widens them 2.8–3.9x** and removes the
+>   claimed GPT-5.5 / GPT-4o separation.
+>
+> [ERRATA.md](ERRATA.md) documents each item with reproducible numbers. A
+> rebuilt v2 dataset is in progress on the `v2-rebuild` branch.
+
+---
+
 ## Overview
 
-Large language models are increasingly deployed as automated judges to evaluate the outputs of other models, yet the reliability of these systems remains poorly understood. **JudgeSense** is a reproducible benchmark that quantifies prompt sensitivity in LLM-as-a-Judge systems via the **Judge Sensitivity Score (JSS)**, a metric measuring how often a judge's evaluation decision changes when prompt phrasing varies while evaluation intent stays constant. We evaluate **13 LLM judges** across **4 evaluation tasks** (factuality, coherence, preference, relevance) with **500 hand-validated prompt pairs** and **3 independent runs each**, and uncover systematic sensitivity driven by prompt polarity inversion. Our analysis reveals that polarity-inverted templates can reduce apparent agreement by up to **37 percentage points**, that coherence JSS varies by more than **0.6 units** across judges (range 0.39 to 0.99), and that sensitivity does not track model scale or recency.
+Large language models are increasingly deployed as automated judges to evaluate the outputs of other models, yet the reliability of these systems remains poorly understood. **JudgeSense** quantifies prompt sensitivity in LLM-as-a-Judge systems via the **Judge Sensitivity Score (JSS)**, a metric measuring how often a judge's evaluation decision changes when prompt phrasing varies while evaluation intent stays constant. The v1 release evaluated **13 LLM judges** across **4 evaluation tasks** (factuality, coherence, preference, relevance).
 
-This repository contains the full reproducible codebase, datasets, and evaluation artifacts accompanying the paper.
+**The v1 empirical claims should not be cited.** They rest on 75 unique items (5 for coherence), on provenance fields that do not describe the data, and on confidence intervals computed at the wrong unit of analysis. See [ERRATA.md](ERRATA.md).
+
+This repository contains the codebase and artifacts as released, retained unchanged for provenance, alongside the v2 rebuild.
 
 ## Key contributions
 
-- **JSS metric**: A novel, formally defined score for judge decision consistency across semantically equivalent prompts.
-- **Public dataset**: 500 semantically equivalent prompt pairs across 4 evaluation task types.
-- **Empirical evaluation**: Thirteen LLM judges (GPT-5.5, GPT-4o, GPT-4o-mini, Claude Opus 4.7, Claude Sonnet 4.5, Claude Haiku 4.5, Gemini 2.5 Flash, LLaMA-3.1-70B, Mistral-7B, DeepSeek-R1, Qwen-2.5-72B, Qwen 3.6 Flash, DeepSeek-V4 Flash) tested across 4 task types; coherence JSS ranges from 0.39 to 0.99 and does not correlate with model scale or recency.
-- **Human validation**: All 500 prompt pairs hand-validated by a primary annotator and independently re-reviewed by a second annotator with full agreement; 50 polarity-inverted Template 4 pairs labeled non-equivalent by both annotators and excluded from the published dataset.
-- **Full reproducibility**: All code, data, and results released under open licenses.
+- **JSS metric**: A formally defined score for judge decision consistency across semantically equivalent prompts. The metric itself is unaffected by the dataset defects, though it needs chance correction — see `src/metrics_v2.py`.
+- **Public dataset**: 500 rows spanning **202 unique prompt pairs over 75 unique underlying items**, across 4 evaluation task types. Per-task unique item counts are in [ERRATA.md](ERRATA.md).
+- **Empirical evaluation**: Thirteen LLM judges (GPT-5.5, GPT-4o, GPT-4o-mini, Claude Opus 4.7, Claude Sonnet 4.5, Claude Haiku 4.5, Gemini 2.5 Flash, LLaMA-3.1-70B, Mistral-7B, DeepSeek-R1, Qwen-2.5-72B, Qwen 3.6 Flash, DeepSeek-V4 Flash) across 4 task types. The observed coherence JSS spread (0.39–0.99) is large, but rests on 5 unique items and should be treated as provisional.
+- **Human validation**: All 500 prompt pairs were reviewed for paraphrase equivalence by **a single annotator**; 450 were labelled equivalent and 50 polarity-inverted Template 4 pairs non-equivalent. A previous version of this README claimed independent re-review by a second annotator; that claim is **not supported by the repository's annotation records and is withdrawn**.
+- **Reproducibility**: All code, data, and results released under open licenses. `scripts/data_audit.py` reproduces every figure in [ERRATA.md](ERRATA.md).
 
 ## Installation
 

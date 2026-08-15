@@ -6,20 +6,65 @@
 
 ---
 
+> ## ⚠️ This dataset should not be used
+>
+> The accompanying paper was **withdrawn from NeurIPS 2026** in July 2026 after
+> defects were verified against this released artifact. The dataset is smaller
+> than described, its stated provenance is inaccurate, and some ground-truth
+> labels are wrong. Details and reproducible numbers:
+> [ERRATA.md](https://github.com/rohithreddybc/judgeSense/blob/main/ERRATA.md).
+>
+> A rebuilt v2 dataset — 250 unique items per task loaded from the real upstream
+> benchmarks with per-item provenance — is in progress on the `v2-rebuild`
+> branch.
+
 ## Overview
 
-**JudgeSense** is a benchmark dataset of **500 hand-validated prompt pairs** for measuring prompt sensitivity in LLM-as-a-Judge evaluation systems. Each pair contains two differently phrased but semantically equivalent judge prompts applied to the same response, enabling rigorous measurement of how much a judge's decision changes due to prompt wording alone.
+**JudgeSense** is a benchmark dataset for measuring prompt sensitivity in
+LLM-as-a-Judge evaluation systems. Each row contains two differently phrased
+judge prompts applied to the same item, enabling measurement of how much a
+judge's decision changes due to prompt wording alone.
 
-All 500 pairs were independently validated by two human annotators with full agreement: 500 confirmed semantically equivalent; 50 pairs involving Template 4 (polarity-inverted) were labeled non-equivalent by both annotators and excluded before publication (see Appendix B of the paper).
+### Composition — corrected
 
-The dataset covers four evaluation task types:
+The dataset was previously described as 500 hand-validated prompt pairs. It
+contains **500 rows, spanning 202 unique prompt pairs over 75 unique underlying
+items**:
 
-| Task | Source | Pairs | Labels |
-|------|--------|-------|--------|
-| **Factuality** | TruthfulQA | 125 | accurate / inaccurate |
-| **Coherence** | SummEval | 125 | score_1 ... score_5 |
-| **Preference** | MT-Bench | 125 | A / B |
-| **Relevance** | BEIR | 125 | A / B |
+| Task | Rows | Unique items | Unique prompt pairs | Labels |
+|------|-----:|-------------:|--------------------:|--------|
+| **Factuality** | 125 | 60 | 80 | accurate / inaccurate |
+| **Coherence** | 125 | **5** | **25** | score_1 … score_5 |
+| **Preference** | 125 | 5 | 48 | A / B |
+| **Relevance** | 125 | 5 | 49 | A / B |
+
+### Provenance — corrected
+
+Records carry a `source_benchmark` field naming TruthfulQA, SummEval, MT-Bench,
+or BEIR. **Those strings are hardcoded constants.** The dataset builder contains
+no data-loading code — no download, no read from any source file — and every
+item is a Python literal written in the builder. The items are **not drawn from
+those benchmarks** and the field must not be relied on as provenance.
+
+### Ground-truth labels — corrected
+
+Coherence `ground_truth_label` values (`score_1` … `score_5`) are **enumeration
+indices, not coherence ratings**. They do not enter the JSS computation, which
+compares two prompt phrasings and never consults ground truth, but they are
+unusable for any accuracy evaluation.
+
+Additionally, **ten items carry contradictory ground truth** — identical judged
+content appearing with opposite correct answers (5 in relevance, 5 in
+preference).
+
+### Human validation — corrected
+
+All 500 pairs were reviewed for paraphrase equivalence by **a single annotator**
+(450 labelled equivalent, 50 polarity-inverted Template 4 pairs non-equivalent).
+
+A previous version of this card stated the pairs were independently validated by
+two human annotators with full agreement. **That claim is not supported by the
+annotation records — all 500 carry one annotator — and is withdrawn.**
 
 ---
 

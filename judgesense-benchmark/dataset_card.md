@@ -12,18 +12,43 @@ dataset_info:
 
 # Dataset Card — JudgeSense: A Benchmark for Prompt Sensitivity in LLM-as-a-Judge Systems
 
+> **⚠️ This dataset should not be used.** The accompanying paper was withdrawn
+> from NeurIPS 2026 in July 2026 after defects were verified against this
+> artifact. See
+> [ERRATA.md](https://github.com/rohithreddybc/judgeSense/blob/main/ERRATA.md).
+
 ## Summary
 
-JudgeSense is a benchmark of 500 hand-validated prompt pairs for evaluating prompt sensitivity in LLM-as-a-Judge systems. Each pair presents two differently phrased judge prompts applied to the same response, enabling measurement of how much a judge's decision changes due to prompt wording alone. The dataset spans four evaluation task types: factuality, coherence, preference, and relevance. Human validation (single annotator) confirmed 450 of the 500 pairs as semantically equivalent; the remaining 50 pairs involve Template 4 polarity inversion and are handled via label remapping rather than exclusion.
+JudgeSense is a benchmark for evaluating prompt sensitivity in LLM-as-a-Judge
+systems. Each row presents two differently phrased judge prompts applied to the
+same item, enabling measurement of how much a judge's decision changes due to
+prompt wording alone. The dataset spans four evaluation task types: factuality,
+coherence, preference, and relevance.
+
+**Corrected composition.** Previously described as 500 hand-validated prompt
+pairs, it contains **500 rows spanning 202 unique prompt pairs over 75 unique
+underlying items**. Human validation for paraphrase equivalence was performed by
+a **single annotator**, confirming 450 of 500 rows; the remaining 50 involve
+Template 4 polarity inversion.
 
 ## Tasks Covered
 
-| Task | Type | Source | Pairs | Label Space |
-|------|------|--------|-------|-------------|
-| Factuality | Pointwise binary | TruthfulQA | 125 | `accurate`, `inaccurate` |
-| Coherence | Pointwise Likert scale | SummEval | 125 | `score_1` … `score_5` |
-| Preference | Pairwise | MT-Bench | 125 | `A`, `B` |
-| Relevance | Pairwise | BEIR | 125 | `A`, `B` |
+**The `Source` column below does not describe actual provenance.** Those names
+are hardcoded constants in the dataset builder, which contains no data-loading
+code of any kind. The items are Python literals written in the builder and are
+**not drawn from TruthfulQA, SummEval, MT-Bench, or BEIR**. The column is
+retained only to document what the released files claim.
+
+| Task | Type | `source_benchmark` (inaccurate) | Rows | Unique items | Label Space |
+|------|------|--------|-----:|-------------:|-------------|
+| Factuality | Pointwise binary | TruthfulQA | 125 | 60 | `accurate`, `inaccurate` |
+| Coherence | Pointwise Likert scale | SummEval | 125 | **5** | `score_1` … `score_5` |
+| Preference | Pairwise | MT-Bench | 125 | 5 | `A`, `B` |
+| Relevance | Pairwise | BEIR | 125 | 5 | `A`, `B` |
+
+Coherence `ground_truth_label` values are **enumeration indices, not coherence
+ratings**. Ten items (5 relevance, 5 preference) carry contradictory ground
+truth — identical judged content with opposite correct answers.
 
 Human annotation confirmed 450 pairs as semantically equivalent (`semantic_equivalence_score` = 1.0). The 50 factuality pairs involving Template 4 carry inverted polarity and were labeled NO (non-equivalent label convention) in the human review; they remain in the dataset with their original `semantic_equivalence_score` = 1.0 for backward compatibility, but the evaluation code applies label remapping before computing JSS.
 
@@ -64,7 +89,9 @@ Higher JSS means more consistent judge behavior across prompt variants. Flip Rat
 
 - **English only**: All prompts and responses are in English.
 
-- **Simulated prompts**: The 500 responses being judged are drawn from public benchmark sources (TruthfulQA, SummEval, MT-Bench, BEIR) but the judge prompts are constructed for this benchmark. Real-world judge prompts may differ.
+- **Constructed items, not benchmark-sourced** *(corrected)*: an earlier version of this card stated the judged responses were drawn from TruthfulQA, SummEval, MT-Bench, and BEIR. They are not. Both the judged items and the judge prompts are constructed for this benchmark as literals in the dataset builder. Real-world judge prompts may differ, and the items carry none of the difficulty calibration of the named benchmarks.
+
+- **Very few unique items** *(corrected)*: 75 unique items across the whole dataset, and 5 for coherence — the task carrying the widest reported judge spread. Any statistic computed here has an effective sample size far below the row count, and confidence intervals in the accompanying paper were computed as if rows were independent.
 
 ## Citation
 
