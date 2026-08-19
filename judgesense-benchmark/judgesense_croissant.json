@@ -5,605 +5,105 @@
     "cr": "http://mlcommons.org/croissant/",
     "rai": "http://mlcommons.org/croissant/RAI/",
     "dct": "http://purl.org/dc/terms/",
-    "prov": "http://www.w3.org/ns/prov#",
     "sc": "https://schema.org/",
-    "citeAs": "cr:citeAs",
-    "column": "cr:column",
-    "conformsTo": "dct:conformsTo",
-    "data": {
-      "@id": "cr:data",
-      "@type": "@json"
-    },
-    "dataType": {
-      "@id": "cr:dataType",
-      "@type": "@vocab"
-    },
-    "examples": {
-      "@id": "cr:examples",
-      "@type": "@json"
-    },
-    "extract": "cr:extract",
-    "field": "cr:field",
-    "fileObject": "cr:fileObject",
-    "fileProperty": "cr:fileProperty",
-    "fileSet": "cr:fileSet",
-    "format": "cr:format",
-    "includes": "cr:includes",
-    "isLiveDataset": "cr:isLiveDataset",
-    "jsonPath": "cr:jsonPath",
-    "key": "cr:key",
-    "md5": "cr:md5",
-    "parentField": "cr:parentField",
-    "path": "cr:path",
-    "recordSet": "cr:recordSet",
-    "references": "cr:references",
-    "regex": "cr:regex",
-    "repeated": "cr:repeated",
-    "replace": "cr:replace",
-    "separator": "cr:separator",
-    "source": "cr:source",
-    "subField": "cr:subField",
-    "transform": "cr:transform"
+    "conformsTo": "dct:conformsTo"
   },
-
   "@type": "sc:Dataset",
-  "@id": "https://huggingface.co/datasets/anonymousreview111/judgesense-benchmark",
   "conformsTo": "http://mlcommons.org/croissant/1.1",
-
-  "name": "JudgeSense",
-  "description": "JudgeSense is a benchmark of 500 hand-validated prompt-paraphrase pairs for evaluating prompt sensitivity in LLM-as-a-Judge systems. Each pair presents two differently phrased but semantically equivalent judge prompts applied to the same response, enabling rigorous measurement of how a judge's decision changes due to prompt wording alone. The dataset spans four evaluation tasks: factuality (TruthfulQA, 125 pairs), coherence (SummEval, 125 pairs), preference (MT-Bench, 125 pairs), and relevance (BEIR, 125 pairs). The primary metric is the Judge Sensitivity Score (JSS): the fraction of pairs where both prompt variants elicit the same categorical decision from an LLM judge.",
-  "url": "https://huggingface.co/datasets/anonymousreview111/judgesense-benchmark",
+  "name": "JudgeSense-v2",
+  "description": "JudgeSense v2: prompt-paraphrase pairs for measuring prompt sensitivity in LLM-as-a-Judge systems. All judged items are loaded from public source datasets with per-item provenance; pairwise tasks present both candidate orderings by design.",
+  "version": "2.0-rebuild",
   "license": "https://creativecommons.org/licenses/by/4.0/",
-  "version": "2.0",
-  "datePublished": "2026-05-03",
-  "inLanguage": "en",
-
-  "keywords": [
-    "llm-as-a-judge",
-    "prompt sensitivity",
-    "benchmark",
-    "evaluation",
-    "judge sensitivity score",
-    "factuality",
-    "coherence",
-    "preference",
-    "relevance",
-    "natural language processing"
-  ],
-
   "creator": {
     "@type": "Person",
     "name": "Anonymous Author"
   },
-
-  "citeAs": "@misc{anonymous2026judgesense, title={JudgeSense: A Benchmark for Prompt Sensitivity in LLM-as-a-Judge Systems}, author={Anonymous Author}, year={2026}}",
-
   "isLiveDataset": false,
-
   "distribution": [
     {
       "@type": "cr:FileObject",
-      "@id": "factuality-jsonl",
+      "@id": "factuality-v2-jsonl",
       "name": "factuality.jsonl",
-      "description": "125 prompt-paraphrase pairs for factuality evaluation. Responses drawn from TruthfulQA. Binary labels: accurate or inaccurate. Template 4 (polarity-inverted) pairs were excluded before publication; their analysis is in Appendix B of the paper.",
-      "contentUrl": "https://huggingface.co/datasets/anonymousreview111/judgesense-benchmark/resolve/main/data/factuality.jsonl?download=true",
+      "description": "250 records over 250 unique source items for the factuality task. Every record carries a per-item provenance chain (source dataset, config, split, record id).",
+      "contentUrl": "data/factuality.jsonl",
       "encodingFormat": "application/jsonlines",
-      "sha256": "57cd76339888827b7a25956f0dd03e1c2c9f9c1c80804f4946d7b45a6bf1fe1a"
+      "sha256": "e27bae09fda688dbc6566eda114528fbdc83b6ae4b1fa3750f59a5275f742a67"
     },
     {
       "@type": "cr:FileObject",
-      "@id": "coherence-jsonl",
+      "@id": "coherence-v2-jsonl",
       "name": "coherence.jsonl",
-      "description": "125 prompt-paraphrase pairs for coherence evaluation. Responses drawn from SummEval. Likert-scale labels: score_1 through score_5.",
-      "contentUrl": "https://huggingface.co/datasets/anonymousreview111/judgesense-benchmark/resolve/main/data/coherence.jsonl?download=true",
+      "description": "250 records over 250 unique source items for the coherence task. Every record carries a per-item provenance chain (source dataset, config, split, record id).",
+      "contentUrl": "data/coherence.jsonl",
       "encodingFormat": "application/jsonlines",
-      "sha256": "6a2f7a5214694c1796f85d8f009af4fd2990b5254c63d8e50b82fa33ca0a2b80"
+      "sha256": "18081b1e6d74e7a8e6a95ab8a7ed7c1ae40a1f60ff08649ff1f44a89be57e180"
     },
     {
       "@type": "cr:FileObject",
-      "@id": "preference-jsonl",
-      "name": "preference.jsonl",
-      "description": "125 prompt-paraphrase pairs for pairwise preference evaluation. Responses drawn from MT-Bench. Binary choice labels: A or B.",
-      "contentUrl": "https://huggingface.co/datasets/anonymousreview111/judgesense-benchmark/resolve/main/data/preference.jsonl?download=true",
-      "encodingFormat": "application/jsonlines",
-      "sha256": "aed9cdf7496be3a11a09f01d4d168b3775456961e7098e8be939cb48d44886ad"
-    },
-    {
-      "@type": "cr:FileObject",
-      "@id": "relevance-jsonl",
+      "@id": "relevance-v2-jsonl",
       "name": "relevance.jsonl",
-      "description": "125 prompt-paraphrase pairs for pairwise relevance evaluation. Responses drawn from BEIR. Binary choice labels: A or B.",
-      "contentUrl": "https://huggingface.co/datasets/anonymousreview111/judgesense-benchmark/resolve/main/data/relevance.jsonl?download=true",
+      "description": "500 records over 250 unique source items for the relevance task. Every record carries a per-item provenance chain (source dataset, config, split, record id).",
+      "contentUrl": "data/relevance.jsonl",
       "encodingFormat": "application/jsonlines",
-      "sha256": "c49ba5386efb5392254c3342680c1ae328e96a23a819eafac33a6a03c1e6954b"
+      "sha256": "ca25feaeff1d522e5b97558c3aadc0db31982e542317e462768a04bdb99574be"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "preference-v2-jsonl",
+      "name": "preference.jsonl",
+      "description": "500 records over 250 unique source items for the preference task. Every record carries a per-item provenance chain (source dataset, config, split, record id).",
+      "contentUrl": "data/preference.jsonl",
+      "encodingFormat": "application/jsonlines",
+      "sha256": "a453467a6fa5c3d72dd1f5d1f9537d3ffca8ea954b9a9865b9bfd9ac58d3ac60"
     }
   ],
-
   "recordSet": [
     {
       "@type": "cr:RecordSet",
-      "@id": "factuality-records",
-      "name": "Factuality prompt-paraphrase pairs",
-      "description": "125 records for the factuality task. Source: TruthfulQA. Label space: accurate, inaccurate.",
+      "@id": "factuality-v2-records",
+      "name": "factuality prompt-paraphrase records (v2)",
+      "description": "250 records, 250 unique items, label space ['accurate', 'inaccurate'].",
       "source": {
-        "fileObject": { "@id": "factuality-jsonl" }
-      },
-      "field": [
-        {
-          "@type": "cr:Field",
-          "@id": "factuality-records/pair_id",
-          "name": "pair_id",
-          "description": "Unique pair identifier, e.g. fact_001 through fact_125.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "factuality-jsonl" },
-            "extract": { "column": "pair_id" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "factuality-records/task_type",
-          "name": "task_type",
-          "description": "Always 'factuality' for records in this file.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "factuality-jsonl" },
-            "extract": { "column": "task_type" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "factuality-records/source_benchmark",
-          "name": "source_benchmark",
-          "description": "Always 'TruthfulQA' for records in this file.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "factuality-jsonl" },
-            "extract": { "column": "source_benchmark" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "factuality-records/prompt_a",
-          "name": "prompt_a",
-          "description": "First judge prompt variant (Template A). Full prompt string including the response being judged.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "factuality-jsonl" },
-            "extract": { "column": "prompt_a" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "factuality-records/prompt_b",
-          "name": "prompt_b",
-          "description": "Second judge prompt variant (Template B). Semantically equivalent to prompt_a but differently phrased. All published pairs use non-polarity-inverted templates; Template 4 pairs were excluded before publication.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "factuality-jsonl" },
-            "extract": { "column": "prompt_b" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "factuality-records/response_being_judged",
-          "name": "response_being_judged",
-          "description": "The text being evaluated by the LLM judge, drawn from TruthfulQA.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "factuality-jsonl" },
-            "extract": { "column": "response_being_judged" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "factuality-records/ground_truth_label",
-          "name": "ground_truth_label",
-          "description": "Reference label from TruthfulQA. Values: accurate or inaccurate.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "factuality-jsonl" },
-            "extract": { "column": "ground_truth_label" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "factuality-records/semantic_equivalence_score",
-          "name": "semantic_equivalence_score",
-          "description": "Human-validated semantic equivalence score. 1.0 for all 125 factuality pairs. Template 4 polarity-inverted pairs were excluded before publication; their analysis appears in Appendix B of the paper.",
-          "dataType": "sc:Float",
-          "source": {
-            "fileObject": { "@id": "factuality-jsonl" },
-            "extract": { "column": "semantic_equivalence_score" }
-          }
+        "fileObject": {
+          "@id": "factuality-v2-jsonl"
         }
-      ]
+      }
     },
     {
       "@type": "cr:RecordSet",
-      "@id": "coherence-records",
-      "name": "Coherence prompt-paraphrase pairs",
-      "description": "125 records for the coherence task. Source: SummEval. Label space: score_1, score_2, score_3, score_4, score_5.",
+      "@id": "coherence-v2-records",
+      "name": "coherence prompt-paraphrase records (v2)",
+      "description": "250 records, 250 unique items, label space ['1', '2', '3', '4', '5'].",
       "source": {
-        "fileObject": { "@id": "coherence-jsonl" }
-      },
-      "field": [
-        {
-          "@type": "cr:Field",
-          "@id": "coherence-records/pair_id",
-          "name": "pair_id",
-          "description": "Unique pair identifier, e.g. cohe_001 through cohe_125.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "coherence-jsonl" },
-            "extract": { "column": "pair_id" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "coherence-records/task_type",
-          "name": "task_type",
-          "description": "Always 'coherence' for records in this file.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "coherence-jsonl" },
-            "extract": { "column": "task_type" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "coherence-records/source_benchmark",
-          "name": "source_benchmark",
-          "description": "Always 'SummEval' for records in this file.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "coherence-jsonl" },
-            "extract": { "column": "source_benchmark" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "coherence-records/prompt_a",
-          "name": "prompt_a",
-          "description": "First judge prompt variant (Template A). Full prompt string including the text being evaluated.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "coherence-jsonl" },
-            "extract": { "column": "prompt_a" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "coherence-records/prompt_b",
-          "name": "prompt_b",
-          "description": "Second judge prompt variant (Template B). Semantically equivalent to prompt_a, differently phrased.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "coherence-jsonl" },
-            "extract": { "column": "prompt_b" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "coherence-records/response_being_judged",
-          "name": "response_being_judged",
-          "description": "The text whose coherence is being rated, drawn from SummEval.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "coherence-jsonl" },
-            "extract": { "column": "response_being_judged" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "coherence-records/ground_truth_label",
-          "name": "ground_truth_label",
-          "description": "Reference coherence rating from SummEval. Values: score_1 through score_5.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "coherence-jsonl" },
-            "extract": { "column": "ground_truth_label" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "coherence-records/semantic_equivalence_score",
-          "name": "semantic_equivalence_score",
-          "description": "Human-validated semantic equivalence score. 1.0 for all 125 coherence pairs.",
-          "dataType": "sc:Float",
-          "source": {
-            "fileObject": { "@id": "coherence-jsonl" },
-            "extract": { "column": "semantic_equivalence_score" }
-          }
+        "fileObject": {
+          "@id": "coherence-v2-jsonl"
         }
-      ]
+      }
     },
     {
       "@type": "cr:RecordSet",
-      "@id": "preference-records",
-      "name": "Preference prompt-paraphrase pairs",
-      "description": "125 records for the pairwise preference task. Source: MT-Bench. Label space: A, B.",
+      "@id": "relevance-v2-records",
+      "name": "relevance prompt-paraphrase records (v2)",
+      "description": "500 records, 250 unique items, label space ['candidate_relevant'].",
       "source": {
-        "fileObject": { "@id": "preference-jsonl" }
-      },
-      "field": [
-        {
-          "@type": "cr:Field",
-          "@id": "preference-records/pair_id",
-          "name": "pair_id",
-          "description": "Unique pair identifier, e.g. pref_001 through pref_125.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "preference-jsonl" },
-            "extract": { "column": "pair_id" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "preference-records/task_type",
-          "name": "task_type",
-          "description": "Always 'preference' for records in this file.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "preference-jsonl" },
-            "extract": { "column": "task_type" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "preference-records/source_benchmark",
-          "name": "source_benchmark",
-          "description": "Always 'MT-Bench' for records in this file.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "preference-jsonl" },
-            "extract": { "column": "source_benchmark" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "preference-records/prompt_a",
-          "name": "prompt_a",
-          "description": "First judge prompt variant (Template A). Full pairwise preference prompt.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "preference-jsonl" },
-            "extract": { "column": "prompt_a" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "preference-records/prompt_b",
-          "name": "prompt_b",
-          "description": "Second judge prompt variant (Template B). Semantically equivalent to prompt_a.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "preference-jsonl" },
-            "extract": { "column": "prompt_b" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "preference-records/response_being_judged",
-          "name": "response_being_judged",
-          "description": "Two candidate responses (A and B) separated by ' | ', drawn from MT-Bench.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "preference-jsonl" },
-            "extract": { "column": "response_being_judged" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "preference-records/ground_truth_label",
-          "name": "ground_truth_label",
-          "description": "Reference preferred response from MT-Bench. Values: A or B.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "preference-jsonl" },
-            "extract": { "column": "ground_truth_label" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "preference-records/semantic_equivalence_score",
-          "name": "semantic_equivalence_score",
-          "description": "Human-validated semantic equivalence score. 1.0 for all 125 preference pairs.",
-          "dataType": "sc:Float",
-          "source": {
-            "fileObject": { "@id": "preference-jsonl" },
-            "extract": { "column": "semantic_equivalence_score" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "preference-records/ab_swapped",
-          "name": "ab_swapped",
-          "description": "Boolean flag indicating whether the A/B option order was swapped relative to the source benchmark to balance position bias. True for 62 of 125 pairs (B-correct); False for 63 pairs (A-correct). Enables balanced position-bias analysis.",
-          "dataType": "sc:Boolean",
-          "source": {
-            "fileObject": { "@id": "preference-jsonl" },
-            "extract": { "column": "ab_swapped" }
-          }
+        "fileObject": {
+          "@id": "relevance-v2-jsonl"
         }
-      ]
+      }
     },
     {
       "@type": "cr:RecordSet",
-      "@id": "relevance-records",
-      "name": "Relevance prompt-paraphrase pairs",
-      "description": "125 records for the pairwise relevance task. Source: BEIR. Label space: A, B.",
+      "@id": "preference-v2-records",
+      "name": "preference prompt-paraphrase records (v2)",
+      "description": "500 records, 250 unique items, label space ['candidate_1', 'candidate_2'].",
       "source": {
-        "fileObject": { "@id": "relevance-jsonl" }
-      },
-      "field": [
-        {
-          "@type": "cr:Field",
-          "@id": "relevance-records/pair_id",
-          "name": "pair_id",
-          "description": "Unique pair identifier, e.g. relv_001 through relv_125.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "relevance-jsonl" },
-            "extract": { "column": "pair_id" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "relevance-records/task_type",
-          "name": "task_type",
-          "description": "Always 'relevance' for records in this file.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "relevance-jsonl" },
-            "extract": { "column": "task_type" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "relevance-records/source_benchmark",
-          "name": "source_benchmark",
-          "description": "Always 'BEIR' for records in this file.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "relevance-jsonl" },
-            "extract": { "column": "source_benchmark" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "relevance-records/prompt_a",
-          "name": "prompt_a",
-          "description": "First judge prompt variant (Template A). Full pairwise relevance prompt.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "relevance-jsonl" },
-            "extract": { "column": "prompt_a" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "relevance-records/prompt_b",
-          "name": "prompt_b",
-          "description": "Second judge prompt variant (Template B). Semantically equivalent to prompt_a.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "relevance-jsonl" },
-            "extract": { "column": "prompt_b" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "relevance-records/response_being_judged",
-          "name": "response_being_judged",
-          "description": "Two candidate documents (A and B) separated by ' | ', drawn from BEIR.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "relevance-jsonl" },
-            "extract": { "column": "response_being_judged" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "relevance-records/ground_truth_label",
-          "name": "ground_truth_label",
-          "description": "Reference more-relevant document from BEIR. Values: A or B.",
-          "dataType": "sc:Text",
-          "source": {
-            "fileObject": { "@id": "relevance-jsonl" },
-            "extract": { "column": "ground_truth_label" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "relevance-records/semantic_equivalence_score",
-          "name": "semantic_equivalence_score",
-          "description": "Human-validated semantic equivalence score. 1.0 for all 125 relevance pairs.",
-          "dataType": "sc:Float",
-          "source": {
-            "fileObject": { "@id": "relevance-jsonl" },
-            "extract": { "column": "semantic_equivalence_score" }
-          }
-        },
-        {
-          "@type": "cr:Field",
-          "@id": "relevance-records/ab_swapped",
-          "name": "ab_swapped",
-          "description": "Boolean flag indicating whether the A/B option order was swapped relative to the source benchmark to balance position bias. True for 63 of 125 pairs (B-correct); False for 62 pairs (A-correct). Enables balanced position-bias analysis.",
-          "dataType": "sc:Boolean",
-          "source": {
-            "fileObject": { "@id": "relevance-jsonl" },
-            "extract": { "column": "ab_swapped" }
-          }
+        "fileObject": {
+          "@id": "preference-v2-jsonl"
         }
-      ]
+      }
     }
   ],
-
-  "prov:wasDerivedFrom": [
-    {
-      "@type": "sc:Dataset",
-      "name": "TruthfulQA",
-      "url": "https://github.com/sylinrl/TruthfulQA",
-      "description": "Source of the 125 responses used in the factuality task."
-    },
-    {
-      "@type": "sc:Dataset",
-      "name": "SummEval",
-      "url": "https://github.com/Yale-LILY/SummEval",
-      "description": "Source of the 125 texts used in the coherence task."
-    },
-    {
-      "@type": "sc:Dataset",
-      "name": "MT-Bench",
-      "url": "https://github.com/lm-sys/FastChat",
-      "description": "Source of the 125 response pairs used in the preference task."
-    },
-    {
-      "@type": "sc:Dataset",
-      "name": "BEIR",
-      "url": "https://github.com/beir-cellar/beir",
-      "description": "Source of the 125 document pairs used in the relevance task."
-    }
-  ],
-
-  "prov:wasGeneratedBy": {
-    "@type": "prov:Activity",
-    "name": "JudgeSense Benchmark Construction",
-    "description": "Prompt-paraphrase pairs were constructed by applying five manually written judge-prompt templates (T1-T5) to each item drawn from four source benchmarks. Semantic equivalence was validated by a single human annotator reviewing all 500 pairs, with a supplementary GPT-4o-mini cross-check on a 10% random sample. The Template-4 polarity-inverted factuality pairs were identified post-hoc and excluded from the published dataset; their effect on JSS is analyzed in Appendix B of the paper."
-  },
-
-  "rai:hasSyntheticData": false,
-
-  "rai:dataCollection": "Prompt-paraphrase pairs were constructed by the authors by applying five manually written judge-prompt templates (T1-T5) to each item drawn from four public benchmarks: TruthfulQA (factuality), SummEval (coherence), MT-Bench (preference), and BEIR (relevance). Each pair consists of two templates applied to the same response, forming a semantically equivalent judgment request with different surface phrasing. No new human subjects were recruited and no surveys or interviews were conducted. The responses being judged are verbatim items from the source benchmarks and were not modified.",
-
-  "rai:dataCollectionType": "Manually created / Benchmark construction from existing public datasets",
-
-  "rai:dataCollectionMissingData": "Six factuality items were excluded during curation due to non-equivalent prompt wording (not attributable to polarity inversion). The 50 Template-4 (T4) factuality pairs involving polarity inversion were excluded before publication and are not present in the published factuality.jsonl; their analysis appears in Appendix B of the paper. No other data was intentionally withheld.",
-
-  "rai:dataPreprocessingProtocol": "Source benchmark items were selected to provide a representative spread of difficulty levels and label classes. No text normalization, tokenization, or filtering was applied to the source responses. Five judge-prompt templates per task were written by the authors to systematically vary phrasing, instruction style, and label wording while preserving evaluation intent. Template 4 for the factuality task was identified post-hoc as polarity-inverted and excluded from the published dataset before release. Preference and relevance pairs include an ab_swapped field indicating whether the A/B option order was swapped to balance position bias across the dataset.",
-
-  "rai:dataAnnotationProtocol": "Semantic equivalence validation was performed by two human annotators. The primary annotator independently reviewed all 500 published prompt pairs; a second annotator independently reviewed a random subset for inter-annotator reliability measurement. For each pair, each annotator judged whether the two prompt variants convey the same evaluation intent. Annotation options were YES (semantically equivalent), NO (not equivalent), and UNSURE. The primary validation pass was conducted independently; inter-annotator agreement was computed on the overlapping subset.",
-
-  "rai:dataAnnotationPlatform": "In-house manual annotation; no crowdsourcing platform was used. A supplementary automated pass used GPT-4o-mini (OpenAI Chat Completions API, temperature=0) as a semantic-equivalence classifier to cross-check human judgments on a random 10% subset of pairs.",
-
-  "rai:dataAnnotationAnalysis": "Two annotators; inter-annotator agreement measured on a random subset. Primary annotator outcome: all 500 published pairs marked YES (semantically equivalent); 0 UNSURE. Template-4 polarity-inverted factuality pairs were annotated NO and excluded before publication. Automated GPT-4o-mini cross-check agreed with the primary human annotation on 100% of the reviewed 50-pair random sample.",
-
-  "rai:dataSocialImpact": "JudgeSense is a diagnostic benchmark for auditing LLM evaluation pipelines. It does not contain personal data, demographic information, or user-generated content from real individuals. The primary societal benefit is improving transparency in automated NLP evaluation: LLM judges are increasingly used as proxies for human evaluation, and undetected prompt sensitivity can silently bias research conclusions, model rankings, and deployment decisions. No harmful, offensive, or dual-use content is present in the dataset.",
-
-  "rai:dataBiases": "1. English-only: all prompts and responses are in English; findings may not generalize to multilingual judge settings. 2. Template coverage: only 5 paraphrase templates per task; other phrasing variations may produce different sensitivity profiles. 3. Two-annotator equivalence validation with inter-annotator agreement on a subset; full-dataset agreement is available only from the primary annotator. 4. Source benchmark bias: items drawn from TruthfulQA, SummEval, MT-Bench, and BEIR; task difficulty distributions reflect those benchmarks. 5. Template-4 polarity-inversion artifact (factuality): uncorrected analyses will overestimate flip rates. 6. Position bias in pairwise tasks: 12 of 13 tested judges systematically select option A in preference and relevance tasks.",
-
-  "rai:dataUseCases": "Primary intended use: auditing LLM judges for prompt sensitivity using the Judge Sensitivity Score (JSS) metric. Secondary uses: prompt engineering research; meta-evaluation to detect prompt-induced artifacts in automated evaluation pipelines; comparative benchmarking of LLM judge models on decision consistency. Out-of-scope uses: training or fine-tuning LLMs; evaluating factual knowledge; leaderboard competition (no held-out test split).",
-
-  "rai:dataLimitations": "1. Two human annotators; full-dataset inter-annotator agreement computed on a random subset only — primary annotator reviewed all 500 pairs. 2. Only 5 prompt templates per task; broader coverage may reveal additional sensitivity patterns. 3. English-only. 4. Pairwise sensitivity only: each record compares exactly two prompt variants. 5. Source responses are from academic benchmarks and may not reflect real-world LLM output distributions. 6. Template-4 polarity-inverted factuality pairs are excluded from the published dataset; analyses wishing to study the polarity-inversion effect must reconstruct T4 pairs from the template inventory in Appendix A of the paper. 7. Position bias renders preference and relevance JSS values degenerate for most tested models under fixed A/B order; the ab_swapped field enables balanced-order analysis.",
-
-  "rai:dataSensitiveElement": "None. The dataset contains no personal identifiable information (PII), no demographic data, no health or financial data, no user-generated content from identifiable real individuals, and no content that could identify specific persons.",
-
-  "rai:personalSensitiveInformation": "None. No gender, health, socioeconomic, geographic, linguistic, age, cultural, political, or religious information about individuals is present in the dataset.",
-
-  "rai:annotationsPerItem": "1 (primary); 2 (on IAA subset)",
-
-  "rai:annotatorDemographics": "Two annotators: (1) primary annotator — NLP researcher with domain expertise in LLM evaluation and benchmark design, reviewed all 500 published pairs; (2) secondary annotator — independently reviewed a random subset for inter-annotator agreement measurement. No additional demographic information was collected, consistent with the in-house design and the absence of a human-subjects research protocol.",
-
-  "rai:machineAnnotationTools": "GPT-4o-mini (OpenAI, model gpt-4o-mini) used as a supplementary semantic-equivalence classifier to cross-check human annotations on a 10% random sample (50 pairs). Queried via the OpenAI Chat Completions API at temperature=0. The primary annotation is human; the automated pass is supplementary validation only."
+  "rai:hasSyntheticData": true,
+  "rai:syntheticDataExplanation": "The judged texts include machine-generated content drawn verbatim from the source benchmarks (SummEval machine summaries; MT-Bench model responses). Judge prompt templates are author-written paraphrases. Item texts and ground-truth labels are taken verbatim from the source datasets \u2014 none are authored in this repository. Source datasets present in the built data: ['BeIR/trec-covid', 'lmsys/mt_bench_human_judgments', 'mteb/summeval', 'truthful_qa'].",
+  "rai:dataCollection": "Items are loaded programmatically from public datasets on the Hugging Face Hub by src/data_sources.py; every record carries the source dataset id, config, split, and per-record id. The build fails if any source is unavailable \u2014 no items are authored or synthesized by the builder."
 }
