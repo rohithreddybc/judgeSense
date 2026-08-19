@@ -471,8 +471,135 @@ def repeat_baseline_jss(records: Sequence[dict], unclear_policy: str = "disagree
     this. v1 had no such control, so its JSS numbers conflate prompt
     sensitivity with ordinary decoding variance and no published figure can
     separate the two.
+
+    `records` here are repeat-pair decision records — see
+    `src/repeat_baseline.py` for the call-record contract and
+    `build_repeat_pairs()`, which turns per-call runner output into the
+    `decision_a`/`decision_b` shape this function (and `jss_repeat_delta`
+    below) expect.
     """
     return jss(records, unclear_policy=unclear_policy)
+
+
+def jss_repeat_delta(
+    paraphrase_records: Sequence[dict],
+    repeat_records: Sequence[dict],
+    cluster_unit: str,
+    unclear_policy: str = "disagree",
+    n_bootstrap: int = 2000,
+    confidence: float = 0.95,
+    seed: int = 42,
+) -> dict:
+    """
+    JSS reported as a DELTA from the repeat-baseline ceiling: JSS - JSS_rep.
+
+    A raw JSS number cannot say whether a judge is sensitive to rewording or
+    just noisy at temperature 0: JSS=0.90 means nothing on its own. Paired
+    against JSS_rep=0.90 it means "no measurable paraphrase sensitivity";
+    paired against JSS_rep=1.00 it means the judge is a perfect self-repeater
+    that nonetheless moves 10% of the time under rewording — real sensitivity.
+
+    `paraphrase_records` (decision_a/decision_b = the two paraphrase arms,
+    e.g. P1/P2 on the instruction axis or S0/Sk on the structural axis) and
+    `repeat_records` (decision_a/decision_b = call 1/call 2 of the SAME S0
+    prompt, from `build_repeat_pairs`) both carry `item_id`. Every item in
+    this suite contributes exactly one paraphrase-arm comparison AND one
+    repeat-arm comparison from a SHARED S0 call context, so the two are not
+    independent: pooling them into two separate bootstraps and subtracting
+    the two point estimates (or worse, their CIs) would silently assume
+    independence between arms that share an item. This function instead
+    resamples ITEMS jointly, one draw per bootstrap replicate, and computes
+    both JSS and JSS_rep from that single draw before taking the delta.
+
+    `cluster_unit` must be passed explicitly (no default), echoing the
+    module-wide contract that `CLUSTER_UNITS` = ("row", "structural_pair",
+    "prompt_pair", "item") is never assumed. For THIS paired computation only
+    "item" is accepted: the repeat arm exists at one row per (judge, item)
+    (docs/V2_1_STRUCTURAL_AXIS.md §3, "S0 is issued twice per item"), so any
+    finer declared unit has no corresponding repeat-side granularity to pair
+    against — resampling at "row"/"prompt_pair"/"structural_pair" would have
+    to either duplicate the single repeat row across sub-clusters (fabricating
+    within-item independence it doesn't have) or drop the pairing entirely.
+    Item is the coarsest node in the nesting hierarchy the module already
+    treats as mandatory on the structural axis (§4); this generalizes that
+    same mandate to any repeat-baseline delta.
+
+    Only items present in BOTH inputs contribute; the counts of
+    paraphrase-only and repeat-only items are reported so a caller can see if
+    the two record sets are mismatched.
+
+    Returns {"jss", "jss_rep", "delta", "ci_lower", "ci_upper", "cluster_unit",
+    "n_clusters", "n_items_paraphrase_only", "n_items_repeat_only",
+    "n_bootstrap", "confidence", "unclear_policy"}.
+    """
+    if cluster_unit not in CLUSTER_UNITS:
+        raise ValueError(f"cluster_unit must be one of {CLUSTER_UNITS}, got {cluster_unit!r}")
+    if cluster_unit != "item":
+        raise ValueError(
+            "jss_repeat_delta requires cluster_unit='item': the repeat arm "
+            "exists at one row per (judge, item), so pairing it against a "
+            "finer declared unit "
+            f"({[u for u in CLUSTER_UNITS if u != 'item']}) would either "
+            "fabricate within-item independence the repeat arm doesn't have, "
+            "or silently drop the pairing. Item is the coarsest shared node "
+            "and is always a valid resampling unit for data nested beneath it."
+        )
+
+    para_by_item: Dict[str, List[dict]] = {}
+    for r in paraphrase_records:
+        if "item_id" not in r:
+            raise KeyError("paraphrase record missing 'item_id' required for jss_repeat_delta")
+        para_by_item.setdefault(r["item_id"], []).append(r)
+    rep_by_item: Dict[str, List[dict]] = {}
+    for r in repeat_records:
+        if "item_id" not in r:
+            raise KeyError("repeat record missing 'item_id' required for jss_repeat_delta")
+        rep_by_item.setdefault(r["item_id"], []).append(r)
+
+    shared_items = sorted(set(para_by_item) & set(rep_by_item))
+    if not shared_items:
+        raise ValueError(
+            "No items with both a paraphrase-arm record and a repeat-arm "
+            "record; the delta is undefined without a shared S0 context."
+        )
+    n_para_only = len(set(para_by_item) - set(rep_by_item))
+    n_rep_only = len(set(rep_by_item) - set(para_by_item))
+
+    def _point(items: Sequence[str]) -> Tuple[float, float]:
+        para = [r for it in items for r in para_by_item[it]]
+        rep = [r for it in items for r in rep_by_item[it]]
+        return (
+            jss(para, unclear_policy=unclear_policy),
+            jss(rep, unclear_policy=unclear_policy),
+        )
+
+    jss_full, jss_rep_full = _point(shared_items)
+    delta_full = jss_full - jss_rep_full
+
+    rng = np.random.default_rng(seed)
+    n_items = len(shared_items)
+    deltas = []
+    for _ in range(n_bootstrap):
+        idxs = rng.integers(0, n_items, size=n_items)
+        sampled_items = [shared_items[i] for i in idxs]
+        j_p, j_r = _point(sampled_items)
+        deltas.append(j_p - j_r)
+
+    alpha = 1.0 - confidence
+    return {
+        "jss": jss_full,
+        "jss_rep": jss_rep_full,
+        "delta": delta_full,
+        "ci_lower": float(np.percentile(deltas, 100 * alpha / 2)),
+        "ci_upper": float(np.percentile(deltas, 100 * (1 - alpha / 2))),
+        "cluster_unit": cluster_unit,
+        "n_clusters": n_items,
+        "n_items_paraphrase_only": n_para_only,
+        "n_items_repeat_only": n_rep_only,
+        "n_bootstrap": n_bootstrap,
+        "confidence": confidence,
+        "unclear_policy": unclear_policy,
+    }
 
 
 def format_failure_rate(records: Sequence[dict], side: str = "b") -> dict:

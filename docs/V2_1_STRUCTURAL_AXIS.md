@@ -180,9 +180,65 @@ gate's effective-sample-size check is declared at `cluster_unit="item"`.
   polarity-word drift, declared `cluster_unit`. Nothing in the gate needs
   weakening.
 
-## 7. Open item carried into implementation
+## 7. Repeat baseline: implemented vs outstanding
 
-`JSS_rep` should be backfilled onto the instruction axis as well, not only
-the structural axis. Without a same-prompt repeat baseline, any JSS number
-conflates prompt sensitivity with decoding variance — which applies to the
-v2 main results exactly as much as it does here.
+`JSS_rep` is backfilled onto the main instruction axis, not only the
+structural axis, per the open item this section previously carried. Without
+a same-prompt repeat baseline, any JSS number conflates prompt sensitivity
+with decoding variance — which applies to the v2 main results exactly as
+much as it does here.
+
+**Implemented** (protocol + metrics + tests, no judge calls made):
+
+- **Call-record and repeat-pair contract** (`src/repeat_baseline.py`). A
+  runner logs one dict per API call, tagged `repeat_index` (1 or 2) when the
+  call is a repeat of the S0/baseline arm; single-shot arms (P1/P2, S1-S5)
+  leave it unset. `build_repeat_pairs()` collapses the two S0 calls for an
+  item into one decision record (`decision_a`/`decision_b`, `item_id`,
+  `repeat_pair_id`, `arm_a`/`arm_b`), rejecting incomplete pairs, duplicate
+  `repeat_index`, and `repeat_index` set on a non-S0 arm. The result is
+  consumable directly by the existing `jss`/`chance_corrected_jss`/
+  `cluster_bootstrap_ci` machinery in `src/metrics_v2.py` — no new cluster
+  key was needed, since `item_id` already drives `cluster_unit="item"`.
+- **Delta reporting** (`jss_repeat_delta` in `src/metrics_v2.py`). Reports
+  JSS, JSS_rep, and `delta = JSS - JSS_rep` together, with a percentile
+  bootstrap CI computed by resampling ITEMS jointly — one draw per replicate
+  feeds both the paraphrase-arm and repeat-arm point estimates — because a
+  paraphrase comparison and its item's repeat comparison share the same S0
+  call context and are not independent. `cluster_unit` must be passed
+  explicitly (no default) and only `"item"` is accepted for this paired
+  computation: the repeat arm has no finer-than-item granularity to pair
+  against, so `"row"`/`"prompt_pair"`/`"structural_pair"` are rejected with
+  an explanatory error rather than silently faked.
+- **Budget stated in advance** (`src/judge_registry.py`). `run_plan()`
+  gained an opt-in `repeat_calls_per_judge` parameter (default 0, so every
+  prior caller and its numbers are unchanged) that reports
+  `calls_per_judge_with_repeat` / `total_calls_with_repeat` alongside the
+  existing fields. `main_axis_run_plan()` states the main-axis cost
+  concretely: base cost is 1,500 rows × 2 prompt arms = 3,000 calls/judge;
+  the repeat baseline adds one S0 call per ITEM (pairwise orderings of the
+  same item share one S0 context, exactly as on the structural axis), i.e.
+  1,000 extra calls/judge (1,000 unique items: 250 factuality + 250
+  coherence + 250 relevance + 250 preference, pairwise item counts halved
+  from their row counts). Total across the 14 verified judges: 42,000 calls
+  without the repeat arm, 56,000 with it (+14,000, +33%).
+- Tests: `tests/test_repeat_baseline.py` (contract) and additions to
+  `tests/test_metrics_v2.py` / `tests/test_judge_registry.py` (delta
+  computation, paired-vs-independent bootstrap behavior, budget totals), all
+  on hand-built fixtures — no dataset rows, no judge calls.
+
+**Outstanding — none of this has been run:**
+
+- No runner change exists yet to actually issue the second S0 call; a
+  runner must be extended to emit `repeat_index`-tagged call records for
+  `build_repeat_pairs()` to consume, on both axes.
+- No repeat-baseline data has been collected for either axis, so there are
+  no `JSS_rep` numbers, no deltas, and no filled-in confidence intervals for
+  any real judge yet — only the fixture-verified computation exists.
+- The structural axis's own repeat arm (§3, "S0 is issued twice per item")
+  was already budgeted (§5) but is equally unrun; `jss_repeat_delta` applies
+  to it identically once that data exists, keyed the same way by `item_id`.
+- Whether providers hold model versions stable across the two calls of a
+  repeat pair (§6, "residual risk only if providers change models mid-run")
+  is a run-time operational concern this implementation does not address;
+  pinning and timestamp logging remain future runner work.
