@@ -17,12 +17,15 @@ data is unavailable.
 from __future__ import annotations
 
 import hashlib
+import math
 import random
+import re
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Tuple
 
-LOADER_VERSION = "2.0.0"
+LOADER_VERSION = "2.1.0"
 
 # Number of unique items each task loader targets (audit-gated minimum is
 # declared separately in data/audit_config.json).
@@ -111,6 +114,76 @@ def _require_columns(ds, dataset_id: str, columns: List[str]) -> None:
 
 def _stable_hash(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:12]
+
+
+DIFFICULTIES = ("hard", "easy")
+
+
+def _require_difficulty(difficulty: str) -> None:
+    if difficulty not in DIFFICULTIES:
+        raise ValueError(
+            f"difficulty must be one of {DIFFICULTIES}, got {difficulty!r}"
+        )
+
+
+# ── Lexical retrieval (hard-negative mining for the relevance task) ─────────
+#
+# A compact BM25 index over the real corpus, used ONLY to *select* which real
+# corpus document serves as the non-relevant candidate. It never generates
+# text and never assigns relevance labels: the relevance ground truth remains
+# qrels, exactly as before. Scores are recorded per item so the difficulty of
+# every pairing is auditable.
+
+_TOKEN_RE = re.compile(r"[a-z0-9]+")
+
+
+def _tokenize(text: str) -> List[str]:
+    return _TOKEN_RE.findall(text.lower())
+
+
+class _BM25Index:
+    """Minimal Okapi BM25 over an in-memory corpus (no extra dependencies)."""
+
+    def __init__(self, docs: Dict[str, str], k1: float = 1.5, b: float = 0.75):
+        self.k1 = k1
+        self.b = b
+        self.doc_ids: List[str] = sorted(docs.keys())
+        self.doc_len: List[int] = []
+        self.postings: Dict[str, Dict[int, int]] = defaultdict(dict)
+        for i, did in enumerate(self.doc_ids):
+            toks = _tokenize(docs[did])
+            self.doc_len.append(len(toks))
+            for term, tf in Counter(toks).items():
+                self.postings[term][i] = tf
+        self.n_docs = len(self.doc_ids)
+        self.avg_len = (sum(self.doc_len) / self.n_docs) if self.n_docs else 0.0
+
+    def scores(self, query: str) -> Dict[int, float]:
+        """BM25 score for every doc sharing at least one term with `query`."""
+        acc: Dict[int, float] = defaultdict(float)
+        for term in set(_tokenize(query)):
+            postings = self.postings.get(term)
+            if not postings:
+                continue
+            df = len(postings)
+            idf = math.log((self.n_docs - df + 0.5) / (df + 0.5) + 1.0)
+            for i, tf in postings.items():
+                norm = tf + self.k1 * (1 - self.b + self.b * self.doc_len[i] / self.avg_len)
+                acc[i] += idf * tf * (self.k1 + 1) / norm
+        return acc
+
+    def ranked(self, query: str) -> List[Tuple[str, float]]:
+        """All docs ranked by descending BM25 score, doc-id tiebreak.
+
+        Docs sharing no term with the query score 0.0 and rank after every
+        scored doc; the doc-id tiebreak keeps the ordering deterministic.
+        """
+        acc = self.scores(query)
+        order = sorted(
+            range(self.n_docs),
+            key=lambda i: (-acc.get(i, 0.0), self.doc_ids[i]),
+        )
+        return [(self.doc_ids[i], acc.get(i, 0.0)) for i in order]
 
 
 # ── Task 1: factuality ← TruthfulQA ─────────────────────────────────────────
@@ -284,15 +357,31 @@ def load_relevance_items(
     seed: int = 42,
     corpus_id: str = "BeIR/scifact",
     qrels_id: str = "BeIR/scifact-qrels",
+    difficulty: str = "hard",
     _loader: Optional[Callable] = None,
 ) -> List[SourceItem]:
     """
     Relevance items from BEIR SciFact: a query, its qrels-relevant document,
-    and a deterministically sampled non-relevant document from the same
-    corpus. Both documents are real corpus records; the pairing procedure
-    (not the texts or the relevance label) is constructed, and both document
-    ids are recorded in the provenance chain.
+    and a non-relevant document from the same corpus. Both documents are real
+    corpus records; the pairing procedure (not the texts or the relevance
+    label) is constructed, and both document ids are recorded in the
+    provenance chain.
+
+    difficulty selects HOW the non-relevant document is chosen — never what
+    it is labeled (the label is always qrels):
+
+    - "hard" (default): the corpus document with the HIGHEST BM25 score for
+      the query that is not in the query's qrels — a distractor from the same
+      topical neighbourhood. The previous random pairing produced distractors
+      so unrelated that 11/13 judges scored exactly 1.000, so the task could
+      not discriminate.
+    - "easy": the previous behavior — a seeded random corpus document not in
+      the query's qrels.
+
+    Either way the item records the BM25 score of both candidates and the
+    positive-minus-negative score gap, so per-item difficulty is auditable.
     """
+    _require_difficulty(difficulty)
     loader = _loader or _load_hf_dataset
     corpus = loader(corpus_id, "corpus", "corpus")
     queries = loader(corpus_id, "queries", "queries")
@@ -317,8 +406,15 @@ def load_relevance_items(
     qids = sorted(relevant.keys())
     rng.shuffle(qids)
 
+    # Index the real corpus once; used to select (hard) or audit (easy) the
+    # negative. Selection only — text and labels still come from the corpus
+    # and qrels untouched.
+    index = _BM25Index(corpus_by_id)
+
     retrieved_at = _now_iso()
     items: List[SourceItem] = []
+    used_pairs: set = set()
+    n_excluded_duplicate = 0
     for qid in qids:
         if len(items) >= n_items:
             break
@@ -327,15 +423,52 @@ def load_relevance_items(
         pos_text = corpus_by_id.get(pos_id, "")
         if not query or not pos_text:
             continue
-        # Deterministic negative: sample until we hit a doc not relevant to qid.
+
+        ranked = index.ranked(query)
+        rank_of = {did: (r, score) for r, (did, score) in enumerate(ranked, start=1)}
+
+        def _eligible(did: str) -> bool:
+            # A byte-identical twin of the positive would render both displayed
+            # candidates the same, which no answer can satisfy.
+            return (
+                did not in relevant_sets[qid]
+                and bool(corpus_by_id[did])
+                and corpus_by_id[did] != pos_text
+            )
+
         neg_id = None
-        for _ in range(100):
-            cand = all_doc_ids[rng.randrange(len(all_doc_ids))]
-            if cand not in relevant_sets[qid] and corpus_by_id[cand]:
-                neg_id = cand
-                break
+        if difficulty == "hard":
+            # Highest-BM25 corpus doc not in this query's qrels: a real
+            # same-neighbourhood distractor. Deterministic (score, doc-id
+            # ranking), no rng involved.
+            for did, _score in ranked:
+                if _eligible(did):
+                    neg_id = did
+                    break
+        else:
+            # "easy": the original seeded random sample, byte-compatible with
+            # the pre-2.1.0 pairing for the same seed.
+            for _ in range(100):
+                cand = all_doc_ids[rng.randrange(len(all_doc_ids))]
+                if _eligible(cand):
+                    neg_id = cand
+                    break
         if neg_id is None:
             continue
+
+        # SciFact queries are claims; several claims can share one qrels doc,
+        # and hard mining then tends to hand them the same top distractor too.
+        # The judge sees candidate content, not the query, so an unordered
+        # repeat of the same two texts is a duplicate item (and, if the roles
+        # reverse, an outright label contradiction). Ship each pair once.
+        pair_sig = (min(pos_text, corpus_by_id[neg_id]), max(pos_text, corpus_by_id[neg_id]))
+        if pair_sig in used_pairs:
+            n_excluded_duplicate += 1
+            continue
+        used_pairs.add(pair_sig)
+
+        neg_rank, neg_score = rank_of[neg_id]
+        pos_score = rank_of[pos_id][1]
         items.append(
             SourceItem(
                 item_id=f"relv_scifact_{qid}",
@@ -355,7 +488,16 @@ def load_relevance_items(
                         "relevant_doc_id": pos_id,
                         "nonrelevant_doc_id": neg_id,
                         "qrels_dataset": qrels_id,
-                        "pairing": "constructed: qrels-positive vs seeded corpus sample",
+                        "pairing": (
+                            "constructed: qrels-positive vs top-BM25 non-qrels doc"
+                            if difficulty == "hard"
+                            else "constructed: qrels-positive vs seeded corpus sample"
+                        ),
+                        "difficulty": difficulty,
+                        "neg_bm25_score": f"{neg_score:.4f}",
+                        "neg_bm25_rank": str(neg_rank),
+                        "pos_bm25_score": f"{pos_score:.4f}",
+                        "bm25_score_gap": f"{pos_score - neg_score:.4f}",
                     },
                     retrieved_at=retrieved_at,
                 ),
@@ -369,7 +511,8 @@ def load_relevance_items(
     if len(items) < n_items:
         raise DataSourceSchemaError(
             f"BEIR SciFact yielded only {len(items)} usable query-document "
-            f"pairs (requested {n_items}); refusing to pad."
+            f"pairs (requested {n_items}, {n_excluded_duplicate} excluded as "
+            f"duplicate document pairs); refusing to pad."
         )
     return items
 
@@ -382,6 +525,7 @@ def load_preference_items(
     dataset_id: str = "lmsys/mt_bench_human_judgments",
     config: Optional[str] = None,
     split: str = "human",
+    difficulty: str = "hard",
     _loader: Optional[Callable] = None,
 ) -> List[SourceItem]:
     """
@@ -389,7 +533,22 @@ def load_preference_items(
     (model_a vs model_b, turn 1) with real human preference votes. Where a
     (question, model_a, model_b) pair has multiple votes, the majority is
     used and the tally recorded; ties and no-majority pairs are excluded.
+
+    difficulty selects WHICH majority-labeled comparisons ship — never the
+    label, which is always the recorded human majority:
+
+    - "hard" (default): comparisons ordered by ascending vote-margin ratio
+      (winner votes − loser votes, over all votes incl. ties), then ascending
+      absolute margin — i.e. the most CONTESTED comparisons first. The
+      previous uniform selection was dominated by unanimous pairs, and 11/13
+      judges scored exactly 1.000.
+    - "easy": the same pool ordered by descending margin ratio then
+      descending margin — the most decisively won comparisons first.
+
+    Each item records its vote margin, margin ratio, and total vote count in
+    `source_fields`, so per-item difficulty is auditable.
     """
+    _require_difficulty(difficulty)
     ds = (_loader or _load_hf_dataset)(dataset_id, config, split)
     _require_columns(
         ds, dataset_id,
@@ -445,6 +604,33 @@ def load_preference_items(
     keys = sorted(votes.keys())
     rng.shuffle(keys)
 
+    def _margin(key) -> Optional[Tuple[int, int, float]]:
+        """(margin, total votes, margin ratio) for a majority-labeled pair.
+
+        margin = winner votes − runner-up votes over the directional votes;
+        total counts every vote including ties, so a 2-1-with-2-ties pair
+        ranks as more contested than a bare 2-1. Returns None where no strict
+        majority exists (excluded regardless of difficulty).
+        """
+        tally = votes[key]
+        directional = {k: v for k, v in tally.items() if k in ("model_a", "model_b")}
+        if not directional:
+            return None
+        best = max(directional.values())
+        if len([k for k, v in directional.items() if v == best]) != 1:
+            return None
+        margin = best - (sum(directional.values()) - best)
+        total = sum(tally.values())
+        return margin, total, margin / total
+
+    # Stable sort after the seeded shuffle: difficulty orders the pool,
+    # the shuffle breaks ranking ties deterministically per seed.
+    margins = {key: _margin(key) for key in keys}
+    if difficulty == "hard":
+        keys.sort(key=lambda k: (margins[k][2], margins[k][0]) if margins[k] else (2.0, 0))
+    else:
+        keys.sort(key=lambda k: (-margins[k][2], -margins[k][0]) if margins[k] else (2.0, 0))
+
     retrieved_at = _now_iso()
     items: List[SourceItem] = []
     n_excluded_tie = 0
@@ -454,25 +640,25 @@ def load_preference_items(
         if len(items) >= n_items:
             break
         tally = votes[key]
-        contested = {k: v for k, v in tally.items() if k in ("model_a", "model_b")}
-        if not contested:
+        if margins[key] is None:
             n_excluded_tie += 1
             continue
+        margin, total_votes, margin_ratio = margins[key]
+        contested = {k: v for k, v in tally.items() if k in ("model_a", "model_b")}
         best = max(contested.values())
         winners = [k for k, v in contested.items() if v == best]
-        if len(winners) != 1:
-            n_excluded_tie += 1
-            continue
         question, ra, rb, row_idx = texts[key]
-        if not question or not ra or not rb:
+        if not question or not ra or not rb or ra == rb:
             continue
 
         # Two different model pairs can produce byte-identical responses for the
         # same question (observed on mt_bench question 135, where both pairs
-        # returned the same structured answer). The judge sees content, not
-        # model names, so those are one comparison and shipping both would
-        # inflate the item count with a duplicate.
-        content_signature = (question, ra, rb)
+        # returned the same structured answer). The judge sees candidate
+        # content — not model names and not the question — so the dedup key is
+        # the unordered response pair: an exact repeat is a duplicate item, and
+        # a role-reversed repeat would be an outright label contradiction
+        # (the A/B swap design displays both orders of every pair).
+        content_signature = (min(ra, rb), max(ra, rb))
         if content_signature in seen_content:
             n_excluded_duplicate += 1
             continue
@@ -495,6 +681,10 @@ def load_preference_items(
                         "first_seen_row": str(row_idx),
                         "vote_tally": str(tally),
                         "label_rule": "majority of human votes; ties excluded",
+                        "difficulty": difficulty,
+                        "vote_margin": str(margin),
+                        "vote_margin_ratio": f"{margin_ratio:.4f}",
+                        "total_votes": str(total_votes),
                     },
                     retrieved_at=retrieved_at,
                 ),
