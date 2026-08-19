@@ -15,9 +15,11 @@ from src.metrics_v2 import (  # noqa: E402
     decision_entropy,
     jss,
     jss_entropy_correlation,
+    jss_repeat_delta,
     label_histogram,
     mean_absolute_flip,
     quadratic_weighted_kappa,
+    repeat_baseline_jss,
 )
 
 
@@ -252,3 +254,126 @@ def test_chance_corrected_jss_carries_a_clustered_ci():
     assert isinstance(cc, dict), "chance-corrected score must ship with uncertainty"
     assert cc["cluster_unit"] == "item"
     assert cc["ci_lower"] <= cc["estimate"] <= cc["ci_upper"]
+
+
+# ── Repeat baseline: JSS_rep and the paired JSS-vs-JSS_rep delta ────────────
+# All record inputs below are hand-built fixtures, never dataset rows.
+
+def test_repeat_baseline_jss_is_plain_jss_over_repeat_pairs():
+    repeat_recs = [rec("YES", "YES", f"i{i}") for i in range(8)] + \
+                  [rec("YES", "NO", f"i{i}") for i in range(8, 10)]
+    assert repeat_baseline_jss(repeat_recs) == pytest.approx(0.8)
+    assert repeat_baseline_jss(repeat_recs) == jss(repeat_recs, "disagree")
+
+
+def test_delta_is_zero_when_judge_is_as_noisy_on_paraphrase_as_on_repeat():
+    # Same disagreement rate on both arms -> no measurable paraphrase
+    # sensitivity, delta should sit at (or very near) zero.
+    items = [f"i{i}" for i in range(40)]
+    para = [rec("YES", "YES" if i % 10 else "NO", it) for i, it in enumerate(items)]
+    repeat = [rec("YES", "YES" if i % 10 else "NO", it) for i, it in enumerate(items)]
+    out = jss_repeat_delta(para, repeat, cluster_unit="item", n_bootstrap=300)
+    assert out["jss"] == pytest.approx(out["jss_rep"])
+    assert out["delta"] == pytest.approx(0.0, abs=1e-9)
+    assert out["ci_lower"] <= 0.0 <= out["ci_upper"]
+
+
+def test_delta_is_negative_when_paraphrase_disagreement_exceeds_repeat_ceiling():
+    # JSS_rep near-perfect (judge barely self-disagrees); JSS on paraphrases
+    # noticeably lower -> a real, negative delta (JSS - JSS_rep < 0).
+    items = [f"i{i}" for i in range(50)]
+    repeat = [rec("YES", "YES", it) for it in items]  # perfect self-agreement
+    para = [rec("YES", "YES" if i % 2 else "NO", it) for i, it in enumerate(items)]
+    out = jss_repeat_delta(para, repeat, cluster_unit="item", n_bootstrap=300)
+    assert out["jss_rep"] == pytest.approx(1.0)
+    assert out["jss"] == pytest.approx(0.5)
+    assert out["delta"] == pytest.approx(-0.5)
+    assert out["ci_upper"] < 0.0, "a clear, consistent gap should exclude zero"
+
+
+def test_delta_result_reports_declared_cluster_unit_and_counts():
+    items = [f"i{i}" for i in range(12)]
+    para = [rec("A", "A", it) for it in items]
+    repeat = [rec("A", "A", it) for it in items]
+    out = jss_repeat_delta(para, repeat, cluster_unit="item", n_bootstrap=50)
+    assert out["cluster_unit"] == "item"
+    assert out["n_clusters"] == 12
+    assert out["n_items_paraphrase_only"] == 0
+    assert out["n_items_repeat_only"] == 0
+
+
+def test_delta_requires_explicit_cluster_unit():
+    para = [rec("A", "A", "i0")]
+    repeat = [rec("A", "A", "i0")]
+    with pytest.raises(TypeError):
+        jss_repeat_delta(para, repeat)  # no cluster_unit -> refuse
+
+
+def test_delta_rejects_finer_than_item_cluster_units():
+    para = [rec("A", "A", "i0")]
+    repeat = [rec("A", "A", "i0")]
+    for unit in ("row", "prompt_pair", "structural_pair"):
+        with pytest.raises(ValueError, match="cluster_unit='item'"):
+            jss_repeat_delta(para, repeat, cluster_unit=unit)
+    with pytest.raises(ValueError):
+        jss_repeat_delta(para, repeat, cluster_unit="not_a_unit")
+
+
+def test_delta_only_uses_items_present_in_both_arms():
+    # i0-i9 have both; i10-i11 paraphrase-only; i12 repeat-only.
+    para = [rec("A", "A", f"i{k}") for k in range(10)] + \
+           [rec("A", "B", "i10"), rec("A", "B", "i11")]
+    repeat = [rec("A", "A", f"i{k}") for k in range(10)] + [rec("A", "A", "i12")]
+    out = jss_repeat_delta(para, repeat, cluster_unit="item", n_bootstrap=50)
+    assert out["n_clusters"] == 10
+    assert out["n_items_paraphrase_only"] == 2
+    assert out["n_items_repeat_only"] == 1
+    assert out["jss"] == pytest.approx(1.0)
+    assert out["jss_rep"] == pytest.approx(1.0)
+
+
+def test_delta_raises_when_no_items_shared():
+    para = [rec("A", "A", "only_in_para")]
+    repeat = [rec("A", "A", "only_in_repeat")]
+    with pytest.raises(ValueError):
+        jss_repeat_delta(para, repeat, cluster_unit="item")
+
+
+def test_delta_bootstrap_is_paired_not_independently_resampled():
+    # Construct items where paraphrase and repeat outcomes are perfectly
+    # ANTI-correlated across items (item agrees on repeat exactly when it
+    # disagrees on paraphrase). Under a PAIRED bootstrap that draws one
+    # shared item set per replicate, jss(sample_para) + jss(sample_repeat)
+    # == 1.0 identically, so delta_replicate == 2*jss(sample_para) - 1. An
+    # (incorrect) independent bootstrap of the two arms would not respect
+    # that identity. Zero-padded ids keep lexicographic sort == numeric
+    # order, matching the index arithmetic below.
+    n = 30
+    para, repeat = [], []
+    for k in range(n):
+        it = f"i{k:02d}"
+        if k % 2 == 0:
+            para.append(rec("A", "A", it))     # paraphrase agrees
+            repeat.append(rec("A", "B", it))   # repeat disagrees
+        else:
+            para.append(rec("A", "B", it))     # paraphrase disagrees
+            repeat.append(rec("A", "A", it))   # repeat agrees
+
+    out = jss_repeat_delta(para, repeat, cluster_unit="item", n_bootstrap=500, seed=1)
+    assert out["jss"] == pytest.approx(0.5)
+    assert out["jss_rep"] == pytest.approx(0.5)
+    assert out["delta"] == pytest.approx(0.0)
+
+    # Recompute the CI from first principles using the identity above, with
+    # the same seed and the same draw order `jss_repeat_delta` uses
+    # internally (sorted item ids, one `rng.integers` draw per replicate).
+    # If the implementation resampled the two arms independently instead of
+    # jointly, this would not reproduce the function's output.
+    rng = np.random.default_rng(1)
+    deltas = []
+    for _ in range(500):
+        idxs = rng.integers(0, n, size=n)
+        agree_para = sum(1 for i in idxs if i % 2 == 0)
+        deltas.append(2 * (agree_para / n) - 1)
+    assert out["ci_lower"] == pytest.approx(float(np.percentile(deltas, 2.5)))
+    assert out["ci_upper"] == pytest.approx(float(np.percentile(deltas, 97.5)))

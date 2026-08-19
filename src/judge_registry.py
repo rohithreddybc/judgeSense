@@ -211,17 +211,84 @@ def select_judges(names: Optional[List[str]] = None, allow_unverified: bool = Fa
 
 
 def run_plan(n_calls_per_judge: int, judges: Optional[List[str]] = None,
-             budget_policy: str = "native") -> dict:
+             budget_policy: str = "native", repeat_calls_per_judge: int = 0) -> dict:
     """
     Call-count plan for a sweep, so budget is stated before it is spent rather
     than discovered afterwards.
+
+    `repeat_calls_per_judge` states the cost of the same-prompt repeat
+    baseline in advance: one extra S0 call per (judge, item)
+    (docs/V2_1_STRUCTURAL_AXIS.md §7, `src/repeat_baseline.py`). It defaults
+    to 0, so existing callers that pre-compute `n_calls_per_judge` themselves
+    (e.g. the structural axis, which already bakes its "+1 repeat" into the
+    700/1,400 arithmetic in §5) are unaffected — `calls_per_judge` and
+    `total_calls` keep their exact prior meaning and value. When set, the
+    plan additionally reports the repeat-inclusive totals so both numbers are
+    visible side by side rather than one silently replacing the other.
     """
     selection = select_judges(judges)
+    n_judges = len(selection)
+    calls_with_repeat = n_calls_per_judge + repeat_calls_per_judge
     return {
         "judges": selection,
-        "n_judges": len(selection),
+        "n_judges": n_judges,
         "calls_per_judge": n_calls_per_judge,
-        "total_calls": n_calls_per_judge * len(selection),
+        "total_calls": n_calls_per_judge * n_judges,
         "budget_policy": budget_policy,
         "max_tokens": {j: max_tokens_for(j, budget_policy) for j in selection},
+        "repeat_calls_per_judge": repeat_calls_per_judge,
+        "calls_per_judge_with_repeat": calls_with_repeat,
+        "total_calls_with_repeat": calls_with_repeat * n_judges,
     }
+
+
+# ── Main instruction-axis dataset shape ──────────────────────────────────────
+# Current dataset (docs/V2_1_STRUCTURAL_AXIS.md §7 backfill target): 1,500
+# rows = 250 factuality + 250 coherence + 500 relevance + 500 preference.
+# Pairwise tasks (relevance, preference) carry both candidate orderings, so
+# their row count is 2x their item count; pointwise tasks (factuality,
+# coherence) are 1 row per item. Two prompt arms (P1/P2 paraphrases) are
+# issued per row for the existing JSS computation.
+MAIN_AXIS_ROWS_PER_TASK: Dict[str, int] = {
+    "factuality": 250,
+    "coherence": 250,
+    "relevance": 500,
+    "preference": 500,
+}
+MAIN_AXIS_PAIRWISE_TASKS = ("relevance", "preference")
+MAIN_AXIS_PROMPT_ARMS_PER_ROW = 2
+
+MAIN_AXIS_TOTAL_ROWS = sum(MAIN_AXIS_ROWS_PER_TASK.values())
+# unique items: pairwise rows fold 2 orderings into 1 item; pointwise rows are
+# already 1 row per item.
+MAIN_AXIS_TOTAL_ITEMS = sum(
+    n // 2 if task in MAIN_AXIS_PAIRWISE_TASKS else n
+    for task, n in MAIN_AXIS_ROWS_PER_TASK.items()
+)
+
+
+def main_axis_run_plan(judges: Optional[List[str]] = None, budget_policy: str = "native",
+                        include_repeat_baseline: bool = True) -> dict:
+    """
+    Call-count plan for the main instruction axis (not the structural axis,
+    which has its own budget in docs/V2_1_STRUCTURAL_AXIS.md §5).
+
+    Base cost is `MAIN_AXIS_TOTAL_ROWS * MAIN_AXIS_PROMPT_ARMS_PER_ROW` calls
+    per judge (1,500 rows x 2 arms = 3,000). The repeat baseline adds one S0
+    call per ITEM, not per row: pairwise rows for the same item share a
+    single canonical S0 context, so the repeat call is item-scoped exactly
+    like the structural axis's shared S0 arm (docs/V2_1_STRUCTURAL_AXIS.md
+    §3-4). With `include_repeat_baseline=True` (default) that is
+    `MAIN_AXIS_TOTAL_ITEMS` (1,000) extra calls per judge.
+    """
+    base_calls = MAIN_AXIS_TOTAL_ROWS * MAIN_AXIS_PROMPT_ARMS_PER_ROW
+    repeat_calls = MAIN_AXIS_TOTAL_ITEMS if include_repeat_baseline else 0
+    plan = run_plan(base_calls, judges, budget_policy, repeat_calls_per_judge=repeat_calls)
+    plan["dataset"] = {
+        "rows_per_task": dict(MAIN_AXIS_ROWS_PER_TASK),
+        "total_rows": MAIN_AXIS_TOTAL_ROWS,
+        "total_items": MAIN_AXIS_TOTAL_ITEMS,
+        "prompt_arms_per_row": MAIN_AXIS_PROMPT_ARMS_PER_ROW,
+        "include_repeat_baseline": include_repeat_baseline,
+    }
+    return plan
