@@ -30,14 +30,13 @@ from test_data_sources_v2 import FakeSplit, make_loader  # noqa: E402
 # ── Fixtures ─────────────────────────────────────────────────────────────────
 
 def relevance_splits():
-    """A corpus with one on-topic distractor and many off-topic fillers."""
+    """TREC-COVID-style graded qrels: a human-relevant positive (score 2), a
+    lexically-close human-rejected hard negative (score 0), and off-topic
+    human-rejected fillers (score 0)."""
     docs = [
-        # qrels-relevant doc for q1
         {"_id": "d_pos", "text": "machine learning algorithms improve prediction accuracy"},
-        # on-topic distractor: shares most query terms, NOT in qrels
+        # on-topic distractor a human still judged non-relevant
         {"_id": "d_hard", "text": "prediction accuracy of machine learning classifiers"},
-        # second qrels-relevant doc: lexically close but must never be the negative
-        {"_id": "d_pos2", "text": "machine learning improves prediction in clinical models"},
     ] + [
         {"_id": f"d_fill{i:02d}", "text": f"the capital of country {i} is city {i}"}
         for i in range(30)
@@ -46,14 +45,20 @@ def relevance_splits():
     queries = FakeSplit(
         [{"_id": "q1", "text": "machine learning prediction accuracy"}]
     )
-    qrels = FakeSplit([
-        {"query-id": "q1", "corpus-id": "d_pos", "score": 1},
-        {"query-id": "q1", "corpus-id": "d_pos2", "score": 1},
-    ])
+    qrels = FakeSplit(
+        [
+            {"query-id": "q1", "corpus-id": "d_pos", "score": 2},   # human: fully relevant
+            {"query-id": "q1", "corpus-id": "d_hard", "score": 0},  # human: non-relevant (on-topic)
+        ]
+        + [
+            {"query-id": "q1", "corpus-id": f"d_fill{i:02d}", "score": 0}  # human: non-relevant
+            for i in range(30)
+        ]
+    )
     return {
-        ("BeIR/scifact", "corpus", "corpus"): corpus,
-        ("BeIR/scifact", "queries", "queries"): queries,
-        ("BeIR/scifact-qrels", None, "train"): qrels,
+        ("BeIR/trec-covid", "corpus", "corpus"): corpus,
+        ("BeIR/trec-covid", "queries", "queries"): queries,
+        ("BeIR/trec-covid-qrels", None, "test"): qrels,
     }
 
 
@@ -90,19 +95,18 @@ def preference_loader():
 
 # ── Relevance: hard negatives ────────────────────────────────────────────────
 
-def test_hard_negative_is_top_bm25_doc_outside_qrels():
+def test_hard_negative_is_top_bm25_explicit_negative():
     items = load_relevance_items(
         n_items=1, difficulty="hard", _loader=make_loader(relevance_splits())
     )
     fields = items[0].source.source_fields
-    # The on-topic distractor wins; both qrels docs are excluded even though
-    # they outscore it lexically.
+    # The on-topic human-rejected doc wins over the off-topic fillers.
     assert fields["nonrelevant_doc_id"] == "d_hard"
-    assert fields["nonrelevant_doc_id"] not in {"d_pos", "d_pos2"}
+    assert fields["nonrelevant_human_grade"].startswith("0")   # a human said non-relevant
+    assert fields["relevant_human_grade"].startswith("2")      # a human said fully relevant
     assert items[0].extra["candidate_nonrelevant"] == (
         "prediction accuracy of machine learning classifiers"
     )
-    # Label authority unchanged: still qrels, still the same candidate key.
     assert items[0].ground_truth_label == "candidate_relevant"
 
 
@@ -113,20 +117,17 @@ def test_relevance_difficulty_fields_are_populated_and_consistent():
         )
         fields = items[0].source.source_fields
         assert fields["difficulty"] == difficulty
-        neg_score = float(fields["neg_bm25_score"])
-        pos_score = float(fields["pos_bm25_score"])
-        gap = float(fields["bm25_score_gap"])
-        assert gap == pytest.approx(pos_score - neg_score, abs=1e-3)
-        assert int(fields["neg_bm25_rank"]) >= 1
-        # existing provenance keys survive
-        for key in ("relevant_doc_id", "nonrelevant_doc_id", "qrels_dataset", "pairing"):
+        assert float(fields["neg_bm25_score"]) >= 0.0
+        assert int(fields["neg_bm25_rank_in_pool"]) >= 1
+        assert int(fields["n_explicit_negatives"]) >= 1
+        for key in ("relevant_doc_id", "nonrelevant_doc_id", "qrels_dataset",
+                    "pairing", "relevant_human_grade", "nonrelevant_human_grade"):
             assert key in fields
 
 
 def test_hard_negative_scores_at_least_as_high_as_easy_negative():
-    """Hard is measurably harder: its distractor's lexical proximity to the
-    query is maximal over the eligible pool, so it can never score below
-    whatever the easy (random) pairing drew for the same query."""
+    """Hard picks the highest-BM25 human-rejected doc; easy draws randomly from
+    the same explicit-non-relevant pool, so hard can never score below it."""
     hard = load_relevance_items(
         n_items=1, difficulty="hard", _loader=make_loader(relevance_splits())
     )[0]
@@ -136,16 +137,19 @@ def test_hard_negative_scores_at_least_as_high_as_easy_negative():
     hard_neg = float(hard.source.source_fields["neg_bm25_score"])
     easy_neg = float(easy.source.source_fields["neg_bm25_score"])
     assert hard_neg >= easy_neg
-    # In this fixture the fillers share no query term at all, so strictly harder.
-    assert hard_neg > easy_neg
-    assert easy.source.source_fields["nonrelevant_doc_id"].startswith("d_fill")
+    # d_hard is the only on-topic negative, so hard must select it.
+    assert hard.source.source_fields["nonrelevant_doc_id"] == "d_hard"
 
 
-def test_easy_negative_still_excluded_from_qrels():
+def test_every_candidate_carries_a_human_relevance_judgement():
+    # The core fix: the negative is not merely absent from an incomplete qrels,
+    # it is a document a human explicitly judged non-relevant.
     items = load_relevance_items(
-        n_items=1, difficulty="easy", _loader=make_loader(relevance_splits())
+        n_items=1, difficulty="hard", _loader=make_loader(relevance_splits())
     )
-    assert items[0].source.source_fields["nonrelevant_doc_id"] not in {"d_pos", "d_pos2"}
+    for i in items:
+        assert i.source.source_fields["relevant_human_grade"].startswith("2")
+        assert i.source.source_fields["nonrelevant_human_grade"].startswith("0")
 
 
 def test_bm25_ranking_is_deterministic_with_zero_overlap():
@@ -227,16 +231,18 @@ def test_hard_split_mean_margin_ratio_below_easy():
 # each unordered content pair at most once.
 
 def test_relevance_same_doc_pair_ships_once():
-    """Two claims about the same qrels doc that mine the same distractor must
-    not produce two items with identical displayed candidates."""
+    """Two topics that share the same relevant doc and the same hard negative
+    must not produce two items with identical displayed candidates."""
     splits = relevance_splits()
-    splits[("BeIR/scifact", "queries", "queries")] = FakeSplit([
+    splits[("BeIR/trec-covid", "queries", "queries")] = FakeSplit([
         {"_id": "q1", "text": "machine learning prediction accuracy"},
         {"_id": "q2", "text": "prediction accuracy machine learning"},
     ])
-    splits[("BeIR/scifact-qrels", None, "train")] = FakeSplit([
-        {"query-id": "q1", "corpus-id": "d_pos", "score": 1},
-        {"query-id": "q2", "corpus-id": "d_pos", "score": 1},
+    splits[("BeIR/trec-covid-qrels", None, "test")] = FakeSplit([
+        {"query-id": "q1", "corpus-id": "d_pos", "score": 2},
+        {"query-id": "q1", "corpus-id": "d_hard", "score": 0},
+        {"query-id": "q2", "corpus-id": "d_pos", "score": 2},
+        {"query-id": "q2", "corpus-id": "d_hard", "score": 0},
     ])
     loader = make_loader(splits)
 

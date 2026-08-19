@@ -1,6 +1,6 @@
 {
   "generated_by": "scripts/generate_counts.py",
-  "generated_at": "2026-08-07T04:54:45.651798+00:00",
+  "generated_at": "2026-08-19T12:14:28.134107+00:00",
   "dataset_v1": {
     "factuality": {
       "rows": 125,
@@ -100,8 +100,8 @@
       "unique_prompt_pairs": 250,
       "unique_prompt_texts": 1000,
       "label_histogram": {
-        "candidate_1": 250,
-        "candidate_2": 250
+        "candidate_1": 262,
+        "candidate_2": 238
       },
       "excluded_pairs": []
     },

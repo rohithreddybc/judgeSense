@@ -1,6 +1,6 @@
 {
   "builder_version": "2.0.0",
-  "built_at": "2026-08-19T02:37:32.153434+00:00",
+  "built_at": "2026-08-19T12:07:58.669999+00:00",
   "seed": 42,
   "items_per_task": 250,
   "tasks": {
@@ -23,7 +23,7 @@
       "rows": 500,
       "unique_items": 250,
       "unique_prompt_pairs": 250,
-      "source_dataset": "BeIR/scifact"
+      "source_dataset": "BeIR/trec-covid"
     },
     "preference": {
       "file": "preference.jsonl",

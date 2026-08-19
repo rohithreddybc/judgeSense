@@ -136,22 +136,31 @@ def test_coherence_misaligned_scores_raise():
         load_coherence_items(n_items=1, _loader=loader)
 
 
-def test_relevance_records_both_document_ids():
-    corpus = FakeSplit([{"_id": f"d{i}", "text": f"passage {i}"} for i in range(20)])
-    queries = FakeSplit([{"_id": "q1", "text": "the query"}])
-    qrels = FakeSplit([{"query-id": "q1", "corpus-id": "d3", "score": 1}])
+def test_relevance_uses_human_judged_positive_and_explicit_negative():
+    # TREC-COVID graded qrels: positive = score 2 (fully relevant), negative =
+    # score 0 (explicitly non-relevant). Score 1 (partial) is used for neither.
+    corpus = FakeSplit([{"_id": f"d{i}", "text": f"passage about topic {i}"} for i in range(20)])
+    queries = FakeSplit([{"_id": "q1", "text": "the query about topic"}])
+    qrels = FakeSplit([
+        {"query-id": "q1", "corpus-id": "d3", "score": 2},   # human: fully relevant
+        {"query-id": "q1", "corpus-id": "d7", "score": 0},   # human: non-relevant
+        {"query-id": "q1", "corpus-id": "d9", "score": 0},   # human: non-relevant
+        {"query-id": "q1", "corpus-id": "d5", "score": 1},   # partial: must not be used
+    ])
     loader = make_loader({
-        ("BeIR/scifact", "corpus", "corpus"): corpus,
-        ("BeIR/scifact", "queries", "queries"): queries,
-        ("BeIR/scifact-qrels", None, "train"): qrels,
+        ("BeIR/trec-covid", "corpus", "corpus"): corpus,
+        ("BeIR/trec-covid", "queries", "queries"): queries,
+        ("BeIR/trec-covid-qrels", None, "test"): qrels,
     })
     items = load_relevance_items(n_items=1, _loader=loader)
     item = items[0]
-    assert item.source.source_fields["relevant_doc_id"] == "d3"
-    neg = item.source.source_fields["nonrelevant_doc_id"]
-    assert neg != "d3"
-    assert item.extra["candidate_relevant"] == "passage 3"
-    assert item.extra["candidate_nonrelevant"] == f"passage {neg[1:]}"
+    sf = item.source.source_fields
+    assert sf["relevant_doc_id"] == "d3"
+    assert sf["relevant_human_grade"].startswith("2")
+    assert sf["nonrelevant_doc_id"] in {"d7", "d9"}          # an explicit negative
+    assert sf["nonrelevant_human_grade"].startswith("0")
+    assert "d5" not in (sf["relevant_doc_id"], sf["nonrelevant_doc_id"])  # partial excluded
+    assert item.extra["candidate_relevant"] == "passage about topic 3"
 
 
 def test_preference_majority_vote_and_tie_exclusion():
@@ -170,20 +179,42 @@ def test_preference_majority_vote_and_tie_exclusion():
         }
 
     rows = [
-        row(1, "model_a"), row(1, "model_a"), row(1, "model_b"),  # majority a
-        row(2, "model_b"),                                        # single vote b
-        row(3, "model_a"), row(3, "model_b"),                     # tie -> excluded
-        row(4, "tie"),                                            # tie label -> excluded
+        row(1, "model_a"), row(1, "model_a"), row(1, "model_b"),  # 3 votes, majority a
+        row(2, "model_b"), row(2, "model_b"),                     # 2 votes, majority b
+        row(3, "model_a"),                                        # single vote -> excluded (min_votes=2)
+        row(4, "model_a"), row(4, "model_b"),                     # 2 votes, tie -> excluded
+        row(5, "tie"), row(5, "tie"),                             # tie label -> excluded
     ]
     loader = make_loader({("lmsys/mt_bench_human_judgments", None, "human"): FakeSplit(rows)})
     items = load_preference_items(n_items=2, _loader=loader)
 
     by_qid = {i.source.source_record_id.split(";")[0]: i for i in items}
+    assert set(by_qid) == {"question_id=1", "question_id=2"}   # single-vote q3 excluded by default
     assert by_qid["question_id=1"].ground_truth_label == "candidate_1"
     assert by_qid["question_id=2"].ground_truth_label == "candidate_2"
-    assert len(items) == 2
     for i in items:
-        assert "vote_tally" in i.source.source_fields
+        assert int(i.source.source_fields["total_votes"]) >= 2  # no single-annotator labels
 
+    # Only two multi-vote majority items exist; asking for three must fail loud.
     with pytest.raises(DataSourceSchemaError, match="refusing to pad"):
         load_preference_items(n_items=3, _loader=loader)
+
+
+def test_preference_min_votes_one_readmits_single_annotator_items():
+    def row(qid, winner):
+        return {
+            "question_id": qid, "model_a": "m1", "model_b": "m2",
+            "winner": winner, "turn": 1,
+            "conversation_a": [{"role": "user", "content": f"q{qid}"},
+                               {"role": "assistant", "content": f"a{qid}"}],
+            "conversation_b": [{"role": "user", "content": f"q{qid}"},
+                               {"role": "assistant", "content": f"b{qid}"}],
+        }
+    rows = [row(1, "model_a"), row(2, "model_b")]  # two single-vote items
+    loader = make_loader({("lmsys/mt_bench_human_judgments", None, "human"): FakeSplit(rows)})
+    # default min_votes=2 rejects both single-vote items
+    with pytest.raises(DataSourceSchemaError):
+        load_preference_items(n_items=1, _loader=loader)
+    # min_votes=1 restores the prior single-vote behaviour
+    items = load_preference_items(n_items=1, min_votes=1, _loader=loader)
+    assert len(items) == 1

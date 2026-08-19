@@ -355,164 +355,181 @@ def load_coherence_items(
 def load_relevance_items(
     n_items: int = DEFAULT_ITEMS_PER_TASK,
     seed: int = 42,
-    corpus_id: str = "BeIR/scifact",
-    qrels_id: str = "BeIR/scifact-qrels",
+    corpus_id: str = "BeIR/trec-covid",
+    qrels_id: str = "BeIR/trec-covid-qrels",
+    qrels_split: str = "test",
     difficulty: str = "hard",
     _loader: Optional[Callable] = None,
 ) -> List[SourceItem]:
     """
-    Relevance items from BEIR SciFact: a query, its qrels-relevant document,
-    and a non-relevant document from the same corpus. Both documents are real
-    corpus records; the pairing procedure (not the texts or the relevance
-    label) is constructed, and both document ids are recorded in the
-    provenance chain.
+    Relevance items from BEIR TREC-COVID: a topic, a document a human assessor
+    judged FULLY RELEVANT (graded score 2), and a document the SAME assessment
+    process judged EXPLICITLY NON-RELEVANT (score 0) for that topic.
 
-    difficulty selects HOW the non-relevant document is chosen — never what
-    it is labeled (the label is always qrels):
+    This is the substantive difference from a positives-only collection such as
+    SciFact. There, the negative could only be a document ABSENT from an
+    incomplete qrels, so a topically similar distractor might in fact be
+    relevant-but-unjudged, and the item would penalise a defensible answer.
+    TREC-COVID carries graded human judgements including 41k+ explicit
+    non-relevant assessments, so here BOTH candidates carry a real human
+    relevance label and the negative is one a human affirmatively rejected.
+    Nothing in this module assigns or infers relevance: the labels are TREC's.
 
-    - "hard" (default): the corpus document with the HIGHEST BM25 score for
-      the query that is not in the query's qrels — a distractor from the same
-      topical neighbourhood. The previous random pairing produced distractors
-      so unrelated that 11/13 judges scored exactly 1.000, so the task could
-      not discriminate.
-    - "easy": the previous behavior — a seeded random corpus document not in
-      the query's qrels.
+    difficulty selects WHICH human-judged non-relevant document is shown —
+    never its label:
 
-    Either way the item records the BM25 score of both candidates and the
-    positive-minus-negative score gap, so per-item difficulty is auditable.
+    - "hard" (default): among the topic's explicit non-relevant documents, the
+      one with the HIGHEST BM25 score against the topic — a same-neighbourhood
+      distractor a human still rejected. A random non-relevant document is so
+      unrelated that the task cannot discriminate between judges.
+    - "easy": a seeded random draw from the same explicit-non-relevant pool.
+
+    Each item records both documents' human relevance grade and the negative's
+    BM25 score and within-pool rank, so difficulty is auditable per item.
     """
     _require_difficulty(difficulty)
     loader = _loader or _load_hf_dataset
     corpus = loader(corpus_id, "corpus", "corpus")
     queries = loader(corpus_id, "queries", "queries")
-    qrels = loader(qrels_id, None, "train")
+    qrels = loader(qrels_id, None, qrels_split)
     _require_columns(corpus, corpus_id, ["_id", "text"])
     _require_columns(queries, corpus_id, ["_id", "text"])
     _require_columns(qrels, qrels_id, ["query-id", "corpus-id", "score"])
 
-    corpus_by_id = {str(row["_id"]): (row["text"] or "").strip() for row in corpus}
     query_by_id = {str(row["_id"]): (row["text"] or "").strip() for row in queries}
-    all_doc_ids = sorted(corpus_by_id.keys())
 
-    relevant: Dict[str, str] = {}
-    relevant_sets: Dict[str, set] = {}
+    # Graded human judgements per topic: fully-relevant positives (score 2) and
+    # explicitly-rejected negatives (score 0). Partial-relevance (score 1) is
+    # used for NEITHER candidate — it is neither a clean positive nor a clean
+    # negative — so every shipped candidate is an unambiguous human judgement.
+    positives: Dict[str, List[str]] = defaultdict(list)
+    negatives: Dict[str, List[str]] = defaultdict(list)
+    judged_ids: set = set()
     for row in qrels:
         qid, did, score = str(row["query-id"]), str(row["corpus-id"]), int(row["score"])
-        if score > 0:
-            relevant.setdefault(qid, did)
-            relevant_sets.setdefault(qid, set()).add(did)
+        if score >= 2:
+            positives[qid].append(did); judged_ids.add(did)
+        elif score == 0:
+            negatives[qid].append(did); judged_ids.add(did)
+
+    # Only the judged documents' text is needed; the TREC-COVID corpus is large,
+    # so keep just those rather than the whole collection in memory.
+    corpus_by_id: Dict[str, str] = {}
+    for row in corpus:
+        did = str(row["_id"])
+        if did in judged_ids:
+            corpus_by_id[did] = (row["text"] or "").strip()
+
+    index = _BM25Index({d: corpus_by_id[d] for d in judged_ids if corpus_by_id.get(d)})
 
     rng = random.Random(seed)
-    qids = sorted(relevant.keys())
+    qids = sorted(q for q in positives if negatives.get(q))
     rng.shuffle(qids)
+    if not qids:
+        raise DataSourceSchemaError(
+            f"{corpus_id}: no topic has both a fully-relevant (score 2) and an "
+            "explicit non-relevant (score 0) human judgement."
+        )
 
-    # Index the real corpus once; used to select (hard) or audit (easy) the
-    # negative. Selection only — text and labels still come from the corpus
-    # and qrels untouched.
-    index = _BM25Index(corpus_by_id)
+    # Distribute items across the available topics. TREC-COVID has ~50 topics
+    # but many graded judgements each, so several distinct (relevant,
+    # non-relevant) document pairs are drawn per topic; each is a separate
+    # judgement over real human-labelled documents.
+    per_query_cap = max(1, math.ceil(n_items / len(qids)))
+
+    def _texts_ok(a: str, b: str) -> bool:
+        return bool(a) and bool(b) and a != b
 
     retrieved_at = _now_iso()
     items: List[SourceItem] = []
     used_pairs: set = set()
     n_excluded_duplicate = 0
+
+    # Round over topics so items are spread across topics rather than exhausting
+    # one before the next; within a topic, hardest negatives first.
+    ranked_neg: Dict[str, List[Tuple[str, float]]] = {}
     for qid in qids:
-        if len(items) >= n_items:
-            break
-        query = query_by_id.get(qid, "")
-        pos_id = relevant[qid]
-        pos_text = corpus_by_id.get(pos_id, "")
-        if not query or not pos_text:
-            continue
-
-        ranked = index.ranked(query)
-        rank_of = {did: (r, score) for r, (did, score) in enumerate(ranked, start=1)}
-
-        def _eligible(did: str) -> bool:
-            # A byte-identical twin of the positive would render both displayed
-            # candidates the same, which no answer can satisfy.
-            return (
-                did not in relevant_sets[qid]
-                and bool(corpus_by_id[did])
-                and corpus_by_id[did] != pos_text
-            )
-
-        neg_id = None
+        scores = index.scores(query_by_id.get(qid, ""))
+        idx_of = {index.doc_ids[i]: i for i in range(index.n_docs)}
+        scored = [
+            (did, scores.get(idx_of[did], 0.0))
+            for did in negatives[qid]
+            if did in idx_of and corpus_by_id.get(did)
+        ]
         if difficulty == "hard":
-            # Highest-BM25 corpus doc not in this query's qrels: a real
-            # same-neighbourhood distractor. Deterministic (score, doc-id
-            # ranking), no rng involved.
-            for did, _score in ranked:
-                if _eligible(did):
-                    neg_id = did
-                    break
+            scored.sort(key=lambda t: (-t[1], t[0]))
         else:
-            # "easy": the original seeded random sample, byte-compatible with
-            # the pre-2.1.0 pairing for the same seed.
-            for _ in range(100):
-                cand = all_doc_ids[rng.randrange(len(all_doc_ids))]
-                if _eligible(cand):
-                    neg_id = cand
-                    break
-        if neg_id is None:
-            continue
+            rng.shuffle(scored)
+        ranked_neg[qid] = scored
 
-        # SciFact queries are claims; several claims can share one qrels doc,
-        # and hard mining then tends to hand them the same top distractor too.
-        # The judge sees candidate content, not the query, so an unordered
-        # repeat of the same two texts is a duplicate item (and, if the roles
-        # reverse, an outright label contradiction). Ship each pair once.
-        pair_sig = (min(pos_text, corpus_by_id[neg_id]), max(pos_text, corpus_by_id[neg_id]))
-        if pair_sig in used_pairs:
-            n_excluded_duplicate += 1
-            continue
-        used_pairs.add(pair_sig)
-
-        neg_rank, neg_score = rank_of[neg_id]
-        pos_score = rank_of[pos_id][1]
-        items.append(
-            SourceItem(
-                item_id=f"relv_scifact_{qid}",
-                task_type="relevance",
-                text=query,
-                # Must name one of the `extra` candidate keys below: the builder
-                # resolves the ground truth to a display position by matching this
-                # value against candidate_map. "relevant_candidate" transposes the
-                # words and matches nothing.
-                ground_truth_label="candidate_relevant",
-                source=SourceRecord(
-                    source_dataset=corpus_id,
-                    source_config="corpus+queries",
-                    source_split="corpus/queries/qrels-train",
-                    source_record_id=f"query[{qid}]",
-                    source_fields={
-                        "relevant_doc_id": pos_id,
-                        "nonrelevant_doc_id": neg_id,
-                        "qrels_dataset": qrels_id,
-                        "pairing": (
-                            "constructed: qrels-positive vs top-BM25 non-qrels doc"
-                            if difficulty == "hard"
-                            else "constructed: qrels-positive vs seeded corpus sample"
-                        ),
-                        "difficulty": difficulty,
-                        "neg_bm25_score": f"{neg_score:.4f}",
-                        "neg_bm25_rank": str(neg_rank),
-                        "pos_bm25_score": f"{pos_score:.4f}",
-                        "bm25_score_gap": f"{pos_score - neg_score:.4f}",
+    emitted_per_query: Dict[str, int] = defaultdict(int)
+    progress = True
+    while len(items) < n_items and progress:
+        progress = False
+        for qid in qids:
+            if len(items) >= n_items:
+                break
+            if emitted_per_query[qid] >= per_query_cap:
+                continue
+            j = emitted_per_query[qid]
+            pos_ids = [d for d in positives[qid] if corpus_by_id.get(d)]
+            negs = ranked_neg[qid]
+            if j >= len(negs) or not pos_ids:
+                continue
+            pos_id = pos_ids[j % len(pos_ids)]
+            neg_id, neg_score = negs[j]
+            pos_text, neg_text = corpus_by_id.get(pos_id, ""), corpus_by_id.get(neg_id, "")
+            emitted_per_query[qid] += 1
+            progress = True
+            if not _texts_ok(pos_text, neg_text):
+                continue
+            pair_sig = (min(pos_text, neg_text), max(pos_text, neg_text))
+            if pair_sig in used_pairs:
+                n_excluded_duplicate += 1
+                continue
+            used_pairs.add(pair_sig)
+            items.append(
+                SourceItem(
+                    item_id=f"relv_treccovid_{qid}_{j}",
+                    task_type="relevance",
+                    text=query_by_id[qid],
+                    ground_truth_label="candidate_relevant",
+                    source=SourceRecord(
+                        source_dataset=corpus_id,
+                        source_config="corpus+queries",
+                        source_split=f"corpus/queries/qrels-{qrels_split}",
+                        source_record_id=f"query[{qid}]#pair{j}",
+                        source_fields={
+                            "relevant_doc_id": pos_id,
+                            "relevant_human_grade": "2 (fully relevant)",
+                            "nonrelevant_doc_id": neg_id,
+                            "nonrelevant_human_grade": "0 (explicitly non-relevant)",
+                            "qrels_dataset": qrels_id,
+                            "pairing": (
+                                "both candidates human-judged: relevant=TREC grade 2, "
+                                "non-relevant=TREC grade 0; distractor selected by BM25 "
+                                "hardness within the explicit-non-relevant pool"
+                            ),
+                            "difficulty": difficulty,
+                            "neg_bm25_score": f"{neg_score:.4f}",
+                            "neg_bm25_rank_in_pool": str(j + 1),
+                            "n_explicit_negatives": str(len(negs)),
+                        },
+                        retrieved_at=retrieved_at,
+                    ),
+                    extra={
+                        "candidate_relevant": pos_text,
+                        "candidate_nonrelevant": neg_text,
                     },
-                    retrieved_at=retrieved_at,
-                ),
-                extra={
-                    "candidate_relevant": corpus_by_id[pos_id],
-                    "candidate_nonrelevant": corpus_by_id[neg_id],
-                },
+                )
             )
-        )
 
     if len(items) < n_items:
         raise DataSourceSchemaError(
-            f"BEIR SciFact yielded only {len(items)} usable query-document "
-            f"pairs (requested {n_items}, {n_excluded_duplicate} excluded as "
-            f"duplicate document pairs); refusing to pad."
+            f"BEIR TREC-COVID yielded only {len(items)} usable (relevant, "
+            f"explicit-non-relevant) pairs over {len(qids)} topics (requested "
+            f"{n_items}, {n_excluded_duplicate} excluded as duplicate document "
+            "pairs); refusing to pad."
         )
     return items
 
@@ -526,6 +543,7 @@ def load_preference_items(
     config: Optional[str] = None,
     split: str = "human",
     difficulty: str = "hard",
+    min_votes: int = 2,
     _loader: Optional[Callable] = None,
 ) -> List[SourceItem]:
     """
@@ -533,6 +551,15 @@ def load_preference_items(
     (model_a vs model_b, turn 1) with real human preference votes. Where a
     (question, model_a, model_b) pair has multiple votes, the majority is
     used and the tally recorded; ties and no-majority pairs are excluded.
+
+    ``min_votes`` (default 2) requires each shipped label to rest on at least
+    that many human votes. At the default, no preference item's ground truth
+    is a single annotator's opinion: every label is a majority of two or more
+    independent human votes. The source contains 324 turn-1 comparisons with a
+    strict multi-vote majority, so the 250-item benchmark is drawn entirely
+    from multiply-annotated comparisons. Setting ``min_votes=1`` restores the
+    prior behaviour (single-vote labels admitted) and is retained only for
+    reproducing the earlier release.
 
     difficulty selects WHICH majority-labeled comparisons ship — never the
     label, which is always the recorded human majority:
@@ -610,9 +637,14 @@ def load_preference_items(
         margin = winner votes − runner-up votes over the directional votes;
         total counts every vote including ties, so a 2-1-with-2-ties pair
         ranks as more contested than a bare 2-1. Returns None where no strict
-        majority exists (excluded regardless of difficulty).
+        majority exists, or where the total vote count is below ``min_votes``
+        (excluded regardless of difficulty): a label resting on fewer than
+        ``min_votes`` human votes is not a multi-annotator judgement.
         """
         tally = votes[key]
+        total = sum(tally.values())
+        if total < min_votes:
+            return None
         directional = {k: v for k, v in tally.items() if k in ("model_a", "model_b")}
         if not directional:
             return None
@@ -620,7 +652,6 @@ def load_preference_items(
         if len([k for k, v in directional.items() if v == best]) != 1:
             return None
         margin = best - (sum(directional.values()) - best)
-        total = sum(tally.values())
         return margin, total, margin / total
 
     # Stable sort after the seeded shuffle: difficulty orders the pool,
@@ -680,7 +711,7 @@ def load_preference_items(
                     source_fields={
                         "first_seen_row": str(row_idx),
                         "vote_tally": str(tally),
-                        "label_rule": "majority of human votes; ties excluded",
+                        "label_rule": f"majority of >= {min_votes} human votes; ties and single-vote items excluded",
                         "difficulty": difficulty,
                         "vote_margin": str(margin),
                         "vote_margin_ratio": f"{margin_ratio:.4f}",
