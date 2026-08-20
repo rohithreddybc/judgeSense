@@ -32,6 +32,7 @@ import argparse
 import json
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -39,13 +40,19 @@ _REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO))
 
 try:
-    from .evaluate import _build_client, _call, _append_jsonl, _load_jsonl, _load_env
+    from .evaluate import _build_client, _append_jsonl, _load_jsonl, _load_env
+    from .usage_meter import metered_call as _call, clear_last_meta, take_last_meta
     from .judge_registry import JUDGES, max_tokens_for, select_judges, main_axis_run_plan
     from .structural_variants import parse_variant_output, UNCLEAR
 except ImportError:  # `python src/run_v2.py`
-    from evaluate import _build_client, _call, _append_jsonl, _load_jsonl, _load_env  # type: ignore
+    from evaluate import _build_client, _append_jsonl, _load_jsonl, _load_env  # type: ignore
+    from usage_meter import metered_call as _call, clear_last_meta, take_last_meta  # type: ignore
     from judge_registry import JUDGES, max_tokens_for, select_judges, main_axis_run_plan  # type: ignore
     from structural_variants import parse_variant_output, UNCLEAR  # type: ignore
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
 
 _DATA_DIR = _REPO / "data" / "v2"
 _OUT_DIR = _REPO / "data" / "results_v2" / "raw"
@@ -83,14 +90,25 @@ def _completed_pair_ids(path: Path) -> Set[str]:
     return {pid for pid, err in last.items() if err is None}
 
 
-def _decide(provider, client, model_id, prompt: str, task: str, max_tokens: int) -> Tuple[str, str, Optional[str]]:
-    """One judge call → (raw, normalized_decision, error). error is a string on
-    a hard failure, else None. UNCLEAR is a decision, not an error."""
+def _decide(provider, client, model_id, prompt: str, task: str,
+            max_tokens: int) -> Tuple[str, str, Optional[str], Optional[dict]]:
+    """One judge call → (raw, normalized_decision, error, usage_meta).
+
+    error is a string on a hard failure, else None; UNCLEAR is a decision, not
+    an error. usage_meta carries this call's token counts and timing, or None
+    when the call seam is stubbed (as in the offline tests) or the provider
+    returned no usage.
+
+    The slot is cleared BEFORE the call so a stub that writes nothing yields
+    None rather than silently re-reporting the previous call's tokens.
+    """
+    clear_last_meta()
     raw = _call(provider, client, model_id, prompt, max_tokens)
+    meta = take_last_meta()
     if isinstance(raw, str) and raw.startswith("ERROR:"):
-        return raw, UNCLEAR, raw[len("ERROR:"):]
+        return raw, UNCLEAR, raw[len("ERROR:"):], meta
     decision = parse_variant_output(task, raw, "plain")
-    return raw, decision, None
+    return raw, decision, None, meta
 
 
 def preflight(judges: List[str]) -> bool:
@@ -106,8 +124,8 @@ def preflight(judges: List[str]) -> bool:
             print(f"  [FAIL] {judge:<20} client/key: {exc}")
             ok = False
             continue
-        raw, decision, err = _decide(provider, client, model_id, probe, "factuality",
-                                     max_tokens_for(judge, "native"))
+        raw, decision, err, _use = _decide(provider, client, model_id, probe, "factuality",
+                                           max_tokens_for(judge, "native"))
         if err:
             print(f"  [FAIL] {judge:<20} call errored: {err[:80]}")
             ok = False
@@ -134,8 +152,8 @@ def run_cell(judge: str, task: str, budget_policy: str, repeat_baseline: bool,
         if pid in done:
             n_done += 1
             continue
-        raw_a, dec_a, err_a = _decide(provider, client, model_id, row["prompt_a"], task, max_tokens)
-        raw_b, dec_b, err_b = _decide(provider, client, model_id, row["prompt_b"], task, max_tokens)
+        raw_a, dec_a, err_a, use_a = _decide(provider, client, model_id, row["prompt_a"], task, max_tokens)
+        raw_b, dec_b, err_b, use_b = _decide(provider, client, model_id, row["prompt_b"], task, max_tokens)
         rec = {
             "pair_id": pid,
             "item_id": row.get("item_id"),
@@ -150,6 +168,12 @@ def run_cell(judge: str, task: str, budget_policy: str, repeat_baseline: bool,
             "budget_policy": budget_policy,
             "max_tokens": max_tokens,
             "error": err_a or err_b,
+            # Usage is inline on the record rather than in a side log: one append
+            # keeps the crash-consistency story unchanged, and usage stays joined
+            # to its decision without a second file to desynchronise.
+            "ts": _now_iso(),
+            "usage_a": use_a,
+            "usage_b": use_b,
         }
         # The repeat baseline is ONE extra call per ITEM, not per row. Pairwise
         # tasks emit two rows per item (original + swapped orderings), so firing
@@ -158,9 +182,10 @@ def run_cell(judge: str, task: str, budget_policy: str, repeat_baseline: bool,
         # The noise ceiling only needs one prompt repeated, so it is taken on the
         # canonical ordering.
         if repeat_baseline and row.get("ab_order") in (None, "original"):
-            raw_r, dec_r, err_r = _decide(provider, client, model_id, row["prompt_a"], task, max_tokens)
+            raw_r, dec_r, err_r, use_r = _decide(provider, client, model_id, row["prompt_a"], task, max_tokens)
             rec["prompt_a_repeat_raw"] = raw_r
             rec["decision_a_repeat"] = dec_r
+            rec["usage_a_repeat"] = use_r
             rec["error"] = rec["error"] or err_r
         _append_jsonl(rec, out)
         n_new += 1
