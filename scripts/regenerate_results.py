@@ -46,17 +46,42 @@ POINTWISE = {"factuality", "coherence"}
 
 
 def _records(path: Path) -> List[dict]:
-    """Raw rows -> metric records ({decision_a, decision_b, item_id, ...})."""
-    recs = []
+    """Raw rows -> metric records ({decision_a, decision_b, item_id, ...}).
+
+    Deduplicates by pair_id, KEEPING THE LAST record written. The runner appends
+    and never rewrites, so a row that errored and was later retried leaves two
+    records: the stale failure and the good retry. Reading both would feed a
+    phantom UNCLEAR disagreement into that item's cluster and silently bias the
+    metrics. Last-write-wins matches the runner's own resume semantics, under
+    which an errored row is not "done" and is re-executed.
+    """
+    by_pair: Dict[str, dict] = {}
+    order: List[str] = []
+    n_superseded = 0
     for line in open(path, encoding="utf-8"):
         line = line.strip()
         if not line:
             continue
-        r = json.loads(line)
-        if r.get("error") is not None:
-            # An errored row has no usable decision; count it as malformed by
-            # leaving UNCLEAR, which the strict metric charges as disagreement.
-            pass
+        try:
+            r = json.loads(line)
+        except json.JSONDecodeError:
+            # A run killed mid-write can leave a truncated final line; it is
+            # incomplete data, not a decision, so it is dropped rather than
+            # guessed at.
+            continue
+        pid = str(r.get("pair_id"))
+        if pid in by_pair:
+            n_superseded += 1
+        else:
+            order.append(pid)
+        by_pair[pid] = r
+    if n_superseded:
+        print(f"  [{path.name}] {n_superseded} superseded record(s) ignored "
+              f"(retried rows); using the last write per pair_id")
+
+    recs = []
+    for pid in order:
+        r = by_pair[pid]
         recs.append({
             "decision_a": r.get("decision_a", UNCLEAR),
             "decision_b": r.get("decision_b", UNCLEAR),

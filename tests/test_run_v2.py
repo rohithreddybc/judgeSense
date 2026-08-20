@@ -114,3 +114,73 @@ def test_unparseable_output_is_unclear_not_a_crash(tiny_dataset, monkeypatch):
     rec = json.loads(open(run_v2._out_path("gpt-4o", "factuality"), encoding="utf-8").readline())
     assert rec["decision_a"] == run_v2.UNCLEAR   # ambiguous -> UNCLEAR, raw retained
     assert rec["error"] is None                  # UNCLEAR is a decision, not an error
+
+
+# ── regression: append-only file + retries must not double-count ─────────────
+# The runner appends and never rewrites, so an errored row that is later retried
+# leaves TWO records for one pair_id. Reading both feeds a phantom UNCLEAR
+# disagreement into that item's cluster and silently biases the one-shot
+# metrics. Runner and reader must agree on last-write-wins.
+
+def test_retried_row_is_not_counted_twice_by_the_reader(tiny_dataset, monkeypatch):
+    monkeypatch.setattr(run_v2, "_call", _answers(["YES", "ERROR:timeout"]))
+    run_v2.run_cell("gpt-4o", "factuality", "native", repeat_baseline=False, limit=1)
+    monkeypatch.setattr(run_v2, "_call", _answers(["YES", "YES"]))
+    run_v2.run_cell("gpt-4o", "factuality", "native", repeat_baseline=False, limit=1)
+
+    path = run_v2._out_path("gpt-4o", "factuality")
+    raw = [json.loads(l) for l in open(path, encoding="utf-8")]
+    assert len(raw) == 2, "append-only file should hold both attempts"
+
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "regen", Path(__file__).resolve().parent.parent / "scripts" / "regenerate_results.py")
+    regen = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(regen)
+    recs = regen._records(path)
+    assert len(recs) == 1, "reader must keep one record per pair_id"
+    assert recs[0]["decision_b"] == "YES", "must keep the LAST (successful) attempt"
+
+
+def test_successful_row_is_not_repaid_after_a_later_failed_attempt(tiny_dataset, monkeypatch):
+    # succeed, then a stale failure is appended for the same pair; the row must
+    # still count as done so the resume does not pay for it again.
+    monkeypatch.setattr(run_v2, "_call", _answers(["YES", "YES"]))
+    run_v2.run_cell("gpt-4o", "factuality", "native", repeat_baseline=False, limit=1)
+    path = run_v2._out_path("gpt-4o", "factuality")
+    assert run_v2._completed_pair_ids(path) == {"f1"}
+
+
+def test_repeat_baseline_fires_once_per_item_not_per_row(tmp_path, monkeypatch):
+    """Pairwise items have two ab_order rows; the repeat arm is per ITEM, so
+    firing it on both would overspend the budgeted repeat calls by 50%."""
+    data = tmp_path / "v2"; data.mkdir()
+    rows = [
+        {"pair_id": "r1_original", "item_id": "i1", "prompt_pair_id": "i1#T1-T2",
+         "task_type": "relevance", "ab_order": "original", "ground_truth_position": "A",
+         "ground_truth_label": "candidate_relevant", "prompt_a": "P?", "prompt_b": "P'?"},
+        {"pair_id": "r1_swapped", "item_id": "i1", "prompt_pair_id": "i1#T1-T2",
+         "task_type": "relevance", "ab_order": "swapped", "ground_truth_position": "B",
+         "ground_truth_label": "candidate_relevant", "prompt_a": "Q?", "prompt_b": "Q'?"},
+    ]
+    with open(data / "relevance.jsonl", "w", encoding="utf-8") as fh:
+        for r in rows:
+            fh.write(json.dumps(r) + "\n")
+    monkeypatch.setattr(run_v2, "_DATA_DIR", data)
+    monkeypatch.setattr(run_v2, "_OUT_DIR", tmp_path / "out")
+    monkeypatch.setattr(run_v2, "_resolve_client", lambda j: ("C", "m", "openai"))
+    monkeypatch.setattr(run_v2, "max_tokens_for", lambda j, p: 20)
+
+    calls = []
+    def counting(provider, client, model_id, prompt, max_tokens):
+        calls.append(prompt)
+        return "A"
+    monkeypatch.setattr(run_v2, "_call", counting)
+    run_v2.run_cell("gpt-4o", "relevance", "native", repeat_baseline=True, limit=None)
+
+    # 2 rows x 2 arms = 4, plus exactly ONE repeat (on the original ordering)
+    assert len(calls) == 5, f"expected 5 calls (4 arms + 1 repeat), got {len(calls)}"
+    recs = [json.loads(l) for l in open(run_v2._out_path("gpt-4o", "relevance"), encoding="utf-8")]
+    by_order = {r["ab_order"]: r for r in recs}
+    assert "decision_a_repeat" in by_order["original"]
+    assert "decision_a_repeat" not in by_order["swapped"]

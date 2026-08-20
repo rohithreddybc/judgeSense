@@ -64,15 +64,23 @@ def _out_path(judge: str, task: str) -> Path:
 
 
 def _completed_pair_ids(path: Path) -> Set[str]:
-    """pair_ids already written with no error — skipped on resume."""
+    """pair_ids whose LAST written record succeeded — skipped on resume.
+
+    Last-write-wins, not any-write-wins: the file is append-only, so a row that
+    errored and was retried has both records present. Judging completion by the
+    final record means a successful retry marks the row done (no re-spend) while
+    a row whose latest attempt failed is retried. `regenerate_results` applies
+    the same rule when reading, so the paid calls and the scored records always
+    agree on which attempt counts.
+    """
     if not path.exists():
         return set()
-    done: Set[str] = set()
+    last: Dict[str, Optional[str]] = {}
     for rec in _load_jsonl(path):
         pid = rec.get("pair_id")
-        if pid is not None and rec.get("error") is None:
-            done.add(str(pid))
-    return done
+        if pid is not None:
+            last[str(pid)] = rec.get("error")
+    return {pid for pid, err in last.items() if err is None}
 
 
 def _decide(provider, client, model_id, prompt: str, task: str, max_tokens: int) -> Tuple[str, str, Optional[str]]:
@@ -143,7 +151,13 @@ def run_cell(judge: str, task: str, budget_policy: str, repeat_baseline: bool,
             "max_tokens": max_tokens,
             "error": err_a or err_b,
         }
-        if repeat_baseline:
+        # The repeat baseline is ONE extra call per ITEM, not per row. Pairwise
+        # tasks emit two rows per item (original + swapped orderings), so firing
+        # it on every row would issue 1,500 repeat calls per judge against the
+        # 1,000 the run plan budgets — a 12.5% overspend on the total sweep.
+        # The noise ceiling only needs one prompt repeated, so it is taken on the
+        # canonical ordering.
+        if repeat_baseline and row.get("ab_order") in (None, "original"):
             raw_r, dec_r, err_r = _decide(provider, client, model_id, row["prompt_a"], task, max_tokens)
             rec["prompt_a_repeat_raw"] = raw_r
             rec["decision_a_repeat"] = dec_r
@@ -193,6 +207,14 @@ def main(argv: Optional[List[str]] = None) -> int:
     elif args.preflight_only:
         print("nothing to do: --preflight-only with --skip-preflight")
         return 0
+
+    print(
+        "\nNOTE: do not run two processes over the SAME (judge, task) at once.\n"
+        "  Completed rows are read once at cell start and the output file is\n"
+        "  append-only with no lock, so two processes would each work the whole\n"
+        "  remaining backlog and both pay for it. To parallelise, split by\n"
+        "  --judges or --tasks into disjoint sets, one process per set."
+    )
 
     if not args.yes:
         print("\nRe-run with --yes to start the full run (this spends API credit).")
