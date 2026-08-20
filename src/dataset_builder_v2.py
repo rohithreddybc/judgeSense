@@ -182,11 +182,21 @@ def build_all(output_dir: Path, items_per_task: int = DEFAULT_ITEMS_PER_TASK,
         with open(path, "w", encoding="utf-8") as fh:
             for rec in records:
                 fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        # Distinct UPSTREAM source records behind the items: an item_id is unique
+        # per (source record, answer field / doc pair), so several items can share
+        # one upstream question, article, or topic. Disclosing this makes the
+        # effective source diversity explicit rather than implying 250 independent
+        # sources per task (reviewer qkzU W3/Q2).
+        n_source = len({
+            r["source"]["source_record_id"].split("#")[0].split(".")[0]
+            for r in records
+        })
         manifest["tasks"][task] = {
             "file": path.name,
             "rows": len(records),
             "unique_items": len({r["item_id"] for r in records}),
             "unique_prompt_pairs": len({r["prompt_pair_id"] for r in records}),
+            "distinct_source_records": n_source,
             "source_dataset": loaded[task][0].source.source_dataset,
         }
         print(f"  wrote {len(records)} records -> {path}")

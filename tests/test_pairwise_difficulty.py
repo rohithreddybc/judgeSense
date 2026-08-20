@@ -118,7 +118,10 @@ def test_relevance_difficulty_fields_are_populated_and_consistent():
         fields = items[0].source.source_fields
         assert fields["difficulty"] == difficulty
         assert float(fields["neg_bm25_score"]) >= 0.0
-        assert int(fields["neg_bm25_rank_in_pool"]) >= 1
+        assert float(fields["pos_bm25_score"]) >= 0.0
+        # the negative is lexically MATCHED to the positive, so the absolute
+        # BM25 gap is a small, non-negative number recorded per item
+        assert float(fields["bm25_abs_gap"]) >= 0.0
         assert int(fields["n_explicit_negatives"]) >= 1
         for key in ("relevant_doc_id", "nonrelevant_doc_id", "qrels_dataset",
                     "pairing", "relevant_human_grade", "nonrelevant_human_grade"):

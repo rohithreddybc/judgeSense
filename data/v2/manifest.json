@@ -1,6 +1,6 @@
 {
   "builder_version": "2.0.0",
-  "built_at": "2026-08-19T12:07:58.669999+00:00",
+  "built_at": "2026-08-20T00:15:55.719588+00:00",
   "seed": 42,
   "items_per_task": 250,
   "tasks": {
@@ -9,6 +9,7 @@
       "rows": 250,
       "unique_items": 250,
       "unique_prompt_pairs": 250,
+      "distinct_source_records": 125,
       "source_dataset": "truthful_qa"
     },
     "coherence": {
@@ -16,6 +17,7 @@
       "rows": 250,
       "unique_items": 250,
       "unique_prompt_pairs": 250,
+      "distinct_source_records": 92,
       "source_dataset": "mteb/summeval"
     },
     "relevance": {
@@ -23,6 +25,7 @@
       "rows": 500,
       "unique_items": 250,
       "unique_prompt_pairs": 250,
+      "distinct_source_records": 50,
       "source_dataset": "BeIR/trec-covid"
     },
     "preference": {
@@ -30,6 +33,7 @@
       "rows": 500,
       "unique_items": 250,
       "unique_prompt_pairs": 250,
+      "distinct_source_records": 229,
       "source_dataset": "lmsys/mt_bench_human_judgments"
     }
   }

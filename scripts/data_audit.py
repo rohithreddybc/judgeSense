@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import statistics
 import sys
 from datetime import datetime
@@ -155,6 +156,56 @@ def check_label_degeneracy(records: List[dict], cfg: dict) -> dict:
         "threshold": {"max_label_share": max_share, "min_distinct_labels": min_distinct},
         "passed": passed,
         "detail": detail,
+    }
+
+
+def check_length_shortcut(records: List[dict], cfg: dict) -> dict:
+    """On a pairwise task, the correct candidate must not be identifiable by
+    length. If the ground-truth answer is the longer candidate far more than
+    half the time, "always pick the longer response" beats chance and the task
+    measures verbosity preference rather than the intended construct (a known
+    LLM-judge failure mode). Non-pairwise tasks pass trivially.
+
+    'Longer wins' is read from the winner_chars/loser_chars provenance where
+    present (preference), else measured from the displayed candidates.
+    """
+    positional = [r for r in records if r.get("ground_truth_position") in ("A", "B")]
+    if not positional:
+        return {"check": "length_shortcut", "observed": None, "threshold": None,
+                "passed": True, "detail": "not a pairwise task; length cannot label."}
+
+    max_share = cfg.get("max_longer_wins_share", 0.62)
+    longer_wins = seen = 0
+    for r in positional:
+        sf = r.get("source", {}).get("source_fields", {}) if isinstance(r.get("source"), dict) else {}
+        wl = sf.get("winner_is_longer")
+        if wl in ("yes", "no"):
+            longer_wins += (wl == "yes"); seen += 1
+            continue
+        # relevance and any pairwise task without the field: compare candidate texts
+        cmap = r.get("candidate_map") or {}
+        pos = r.get("ground_truth_position")
+        gt_text = r.get(f"candidate_relevant") if pos else None
+        # fall back to the displayed prompt split
+        m = re.search(r"\bA:\s*(.*?)\n\s*B:\s*(.*)$", str(r.get("response_being_judged", "")), re.S)
+        if not m:
+            continue
+        a_txt, b_txt = m.group(1), m.group(2)
+        gt_txt = a_txt if pos == "A" else b_txt
+        other = b_txt if pos == "A" else a_txt
+        if len(gt_txt) == len(other):
+            continue
+        longer_wins += len(gt_txt) > len(other); seen += 1
+    share = (longer_wins / seen) if seen else 0.5
+    passed = share <= max_share
+    return {
+        "check": "length_shortcut",
+        "observed": {"longer_wins_share": round(share, 4), "n": seen},
+        "threshold": {"max_longer_wins_share": max_share},
+        "passed": passed,
+        "detail": (f"correct answer is the longer candidate in {share:.1%} of {seen} "
+                   f"pairwise items; a length-only baseline scores this. "
+                   f"cap {max_share:.0%}."),
     }
 
 
@@ -324,6 +375,7 @@ def audit(config_path: Path) -> dict:
             check_label_degeneracy(records, split_cfg),
             check_effective_sample_size(records, split_cfg),
             check_ground_truth_consistency(records, split_cfg),
+            check_length_shortcut(records, split_cfg),
         ):
             result["split"] = split
             all_results.append(result)

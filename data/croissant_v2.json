@@ -27,7 +27,7 @@
       "description": "250 records over 250 unique source items for the factuality task. Every record carries a per-item provenance chain (source dataset, config, split, record id).",
       "contentUrl": "data/factuality.jsonl",
       "encodingFormat": "application/jsonlines",
-      "sha256": "8c593fcae8d3beb81be669359c0de8b135952739601a49bf51da158bd0aee406"
+      "sha256": "da7d1e5e45ca7387203541df436e90607884d34588a57caf508cb82f0d1b938d"
     },
     {
       "@type": "cr:FileObject",
@@ -36,7 +36,7 @@
       "description": "250 records over 250 unique source items for the coherence task. Every record carries a per-item provenance chain (source dataset, config, split, record id).",
       "contentUrl": "data/coherence.jsonl",
       "encodingFormat": "application/jsonlines",
-      "sha256": "2485c92a2643efec4d8e372111c018882614e0f831e6806ea7495a99987b2ac8"
+      "sha256": "2d376ec67ccaa49cb942c2c5d43a94d4aeac74afa5c40b5d95913084b42c0389"
     },
     {
       "@type": "cr:FileObject",
@@ -45,7 +45,7 @@
       "description": "500 records over 250 unique source items for the relevance task. Every record carries a per-item provenance chain (source dataset, config, split, record id).",
       "contentUrl": "data/relevance.jsonl",
       "encodingFormat": "application/jsonlines",
-      "sha256": "768fa47e95f68c1bd84ae6d195b5a70672a4b44c585bbf40b35ff8c14cbd28e4"
+      "sha256": "225100493928fecb562a14c2a5530be26a1049bc87bb65127d037040a72f0e6b"
     },
     {
       "@type": "cr:FileObject",
@@ -54,7 +54,7 @@
       "description": "500 records over 250 unique source items for the preference task. Every record carries a per-item provenance chain (source dataset, config, split, record id).",
       "contentUrl": "data/preference.jsonl",
       "encodingFormat": "application/jsonlines",
-      "sha256": "c3db9d0f47f2e9446110a27781cabef80c0aab09f7e4235a920f6f4cbefcf1fb"
+      "sha256": "8853ba27b1e52fd0f3415634d25b2ec09f53b2413579fd0617571a3e690e31c7"
     }
   ],
   "recordSet": [
@@ -104,6 +104,6 @@
     }
   ],
   "rai:hasSyntheticData": true,
-  "rai:syntheticDataExplanation": "The judged texts include machine-generated content drawn verbatim from the source benchmarks (SummEval machine summaries; MT-Bench model responses). Judge prompt templates are author-written paraphrases. Item texts and ground-truth labels are taken verbatim from the source datasets \u2014 none are authored in this repository. Source datasets present in the built data: ['BeIR/scifact', 'lmsys/mt_bench_human_judgments', 'mteb/summeval', 'truthful_qa'].",
+  "rai:syntheticDataExplanation": "The judged texts include machine-generated content drawn verbatim from the source benchmarks (SummEval machine summaries; MT-Bench model responses). Judge prompt templates are author-written paraphrases. Item texts and ground-truth labels are taken verbatim from the source datasets \u2014 none are authored in this repository. Source datasets present in the built data: ['BeIR/trec-covid', 'lmsys/mt_bench_human_judgments', 'mteb/summeval', 'truthful_qa'].",
   "rai:dataCollection": "Items are loaded programmatically from public datasets on the Hugging Face Hub by src/data_sources.py; every record carries the source dataset id, config, split, and per-record id. The build fails if any source is unavailable \u2014 no items are authored or synthesized by the builder."
 }

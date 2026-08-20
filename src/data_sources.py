@@ -212,8 +212,23 @@ def load_factuality_items(
     indices = list(range(len(ds)))
     rng.shuffle(indices)
 
+    # TruthfulQA uses a canonical refusal ("I have no comment") as the safe
+    # answer to unanswerable or ill-posed questions. Judging "is this factually
+    # correct?" on a refusal is nonsensical, so those rows are skipped. Questions
+    # addressed to the model ("Do you...?", "Are you...?") are indexical rather
+    # than factual and are skipped for the same reason.
+    _REFUSAL = ("i have no comment", "no comment", "i have no idea",
+                "it's not possible", "i'm not sure", "unknown")
+    def _ill_posed(question: str, best: str) -> bool:
+        b = best.lower().strip().rstrip(".")
+        if any(b == r or b.startswith(r) for r in _REFUSAL):
+            return True
+        ql = question.lower()
+        return ql.startswith(("do you", "are you", "have you", "can you", "will you"))
+
     retrieved_at = _now_iso()
     items: List[SourceItem] = []
+    seq = 0
     for row_idx in indices:
         if len(items) >= n_items:
             break
@@ -221,13 +236,18 @@ def load_factuality_items(
         question = (row["question"] or "").strip()
         best = (row["best_answer"] or "").strip()
         incorrect = [a.strip() for a in (row["incorrect_answers"] or []) if a and a.strip()]
-        if not question or not best:
+        if not question or not best or _ill_posed(question, best):
             continue
 
+        # item_id is opaque (a running index), so the ground-truth label is not
+        # encoded in the identifier; the answer field is retained in the
+        # provenance record for traceability, not in the id a consumer sorts on.
         def _mk(answer: str, label: str, which: str) -> SourceItem:
+            nonlocal seq
+            seq += 1
             text = f"Q: {question}\nA: {answer}"
             return SourceItem(
-                item_id=f"fact_tqa_{row_idx}_{which}",
+                item_id=f"fact_tqa_{seq:04d}",
                 task_type="factuality",
                 text=text,
                 ground_truth_label=label,
@@ -435,7 +455,10 @@ def load_relevance_items(
     # but many graded judgements each, so several distinct (relevant,
     # non-relevant) document pairs are drawn per topic; each is a separate
     # judgement over real human-labelled documents.
-    per_query_cap = max(1, math.ceil(n_items / len(qids)))
+    # Headroom above the even split so that topics with many graded documents
+    # can cover a shortfall left by topics with few (lexical matching can leave
+    # a sparse topic unable to fill its even share).
+    per_query_cap = max(1, math.ceil(n_items / len(qids)) + 4)
 
     def _texts_ok(a: str, b: str) -> bool:
         return bool(a) and bool(b) and a != b
@@ -445,23 +468,28 @@ def load_relevance_items(
     used_pairs: set = set()
     n_excluded_duplicate = 0
 
-    # Round over topics so items are spread across topics rather than exhausting
-    # one before the next; within a topic, hardest negatives first.
-    ranked_neg: Dict[str, List[Tuple[str, float]]] = {}
+    # BM25 of the query against each candidate. Critically, the negative is
+    # chosen to be LEXICALLY MATCHED to the positive, not maximally overlapping.
+    #
+    # Selecting the highest-BM25 explicit negative (an earlier version) made the
+    # non-relevant document keyword-denser than the truly relevant one, so
+    # "pick the passage with LOWER query-term overlap" recovered relevance ~75%+
+    # of the time -- a lexical shortcut in reverse. Matching the negative's BM25
+    # to the positive's removes overlap as a signal in either direction, so a
+    # judge must read for relevance rather than count shared terms.
+    q_pos_scores: Dict[str, Dict[str, float]] = {}
+    q_neg_scores: Dict[str, Dict[str, float]] = {}
     for qid in qids:
         scores = index.scores(query_by_id.get(qid, ""))
         idx_of = {index.doc_ids[i]: i for i in range(index.n_docs)}
-        scored = [
-            (did, scores.get(idx_of[did], 0.0))
-            for did in negatives[qid]
-            if did in idx_of and corpus_by_id.get(did)
-        ]
-        if difficulty == "hard":
-            scored.sort(key=lambda t: (-t[1], t[0]))
-        else:
-            rng.shuffle(scored)
-        ranked_neg[qid] = scored
+        def _sc(did: str) -> float:
+            i = idx_of.get(did)
+            return scores.get(i, 0.0) if i is not None else 0.0
+        q_pos_scores[qid] = {d: _sc(d) for d in positives[qid] if corpus_by_id.get(d)}
+        q_neg_scores[qid] = {d: _sc(d) for d in negatives[qid]
+                             if d in idx_of and corpus_by_id.get(d)}
 
+    used_neg: Dict[str, set] = defaultdict(set)
     emitted_per_query: Dict[str, int] = defaultdict(int)
     progress = True
     while len(items) < n_items and progress:
@@ -472,12 +500,19 @@ def load_relevance_items(
             if emitted_per_query[qid] >= per_query_cap:
                 continue
             j = emitted_per_query[qid]
-            pos_ids = [d for d in positives[qid] if corpus_by_id.get(d)]
-            negs = ranked_neg[qid]
-            if j >= len(negs) or not pos_ids:
+            pos_list = sorted(q_pos_scores[qid])
+            avail = [(nid, s) for nid, s in q_neg_scores[qid].items()
+                     if nid not in used_neg[qid]]
+            if not pos_list or not avail:
                 continue
-            pos_id = pos_ids[j % len(pos_ids)]
-            neg_id, neg_score = negs[j]
+            pos_id = pos_list[j % len(pos_list)]
+            pos_score = q_pos_scores[qid][pos_id]
+            if difficulty == "hard":
+                # lexically matched: negative whose BM25 is closest to the positive's.
+                neg_id, neg_score = min(avail, key=lambda t: (abs(t[1] - pos_score), t[0]))
+            else:
+                neg_id, neg_score = avail[rng.randrange(len(avail))]
+            used_neg[qid].add(neg_id)
             pos_text, neg_text = corpus_by_id.get(pos_id, ""), corpus_by_id.get(neg_id, "")
             emitted_per_query[qid] += 1
             progress = True
@@ -507,13 +542,15 @@ def load_relevance_items(
                             "qrels_dataset": qrels_id,
                             "pairing": (
                                 "both candidates human-judged: relevant=TREC grade 2, "
-                                "non-relevant=TREC grade 0; distractor selected by BM25 "
-                                "hardness within the explicit-non-relevant pool"
+                                "non-relevant=TREC grade 0; distractor is the explicit "
+                                "negative whose query BM25 is closest to the positive's, "
+                                "so lexical overlap does not identify the relevant doc"
                             ),
                             "difficulty": difficulty,
+                            "pos_bm25_score": f"{pos_score:.4f}",
                             "neg_bm25_score": f"{neg_score:.4f}",
-                            "neg_bm25_rank_in_pool": str(j + 1),
-                            "n_explicit_negatives": str(len(negs)),
+                            "bm25_abs_gap": f"{abs(neg_score - pos_score):.4f}",
+                            "n_explicit_negatives": str(len(q_neg_scores[qid])),
                         },
                         retrieved_at=retrieved_at,
                     ),
@@ -654,13 +691,44 @@ def load_preference_items(
         margin = best - (sum(directional.values()) - best)
         return margin, total, margin / total
 
-    # Stable sort after the seeded shuffle: difficulty orders the pool,
-    # the shuffle breaks ranking ties deterministically per seed.
     margins = {key: _margin(key) for key in keys}
-    if difficulty == "hard":
-        keys.sort(key=lambda k: (margins[k][2], margins[k][0]) if margins[k] else (2.0, 0))
-    else:
-        keys.sort(key=lambda k: (-margins[k][2], -margins[k][0]) if margins[k] else (2.0, 0))
+
+    def _winner_longer(key) -> bool:
+        """True if the human-preferred response is the longer one. Used to
+        BALANCE length, not to select on it: MT-Bench annotators preferred the
+        longer answer ~69% of the time, so an unbalanced pool lets a judge score
+        ~69% by always picking the longer response (verbosity bias). Balancing
+        winner-longer to ~50% removes length as a usable signal."""
+        _q, ra, rb, _r = texts[key]
+        directional = {k: v for k, v in votes[key].items() if k in ("model_a", "model_b")}
+        winners = [k for k, v in directional.items() if v == max(directional.values())]
+        winner_text = ra if winners[0] == "model_a" else rb
+        loser_text = rb if winners[0] == "model_a" else ra
+        return len(winner_text) > len(loser_text)
+
+    def _contest_key(k):
+        m = margins[k]
+        return (m[2], m[0]) if difficulty == "hard" else (-m[2], -m[0])
+
+    eligible = [k for k in keys if margins[k] is not None]
+    longer = sorted([k for k in eligible if _winner_longer(k)], key=_contest_key)
+    shorter = sorted([k for k in eligible if not _winner_longer(k)], key=_contest_key)
+    # Interleave the two length buckets so the winner is longer in ~half the
+    # selected items; within each bucket the most contested comparisons come
+    # first. A tail from the larger bucket is taken only if one bucket is
+    # exhausted before n_items is reached; the residual balance is reported.
+    # Produce the FULL balanced ordering of all eligible comparisons, not just
+    # n_items of them: the item-building loop below drops duplicate-content
+    # pairs, so it needs surplus to still reach n_items. Taking the first n_items
+    # of this balanced order keeps winner-longer near 50%.
+    keys = []
+    li = si = 0
+    while li < len(longer) or si < len(shorter):
+        take_longer = li < len(longer) and (si >= len(shorter) or li <= si)
+        if take_longer:
+            keys.append(longer[li]); li += 1
+        else:
+            keys.append(shorter[si]); si += 1
 
     retrieved_at = _now_iso()
     items: List[SourceItem] = []
@@ -713,9 +781,13 @@ def load_preference_items(
                         "vote_tally": str(tally),
                         "label_rule": f"majority of >= {min_votes} human votes; ties and single-vote items excluded",
                         "difficulty": difficulty,
+                        "contested": "yes" if margin_ratio < 1.0 else "no (unanimous majority)",
                         "vote_margin": str(margin),
                         "vote_margin_ratio": f"{margin_ratio:.4f}",
                         "total_votes": str(total_votes),
+                        "winner_is_longer": "yes" if len(ra if label == "candidate_1" else rb) > len(rb if label == "candidate_1" else ra) else "no",
+                        "winner_chars": str(len(ra if label == "candidate_1" else rb)),
+                        "loser_chars": str(len(rb if label == "candidate_1" else ra)),
                     },
                     retrieved_at=retrieved_at,
                 ),
