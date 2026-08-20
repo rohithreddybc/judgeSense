@@ -94,7 +94,14 @@ def metrics_for_cell(recs: List[dict], task: str) -> Dict:
         "chance_corrected_jss": round(chance_corrected_jss(recs, "disagree"), 4),
         "decision_entropy_bits": round(decision_entropy(recs), 4),
         "label_histogram": label_histogram(recs),
-        "malformed_rate": round(format_failure_rate(recs, "a")["format_failure_rate"], 4),
+        # Malformed output is counted over BOTH arms: a judge can fail to parse
+        # on either phrasing, and reporting one side under-states the rate that
+        # the strict-mode JSS is charging for.
+        "malformed_rate": round(
+            (format_failure_rate(recs, "a")["n_failed"]
+             + format_failure_rate(recs, "b")["n_failed"]) / (2 * len(recs)), 4),
+        "malformed_rate_arm_a": round(format_failure_rate(recs, "a")["format_failure_rate"], 4),
+        "malformed_rate_arm_b": round(format_failure_rate(recs, "b")["format_failure_rate"], 4),
     }
     if likert:
         out["quadratic_weighted_kappa"] = round(

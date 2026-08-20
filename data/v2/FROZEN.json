@@ -1,0 +1,25 @@
+{
+  "note": "content hashes exclude source.retrieved_at, which is volatile by design",
+  "splits": {
+    "factuality": {
+      "sha256": "e87bd53934d27cbeb7bb7caddb8cbb56c2011515ad9bd4fc0f714883e7d77906",
+      "rows": 250,
+      "unique_items": 250
+    },
+    "coherence": {
+      "sha256": "ef2419553bc70afbd6b57f31915427a454a5ef3f2332976d4df4ebdd0b1454e0",
+      "rows": 250,
+      "unique_items": 250
+    },
+    "relevance": {
+      "sha256": "0771bd74bc06fe71d04ea7041995ee5b927c58182ef2a05b73cfe0de1df6ffd1",
+      "rows": 500,
+      "unique_items": 250
+    },
+    "preference": {
+      "sha256": "56da73d200d20d76635b8401ddc992b644387e3e005350f5a7198f74df2dbf20",
+      "rows": 500,
+      "unique_items": 250
+    }
+  }
+}
