@@ -159,6 +159,27 @@ def check_label_degeneracy(records: List[dict], cfg: dict) -> dict:
     }
 
 
+def _split_candidates(prompt: str):
+    """The two candidates from a rendered pairwise prompt, or (None, None).
+
+    Pairwise prompts lay the options out as lines beginning "A:" and "B:", with
+    either candidate free to span multiple lines. Scanning for those markers
+    rather than pattern-matching the whole prompt keeps this working when a
+    candidate itself contains blank lines or code.
+    """
+    lines = prompt.split("\n")
+    starts = {}
+    for i, line in enumerate(lines):
+        for marker in ("A:", "B:"):
+            if line.startswith(marker) and marker not in starts:
+                starts[marker] = i
+    if "A:" not in starts or "B:" not in starts or starts["A:"] >= starts["B:"]:
+        return None, None
+    a = "\n".join(lines[starts["A:"]:starts["B:"]])[len("A:"):].strip()
+    b = "\n".join(lines[starts["B:"]:])[len("B:"):].strip()
+    return (a, b) if a and b else (None, None)
+
+
 def check_length_shortcut(records: List[dict], cfg: dict) -> dict:
     """On a pairwise task, the correct candidate must not be identifiable by
     length. If the ground-truth answer is the longer candidate far more than
@@ -182,26 +203,48 @@ def check_length_shortcut(records: List[dict], cfg: dict) -> dict:
         if wl in ("yes", "no"):
             longer_wins += (wl == "yes"); seen += 1
             continue
-        # relevance and any pairwise task without the field: compare candidate texts
-        cmap = r.get("candidate_map") or {}
+        # relevance and any pairwise task without the field: compare the
+        # candidates as the judge actually sees them, which is the rendered
+        # prompt. Reading `response_being_judged` matched nothing on relevance,
+        # so every row was skipped and the check reported a share on n=0 -- a
+        # check that measures nothing reads exactly like one that found nothing.
         pos = r.get("ground_truth_position")
-        gt_text = r.get(f"candidate_relevant") if pos else None
-        # fall back to the displayed prompt split
-        m = re.search(r"\bA:\s*(.*?)\n\s*B:\s*(.*)$", str(r.get("response_being_judged", "")), re.S)
-        if not m:
+        a_txt, b_txt = _split_candidates(
+            str(r.get("prompt_a") or r.get("response_being_judged") or ""))
+        if a_txt is None:
             continue
-        a_txt, b_txt = m.group(1), m.group(2)
         gt_txt = a_txt if pos == "A" else b_txt
         other = b_txt if pos == "A" else a_txt
         if len(gt_txt) == len(other):
             continue
         longer_wins += len(gt_txt) > len(other); seen += 1
-    share = (longer_wins / seen) if seen else 0.5
-    passed = share <= max_share
+    if not seen:
+        # Never report a share for zero observations: that is the failure this
+        # check itself had. A pairwise split whose candidates cannot be read is
+        # an audit failure, not a pass.
+        return {
+            "check": "length_shortcut",
+            "observed": {"longer_wins_share": None, "n": 0},
+            "threshold": {"max_longer_wins_share": max_share},
+            "passed": False,
+            "detail": ("pairwise split but no candidate pair could be read from "
+                       "prompt_a or response_being_judged; the length shortcut "
+                       "is unmeasured, not absent."),
+        }
+    share = longer_wins / seen
+    # Two-sided. A split where the correct answer is reliably the SHORTER
+    # candidate is exploited by "always pick the shorter one" just as cheaply,
+    # and that is not hypothetical: the v2 relevance split was first built with
+    # maximum-BM25 negatives, which made the distractor denser than the true
+    # positive, so an inverse-overlap heuristic scored 75-92%. A one-sided cap
+    # would have called that clean.
+    min_share = cfg.get("min_longer_wins_share", 1.0 - max_share)
+    passed = min_share <= share <= max_share
     return {
         "check": "length_shortcut",
         "observed": {"longer_wins_share": round(share, 4), "n": seen},
-        "threshold": {"max_longer_wins_share": max_share},
+        "threshold": {"max_longer_wins_share": max_share,
+                      "min_longer_wins_share": round(min_share, 4)},
         "passed": passed,
         "detail": (f"correct answer is the longer candidate in {share:.1%} of {seen} "
                    f"pairwise items; a length-only baseline scores this. "

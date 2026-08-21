@@ -1,6 +1,6 @@
 {
   "builder_version": "2.0.0",
-  "built_at": "2026-08-20T03:29:12.282903+00:00",
+  "built_at": "2026-08-21T00:25:56.257412+00:00",
   "seed": 42,
   "items_per_task": 250,
   "tasks": {
@@ -30,10 +30,10 @@
     },
     "preference": {
       "file": "preference.jsonl",
-      "rows": 500,
-      "unique_items": 250,
-      "unique_prompt_pairs": 250,
-      "distinct_source_records": 229,
+      "rows": 452,
+      "unique_items": 226,
+      "unique_prompt_pairs": 226,
+      "distinct_source_records": 208,
       "source_dataset": "lmsys/mt_bench_human_judgments"
     }
   }

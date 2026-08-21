@@ -12,14 +12,14 @@
       "unique_items": 250
     },
     "relevance": {
-      "sha256": "0771bd74bc06fe71d04ea7041995ee5b927c58182ef2a05b73cfe0de1df6ffd1",
+      "sha256": "18c0c5cbbdfcf3051635a4ef9f759897160d30b58e3fea7a7d2fe2e6b1bfb7e7",
       "rows": 500,
       "unique_items": 250
     },
     "preference": {
-      "sha256": "56da73d200d20d76635b8401ddc992b644387e3e005350f5a7198f74df2dbf20",
-      "rows": 500,
-      "unique_items": 250
+      "sha256": "6208084cc8356498cbd1816b1463d6cbc331b4966511fda9f2bc87d2de5082e0",
+      "rows": 452,
+      "unique_items": 226
     }
   }
 }

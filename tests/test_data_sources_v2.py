@@ -152,7 +152,7 @@ def test_relevance_uses_human_judged_positive_and_explicit_negative():
         ("BeIR/trec-covid", "queries", "queries"): queries,
         ("BeIR/trec-covid-qrels", None, "test"): qrels,
     })
-    items = load_relevance_items(n_items=1, _loader=loader)
+    items = load_relevance_items(n_items=1, _loader=loader, min_document_chars=0)
     item = items[0]
     sf = item.source.source_fields
     assert sf["relevant_doc_id"] == "d3"
@@ -186,7 +186,7 @@ def test_preference_majority_vote_and_tie_exclusion():
         row(5, "tie"), row(5, "tie"),                             # tie label -> excluded
     ]
     loader = make_loader({("lmsys/mt_bench_human_judgments", None, "human"): FakeSplit(rows)})
-    items = load_preference_items(n_items=2, _loader=loader)
+    items = load_preference_items(n_items=2, _loader=loader, length_balance=False)
 
     by_qid = {i.source.source_record_id.split(";")[0]: i for i in items}
     assert set(by_qid) == {"question_id=1", "question_id=2"}   # single-vote q3 excluded by default
@@ -197,7 +197,7 @@ def test_preference_majority_vote_and_tie_exclusion():
 
     # Only two multi-vote majority items exist; asking for three must fail loud.
     with pytest.raises(DataSourceSchemaError, match="refusing to pad"):
-        load_preference_items(n_items=3, _loader=loader)
+        load_preference_items(n_items=3, _loader=loader, length_balance=False)
 
 
 def test_preference_min_votes_one_readmits_single_annotator_items():
@@ -214,7 +214,7 @@ def test_preference_min_votes_one_readmits_single_annotator_items():
     loader = make_loader({("lmsys/mt_bench_human_judgments", None, "human"): FakeSplit(rows)})
     # default min_votes=2 rejects both single-vote items
     with pytest.raises(DataSourceSchemaError):
-        load_preference_items(n_items=1, _loader=loader)
+        load_preference_items(n_items=1, _loader=loader, length_balance=False)
     # min_votes=1 restores the prior single-vote behaviour
-    items = load_preference_items(n_items=1, min_votes=1, _loader=loader)
+    items = load_preference_items(n_items=1, min_votes=1, _loader=loader, length_balance=False)
     assert len(items) == 1

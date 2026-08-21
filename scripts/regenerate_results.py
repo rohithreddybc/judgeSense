@@ -107,6 +107,31 @@ def _accuracy(recs: List[dict], task: str) -> Dict:
     return {"accuracy": correct / len(scored), "answer_A_rate": a_rate, "n": len(scored)}
 
 
+def _defined(fn, *args, **kwargs):
+    """A metric's value, or None where it is mathematically undefined.
+
+    A judge that never emits a parseable decision has no chance-correctable
+    pairs, no scorable Likert records, and no decision distribution, so
+    `chance_corrected_jss`, `quadratic_weighted_kappa` and `decision_entropy`
+    all raise ValueError on it. That is not a defect in the run: a cell whose
+    output is 100% malformed is a real and publishable result about that judge,
+    reported here as a malformed_rate of 1.0 with the undefined metrics null.
+    Allowing the exception to propagate aborted `main`'s loop over raw files, so
+    one unparseable judge destroyed the metrics for every other judge in a run
+    that had already been paid for.
+    """
+    try:
+        return fn(*args, **kwargs)
+    except ValueError:
+        return None
+
+
+def _round4(value):
+    # `+ 0.0` normalises negative zero: a degenerate distribution rounds to
+    # -0.0, which serialises into JSON as "-0.0" and reads as a defect.
+    return None if value is None else round(value, 4) + 0.0
+
+
 def metrics_for_cell(recs: List[dict], task: str) -> Dict:
     likert = task == "coherence"
     strict = cluster_bootstrap_ci(recs, lambda r: jss(r, "disagree"), "item", n_bootstrap=2000)
@@ -116,8 +141,8 @@ def metrics_for_cell(recs: List[dict], task: str) -> Dict:
         "jss_strict": round(strict["estimate"], 4),
         "ci95": [round(strict["ci_lower"], 4), round(strict["ci_upper"], 4)],
         "cluster_unit": "item",
-        "chance_corrected_jss": round(chance_corrected_jss(recs, "disagree"), 4),
-        "decision_entropy_bits": round(decision_entropy(recs), 4),
+        "chance_corrected_jss": _round4(_defined(chance_corrected_jss, recs, "disagree")),
+        "decision_entropy_bits": _round4(_defined(decision_entropy, recs)),
         "label_histogram": label_histogram(recs),
         # Malformed output is counted over BOTH arms: a judge can fail to parse
         # on either phrasing, and reporting one side under-states the rate that
@@ -129,8 +154,8 @@ def metrics_for_cell(recs: List[dict], task: str) -> Dict:
         "malformed_rate_arm_b": round(format_failure_rate(recs, "b")["format_failure_rate"], 4),
     }
     if likert:
-        out["quadratic_weighted_kappa"] = round(
-            quadratic_weighted_kappa(recs, unclear_policy="disagree"), 4)
+        out["quadratic_weighted_kappa"] = _round4(
+            _defined(quadratic_weighted_kappa, recs, unclear_policy="disagree"))
     if task not in POINTWISE:
         out["pairwise"] = _accuracy(recs, task)
     if any(r.get("decision_a_repeat") is not None for r in recs):
@@ -156,7 +181,13 @@ def main(argv=None) -> int:
         recs = _records(f)
         if len(recs) < 2:
             continue
-        summary.setdefault(judge, {})[task] = metrics_for_cell(recs, task)
+        try:
+            summary.setdefault(judge, {})[task] = metrics_for_cell(recs, task)
+        except Exception as exc:  # noqa: BLE001 - one bad cell must not void the rest
+            print(f"  [skip] {judge}/{task}: {type(exc).__name__}: {exc}")
+            summary.setdefault(judge, {})[task] = {
+                "error": f"{type(exc).__name__}: {exc}", "n_rows": len(recs),
+            }
 
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
     OUT_JSON.write_text(json.dumps(summary, indent=2), encoding="utf-8")

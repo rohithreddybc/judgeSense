@@ -215,7 +215,7 @@ much as it does here.
   prior caller and its numbers are unchanged) that reports
   `calls_per_judge_with_repeat` / `total_calls_with_repeat` alongside the
   existing fields. `main_axis_run_plan()` states the main-axis cost
-  concretely: base cost is 1,500 rows × 2 prompt arms = 3,000 calls/judge;
+  concretely: base cost is 1,452 rows × 2 prompt arms = 2,904 calls/judge;
   the repeat baseline adds one S0 call per ITEM (pairwise orderings of the
   same item share one S0 context, exactly as on the structural axis), i.e.
   1,000 extra calls/judge (1,000 unique items: 250 factuality + 250

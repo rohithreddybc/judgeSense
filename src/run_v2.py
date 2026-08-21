@@ -15,7 +15,7 @@ Design guarantees, in order of why they matter for a paid run:
 2. PRE-FLIGHT. `--preflight` (implied before any full run unless --skip-preflight)
    checks every selected judge's API key is present and makes ONE real call per
    judge. A bad model id, missing key, or auth failure is surfaced before the
-   expensive loop, not 3,000 calls in.
+   expensive loop, not 2,904 calls in.
 3. PLAN BEFORE SPEND. The call count and per-judge token budget are printed and
    must be confirmed with --yes before a full run starts.
 4. NO SILENT LABELS. Parsing is the strict v2 parser; anything unparseable is
@@ -177,7 +177,7 @@ def run_cell(judge: str, task: str, budget_policy: str, repeat_baseline: bool,
         }
         # The repeat baseline is ONE extra call per ITEM, not per row. Pairwise
         # tasks emit two rows per item (original + swapped orderings), so firing
-        # it on every row would issue 1,500 repeat calls per judge against the
+        # it on every row would issue 1,452 repeat calls per judge against the
         # 1,000 the run plan budgets — a 12.5% overspend on the total sweep.
         # The noise ceiling only needs one prompt repeated, so it is taken on the
         # canonical ordering.

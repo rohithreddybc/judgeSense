@@ -24,7 +24,7 @@ below runs with no API calls; each must pass before the real run.
    `decision_a_repeat`).
 
 5. **Full end-to-end mock over the REAL dataset.** Run all four tasks through
-   `run_cell` with a deterministic mock judge (reads the real 1,500 rows),
+   `run_cell` with a deterministic mock judge (reads the real 1,452 rows),
    then `regenerate_results` over the output. Confirm: every cell produces a
    metrics record; item-level clustering treats the 2 pairwise rows/item as one
    cluster; position-corrected accuracy reads correctly; the repeat-baseline

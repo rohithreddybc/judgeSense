@@ -372,6 +372,33 @@ def load_coherence_items(
 
 # ── Task 3: relevance ← BEIR (SciFact) ──────────────────────────────────────
 
+# A retrieval corpus can carry records whose body text is missing. In
+# BeIR/trec-covid, 42,607 of 171,332 documents (25%) have an absent abstract,
+# stored as the literal string "Unknown" or as a fragment too short to judge.
+# Such a document is still a valid TREC judgement, so it survives every
+# label-level check, but it cannot support a relevance decision: a judge picks
+# against it by noticing it is empty, not by assessing relevance. One shipped in
+# v2 (item relv_treccovid_17_0, whose non-relevant candidate was "Unknown").
+# Excluded from the candidate pool at source so it can be selected neither as a
+# positive nor as a distractor.
+_PLACEHOLDER_DOC = re.compile(
+    r"^(unknown|none|n/?a|null|nan|untitled|no title|no abstract)$", re.IGNORECASE
+)
+_MIN_DOCUMENT_CHARS = 60
+
+
+def _is_usable_document(text: str, min_chars: int = _MIN_DOCUMENT_CHARS) -> bool:
+    """A document substantial enough that relevance is judged by reading it.
+
+    `min_chars` is a parameter so a test exercising unrelated logic (BM25
+    ranking, qrels grading) can use compact fixtures. The shipped default is
+    deliberately strict; lowering it in a real build reintroduces documents a
+    judge answers against by noticing they are empty.
+    """
+    t = (text or "").strip()
+    return bool(t) and len(t) >= min_chars and not _PLACEHOLDER_DOC.match(t)
+
+
 def load_relevance_items(
     n_items: int = DEFAULT_ITEMS_PER_TASK,
     seed: int = 42,
@@ -379,6 +406,7 @@ def load_relevance_items(
     qrels_id: str = "BeIR/trec-covid-qrels",
     qrels_split: str = "test",
     difficulty: str = "hard",
+    min_document_chars: int = _MIN_DOCUMENT_CHARS,
     _loader: Optional[Callable] = None,
 ) -> List[SourceItem]:
     """
@@ -435,10 +463,16 @@ def load_relevance_items(
     # Only the judged documents' text is needed; the TREC-COVID corpus is large,
     # so keep just those rather than the whole collection in memory.
     corpus_by_id: Dict[str, str] = {}
+    n_excluded_unusable = 0
     for row in corpus:
         did = str(row["_id"])
-        if did in judged_ids:
-            corpus_by_id[did] = (row["text"] or "").strip()
+        if did not in judged_ids:
+            continue
+        text = (row["text"] or "").strip()
+        if not _is_usable_document(text, min_document_chars):
+            n_excluded_unusable += 1
+            continue
+        corpus_by_id[did] = text
 
     index = _BM25Index({d: corpus_by_id[d] for d in judged_ids if corpus_by_id.get(d)})
 
@@ -581,6 +615,7 @@ def load_preference_items(
     split: str = "human",
     difficulty: str = "hard",
     min_votes: int = 2,
+    length_balance: bool = True,
     _loader: Optional[Callable] = None,
 ) -> List[SourceItem]:
     """
@@ -734,10 +769,19 @@ def load_preference_items(
     items: List[SourceItem] = []
     n_excluded_tie = 0
     n_excluded_duplicate = 0
+    n_excluded_length_quota = 0
     seen_content: set = set()
+    # Balancing the ORDER the candidates are considered in is not enough to
+    # balance the shipped set: the tie, empty-text and duplicate-content filters
+    # below drop items unevenly, so the interleave decays. Measured on the v2
+    # build, "always pick the longer response" still scored 0.548-0.560 -- a
+    # residual verbosity shortcut. A hard per-bucket quota makes the shipped
+    # split exactly even regardless of what the filters remove, so length
+    # carries no information about the label.
+    bucket_of: Dict[str, bool] = {}
     for key in keys:
-        if len(items) >= n_items:
-            break
+        # No early break at n_items: the whole eligible pool is collected so the
+        # balanced trim below can choose from all of it.
         tally = votes[key]
         if margins[key] is None:
             n_excluded_tie += 1
@@ -762,6 +806,7 @@ def load_preference_items(
             n_excluded_duplicate += 1
             continue
         seen_content.add(content_signature)
+        winner_is_longer = _winner_longer(key)
 
         label = "candidate_1" if winners[0] == "model_a" else "candidate_2"
         qid, model_a, model_b = key
@@ -794,13 +839,59 @@ def load_preference_items(
                 extra={"candidate_1": ra, "candidate_2": rb},
             )
         )
+        bucket_of[items[-1].item_id] = winner_is_longer
 
-    if len(items) < n_items:
+    # Exact length balance, chosen over hitting a round item count.
+    #
+    # MT-Bench annotators preferred the longer response in 272 of the 385 usable
+    # pairs (70.6%), so "always pick the longer response" is a shortcut that
+    # scores far above chance on an unbalanced sample. Ordering the candidates by
+    # length bucket is not sufficient, because the tie, empty-text and
+    # duplicate-content filters remove items unevenly and the interleave decays:
+    # the v2 build shipped 250 items at 54.8% winner-longer, still an exploitable
+    # signal. Taking an equal number from each bucket makes it exactly 50%, so
+    # length carries no information about the label.
+    #
+    # The smaller bucket therefore caps the split at 2 x 113 = 226 items rather
+    # than the requested 250. That is a real limit of the human-labelled pool,
+    # not padding: the alternative is to ship 24 more items that reintroduce a
+    # measurable verbosity shortcut across the whole task.
+    longer_items = [it for it in items if bucket_of[it.item_id]]
+    shorter_items = [it for it in items if not bucket_of[it.item_id]]
+    n_eligible = len(items)
+    if length_balance:
+        per_bucket = min(len(longer_items), len(shorter_items), n_items // 2)
+        n_excluded_length_quota = n_eligible - 2 * per_bucket
+        keep = {it.item_id for it in longer_items[:per_bucket]}
+        keep |= {it.item_id for it in shorter_items[:per_bucket]}
+        items = [it for it in items if it.item_id in keep]
+        # A shortfall the balance itself caused is a deliberate trade, reported
+        # rather than raised. A shortfall the POOL caused is still fatal: too
+        # few eligible pairs to fill the request means the source could not
+        # supply the benchmark, and padding it is the v1 defect.
+        balance_limited = 2 * per_bucket < n_items <= n_eligible
+    else:
+        # Only for tests exercising margin/tie logic on fixtures too small to
+        # balance. A build with this off ships the pool's native ~70% verbosity
+        # skew, which is the shortcut the balance exists to remove.
+        per_bucket = n_items // 2
+        n_excluded_length_quota = 0
+        items = items[:n_items]
+        balance_limited = False
+
+    if len(items) < n_items and not balance_limited:
         raise DataSourceSchemaError(
-            f"MT-Bench human judgments yielded only {len(items)} usable "
+            f"MT-Bench human judgments yielded only {n_eligible} usable "
             f"majority-labeled pairs (requested {n_items}, "
             f"{n_excluded_tie} excluded as tie/no-majority, "
             f"{n_excluded_duplicate} as duplicate content); refusing to pad."
+        )
+    if balance_limited:
+        print(
+            f"  [preference] length-balanced to {len(items)} items "
+            f"({per_bucket} winner-longer + {per_bucket} winner-shorter); "
+            f"{n_excluded_length_quota} eligible pairs dropped to hold the "
+            f"balance exactly at 50%. Requested {n_items}."
         )
     return items
 

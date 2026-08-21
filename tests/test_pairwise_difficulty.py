@@ -98,7 +98,7 @@ def preference_loader():
 def test_hard_negative_is_top_bm25_explicit_negative():
     items = load_relevance_items(
         n_items=1, difficulty="hard", _loader=make_loader(relevance_splits())
-    )
+    , min_document_chars=0)
     fields = items[0].source.source_fields
     # The on-topic human-rejected doc wins over the off-topic fillers.
     assert fields["nonrelevant_doc_id"] == "d_hard"
@@ -114,7 +114,7 @@ def test_relevance_difficulty_fields_are_populated_and_consistent():
     for difficulty in ("hard", "easy"):
         items = load_relevance_items(
             n_items=1, difficulty=difficulty, _loader=make_loader(relevance_splits())
-        )
+        , min_document_chars=0)
         fields = items[0].source.source_fields
         assert fields["difficulty"] == difficulty
         assert float(fields["neg_bm25_score"]) >= 0.0
@@ -133,10 +133,10 @@ def test_hard_negative_scores_at_least_as_high_as_easy_negative():
     the same explicit-non-relevant pool, so hard can never score below it."""
     hard = load_relevance_items(
         n_items=1, difficulty="hard", _loader=make_loader(relevance_splits())
-    )[0]
+    , min_document_chars=0)[0]
     easy = load_relevance_items(
         n_items=1, difficulty="easy", _loader=make_loader(relevance_splits())
-    )[0]
+    , min_document_chars=0)[0]
     hard_neg = float(hard.source.source_fields["neg_bm25_score"])
     easy_neg = float(easy.source.source_fields["neg_bm25_score"])
     assert hard_neg >= easy_neg
@@ -149,7 +149,7 @@ def test_every_candidate_carries_a_human_relevance_judgement():
     # it is a document a human explicitly judged non-relevant.
     items = load_relevance_items(
         n_items=1, difficulty="hard", _loader=make_loader(relevance_splits())
-    )
+    , min_document_chars=0)
     for i in items:
         assert i.source.source_fields["relevant_human_grade"].startswith("2")
         assert i.source.source_fields["nonrelevant_human_grade"].startswith("0")
@@ -166,7 +166,7 @@ def test_bm25_ranking_is_deterministic_with_zero_overlap():
 def test_hard_preference_prefers_narrow_margins():
     items = load_preference_items(
         n_items=2, difficulty="hard", _loader=preference_loader()
-    )
+    , length_balance=False)
     qids = {i.source.source_record_id.split(";")[0] for i in items}
     # The two most contested comparisons: 2-1 (qid 2) and 2-0-1tie (qid 3).
     assert qids == {"question_id=2", "question_id=3"}
@@ -179,7 +179,7 @@ def test_hard_preference_prefers_narrow_margins():
 def test_easy_preference_prefers_unanimous():
     items = load_preference_items(
         n_items=2, difficulty="easy", _loader=preference_loader()
-    )
+    , length_balance=False)
     qids = {i.source.source_record_id.split(";")[0] for i in items}
     assert qids == {"question_id=1", "question_id=3"}
 
@@ -187,7 +187,7 @@ def test_easy_preference_prefers_unanimous():
 def test_preference_margin_fields_are_populated():
     items = load_preference_items(
         n_items=3, difficulty="hard", _loader=preference_loader()
-    )
+    , length_balance=False)
     by_qid = {i.source.source_record_id.split(";")[0]: i.source.source_fields for i in items}
 
     f2 = by_qid["question_id=2"]
@@ -217,7 +217,7 @@ def test_hard_split_mean_margin_ratio_below_easy():
     def mean_ratio(difficulty):
         items = load_preference_items(
             n_items=2, difficulty=difficulty, _loader=preference_loader()
-        )
+        , length_balance=False)
         return sum(
             float(i.source.source_fields["vote_margin_ratio"]) for i in items
         ) / len(items)
@@ -249,12 +249,12 @@ def test_relevance_same_doc_pair_ships_once():
     ])
     loader = make_loader(splits)
 
-    items = load_relevance_items(n_items=1, difficulty="hard", _loader=loader)
+    items = load_relevance_items(n_items=1, difficulty="hard", _loader=loader, min_document_chars=0)
     assert len(items) == 1
 
     from src.data_sources import DataSourceSchemaError
     with pytest.raises(DataSourceSchemaError, match="duplicate document pairs"):
-        load_relevance_items(n_items=2, difficulty="hard", _loader=loader)
+        load_relevance_items(n_items=2, difficulty="hard", _loader=loader, min_document_chars=0)
 
 
 def test_preference_role_reversed_pair_ships_once():
@@ -282,12 +282,12 @@ def test_preference_role_reversed_pair_ships_once():
     loader = make_loader(
         {("lmsys/mt_bench_human_judgments", None, "human"): FakeSplit(rows)}
     )
-    items = load_preference_items(n_items=1, difficulty="hard", _loader=loader)
+    items = load_preference_items(n_items=1, difficulty="hard", _loader=loader, length_balance=False)
     assert len(items) == 1
 
     from src.data_sources import DataSourceSchemaError
     with pytest.raises(DataSourceSchemaError, match="refusing to pad"):
-        load_preference_items(n_items=2, difficulty="hard", _loader=loader)
+        load_preference_items(n_items=2, difficulty="hard", _loader=loader, length_balance=False)
 
 
 # ── Guard rails ──────────────────────────────────────────────────────────────
@@ -295,10 +295,10 @@ def test_preference_role_reversed_pair_ships_once():
 def test_invalid_difficulty_raises():
     with pytest.raises(ValueError, match="difficulty"):
         load_relevance_items(n_items=1, difficulty="medium",
-                             _loader=make_loader(relevance_splits()))
+                             _loader=make_loader(relevance_splits()), min_document_chars=0)
     with pytest.raises(ValueError, match="difficulty"):
         load_preference_items(n_items=1, difficulty="brutal",
-                              _loader=preference_loader())
+                              _loader=preference_loader(), length_balance=False)
 
 
 def test_ties_still_excluded_in_both_difficulties():
@@ -320,6 +320,6 @@ def test_ties_still_excluded_in_both_difficulties():
         {("lmsys/mt_bench_human_judgments", None, "human"): FakeSplit(rows)}
     )
     for difficulty in ("hard", "easy"):
-        items = load_preference_items(n_items=3, difficulty=difficulty, _loader=loader)
+        items = load_preference_items(n_items=3, difficulty=difficulty, _loader=loader, length_balance=False)
         qids = {i.source.source_record_id.split(";")[0] for i in items}
         assert "question_id=4" not in qids  # 1-1 tie can never ship

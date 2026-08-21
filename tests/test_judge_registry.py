@@ -139,31 +139,33 @@ def test_run_plan_states_repeat_arm_cost_explicitly():
 
 
 def test_main_axis_dataset_shape_matches_documented_composition():
-    # 250 factuality + 250 coherence + 500 relevance + 500 preference = 1500
-    # rows; pairwise tasks fold 2 orderings into 1 item -> 1000 unique items.
-    assert MAIN_AXIS_TOTAL_ROWS == 1500
-    assert MAIN_AXIS_TOTAL_ITEMS == 1000
+    # 250 factuality + 250 coherence + 500 relevance + 452 preference = 1452
+    # rows; pairwise tasks fold 2 orderings into 1 item -> 976 unique items.
+    # Preference is 226 items, not 250: the split is held at an exact 50/50
+    # winner-longer balance and the pool's smaller bucket has only 113 pairs.
+    assert MAIN_AXIS_TOTAL_ROWS == 1452
+    assert MAIN_AXIS_TOTAL_ITEMS == 976
 
 
 def test_main_axis_run_plan_without_repeat_matches_rows_times_arms():
     plan = main_axis_run_plan(judges=["gpt-4o"], include_repeat_baseline=False)
-    assert plan["calls_per_judge"] == 3000        # 1500 rows x 2 prompt arms
+    assert plan["calls_per_judge"] == 2904        # 1452 rows x 2 prompt arms
     assert plan["repeat_calls_per_judge"] == 0
-    assert plan["calls_per_judge_with_repeat"] == 3000
+    assert plan["calls_per_judge_with_repeat"] == 2904
     assert plan["dataset"]["include_repeat_baseline"] is False
 
 
 def test_main_axis_run_plan_with_repeat_adds_one_call_per_item():
     plan = main_axis_run_plan(judges=["gpt-4o"], include_repeat_baseline=True)
-    assert plan["calls_per_judge"] == 3000
-    assert plan["repeat_calls_per_judge"] == 1000   # one S0 call per item
-    assert plan["calls_per_judge_with_repeat"] == 4000
-    assert plan["total_calls_with_repeat"] == 4000  # single judge here
+    assert plan["calls_per_judge"] == 2904
+    assert plan["repeat_calls_per_judge"] == 976    # one S0 call per item
+    assert plan["calls_per_judge_with_repeat"] == 3880
+    assert plan["total_calls_with_repeat"] == 3880  # single judge here
 
 
 def test_main_axis_run_plan_scales_across_default_verified_judges():
     plan = main_axis_run_plan(include_repeat_baseline=True)
     n = plan["n_judges"]
-    assert plan["total_calls"] == 3000 * n
-    assert plan["total_calls_with_repeat"] == 4000 * n
-    assert plan["total_calls_with_repeat"] - plan["total_calls"] == 1000 * n
+    assert plan["total_calls"] == 2904 * n
+    assert plan["total_calls_with_repeat"] == 3880 * n
+    assert plan["total_calls_with_repeat"] - plan["total_calls"] == 976 * n
