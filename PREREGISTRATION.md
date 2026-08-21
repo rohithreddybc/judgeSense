@@ -7,7 +7,18 @@ advance; this file is that fixture, and the paper cites its commit hash.
 
 ## Primary endpoint
 
-**ΔJSS = JSS_repeat − JSS_paraphrase**, per judge–task cell.
+**ΔJSS = JSS_paraphrase − JSS_repeat**, per judge–task cell.
+
+A NEGATIVE ΔJSS means the judge is less stable under rewording than under
+resampling, which is the effect the paper is about.
+
+(Sign-convention correction, made after the first wave landed and recorded here
+rather than silently: this file originally wrote the difference the other way
+round while `metrics_v2.jss_repeat_delta` — written and tested well before the
+run — computes paraphrase minus repeat. The quantity, the estimator, the
+clustering unit and the decision rule below are unchanged; only the direction of
+subtraction in this prose was wrong. Both orderings were always visible in the
+committed output, which reports `jss`, `jss_rep` and `delta` side by side.)
 
 JSS_paraphrase is agreement between the judge's decisions on two
 meaning-equivalent phrasings of the same item. JSS_repeat is agreement between
@@ -26,6 +37,7 @@ enforced in code: the two `ab_order` rows of a pairwise item share an `item_id`
 and the repeat arm nests inside it, so any looser unit understates uncertainty.
 
 The finding is declared present for a cell when the CI for ΔJSS excludes zero.
+The direction of the effect is read from the sign, not chosen after the fact.
 
 ## Support: which pairs enter JSS
 
