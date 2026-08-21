@@ -28,7 +28,7 @@ ceiling for that judge and task.
 ΔJSS is the endpoint rather than raw JSS because raw JSS confounds paraphrase
 sensitivity with a judge's ordinary sampling variance. A judge that is merely
 noisy scores low on both; only a judge that is specifically destabilised by
-rewording shows a positive Δ. The claim the paper makes is about the second
+rewording shows a negative Δ. The claim the paper makes is about the second
 thing.
 
 Uncertainty: 95% cluster bootstrap CI, 2,000 resamples, `cluster_unit="item"`,

@@ -26,7 +26,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 _REPO = Path(__file__).resolve().parent.parent
 import sys
@@ -45,7 +45,11 @@ OUT_TEX = _REPO / "tables" / "main_results_v2.tex"
 POINTWISE = {"factuality", "coherence"}
 
 
-def _records(path: Path) -> List[dict]:
+class MixedConfigurationError(RuntimeError):
+    """A cell contains rows produced under more than one decoding budget."""
+
+
+def _records(path: Path, budget_policy: Optional[str] = None) -> List[dict]:
     """Raw rows -> metric records ({decision_a, decision_b, item_id, ...}).
 
     Deduplicates by pair_id, KEEPING THE LAST record written. The runner appends
@@ -79,6 +83,27 @@ def _records(path: Path) -> List[dict]:
         print(f"  [{path.name}] {n_superseded} superseded record(s) ignored "
               f"(retried rows); using the last write per pair_id")
 
+    # Rows produced under different decoding budgets are different
+    # measurements and must never be pooled into one cell. Scoring the mixture
+    # silently reported a judge as run at one budget while part of its data came
+    # from another.
+    policies = {r.get("budget_policy") for r in by_pair.values()}
+    policies.discard(None)
+    if budget_policy is not None and policies:
+        # A file whose records carry NO policy at all predates the field; it is
+        # legacy, not a mismatch, and is scored as-is. Filtering only applies
+        # once at least one record declares a policy, which is what makes a
+        # mixed cell detectable.
+        by_pair = {k: v for k, v in by_pair.items()
+                   if v.get("budget_policy") in (budget_policy, None)}
+        order = [p for p in order if p in by_pair]
+    elif len(policies) > 1:
+        raise MixedConfigurationError(
+            f"{path.name} mixes decoding budgets {sorted(policies)}. "
+            f"Re-run the cell under one policy, or pass budget_policy= to select. "
+            f"Pooling them would report the cell as run at a budget it was not."
+        )
+
     recs = []
     for pid in order:
         r = by_pair[pid]
@@ -90,6 +115,11 @@ def _records(path: Path) -> List[dict]:
             "ground_truth_label": r.get("ground_truth_label"),
             "ground_truth_position": r.get("ground_truth_position"),
             "decision_a_repeat": r.get("decision_a_repeat"),
+            # Required by the repeat-delta support filter. Omitting it made
+            # every row look canonical, which silently restored the very
+            # canonical-vs-swapped contamination the filter exists to remove.
+            "ab_order": r.get("ab_order"),
+            "budget_policy": r.get("budget_policy"),
             # Per-call metadata is carried through because a provider-reported
             # refusal is a distinct outcome from an unparseable answer, and the
             # two are indistinguishable once both are UNCLEAR. Absent on runs
@@ -138,7 +168,32 @@ def _round4(value):
     return None if value is None else round(value, 4) + 0.0
 
 
-REFUSAL = "refusal"
+# Providers spell "I declined to answer" differently, and the raw string is
+# stored verbatim so the record keeps what the provider actually said. Matching
+# only Anthropic's "refusal" silently misclassified every OpenAI-compatible
+# decline as a verdict: its empty content parses to UNCLEAR, and under the
+# disagree policy that is then CHARGED AS PARAPHRASE DISAGREEMENT -- the exact
+# outcome the taxonomy exists to prevent. Those judges' refusal rates would have
+# read 0.0 no matter what happened.
+REFUSAL_REASONS = frozenset({
+    "refusal",          # anthropic
+    "content_filter",   # openai and OpenAI-compatible gateways
+    "safety",           # google
+    "recitation",       # google, blocked output
+    "blocklist",        # google
+    "prohibited_content",
+})
+
+
+def _is_refusal_reason(reason) -> bool:
+    """The one place a provider decline is recognised.
+
+    Both the pair classifier and the per-call rate route through this, so the
+    two can no longer disagree about what a refusal is -- they did, and the
+    per-call rate kept matching Anthropic's spelling after the classifier was
+    generalised.
+    """
+    return isinstance(reason, str) and reason.strip().lower() in REFUSAL_REASONS
 
 
 def _arm_refused(rec: dict, arm: str) -> bool:
@@ -148,9 +203,12 @@ def _arm_refused(rec: dict, arm: str) -> bool:
     text: a judge that writes "I cannot help with that" in parseable prose is
     malformed output, not a provider-flagged refusal, and the two must not be
     silently merged.
+
+    Matching is case-insensitive because providers are inconsistent about case
+    (google returns enum names such as SAFETY).
     """
     usage = rec.get(f"usage_{arm}") or {}
-    return usage.get("finish_reason") == REFUSAL
+    return _is_refusal_reason(usage.get("finish_reason"))
 
 
 def _pair_class(rec: dict) -> str:
@@ -165,6 +223,50 @@ def _pair_class(rec: dict) -> str:
     if a or b:
         return "one_refused"
     return "both_verdict"
+
+
+def _malformed_rate(recs: List[dict]) -> Optional[float]:
+    """Unparseable COMPLETED responses, over arms that were not refused.
+
+    Both a refusal and a malformed answer end as UNCLEAR, so counting UNCLEAR
+    directly double-counts every refusal and attributes a safety behaviour to
+    format-following. The denominator excludes refused arms too: a refused arm
+    had no opportunity to be well-formed, so including it deflates the rate.
+    """
+    failed = arms = 0
+    for r in recs:
+        for arm in ("a", "b"):
+            if _arm_refused(r, arm):
+                continue
+            arms += 1
+            failed += r.get(f"decision_{arm}") in (None, UNCLEAR)
+    return failed / arms if arms else None
+
+
+def _outcome_partition(recs: List[dict]) -> Dict:
+    """The three outcome categories, as counts that must sum to the arm total.
+
+    Reported as an explicit partition because the paper claims each call ends in
+    exactly one of three outcomes; an assertion is cheaper than a reader
+    checking it by hand.
+    """
+    verdict = refused = malformed = 0
+    for r in recs:
+        for arm in ("a", "b"):
+            if _arm_refused(r, arm):
+                refused += 1
+            elif r.get(f"decision_{arm}") in (None, UNCLEAR):
+                malformed += 1
+            else:
+                verdict += 1
+    total = verdict + refused + malformed
+    return {
+        "n_arm_calls": total,
+        "n_verdict_arms": verdict,
+        "n_refused_arms": refused,
+        "n_malformed_arms": malformed,
+        "partitions": total == 2 * len(recs),
+    }
 
 
 def _refusal_taxonomy(recs: List[dict]) -> Dict:
@@ -182,6 +284,16 @@ def _refusal_taxonomy(recs: List[dict]) -> Dict:
     judged means a meaning-preserving rewording changed whether the judge was
     willing to judge at all.
     """
+    metered = any(
+        (r.get(f"usage_{arm}") or {}).get("finish_reason") is not None
+        for r in recs for arm in ("a", "b")
+    )
+    if not metered:
+        # Same rule as refusal_rate: absent metering is unknown, not zero.
+        # Reporting RDR 0.0 for an unmetered cell states that no rewording
+        # changed the judge's willingness to answer, which was never measured.
+        return {"n_verdict_pairs": len(recs), "refusal_discordance_rate": None,
+                "consistent_refusal_rate": None}
     classes = [_pair_class(r) for r in recs]
     n = len(recs) or 1
     return {
@@ -195,7 +307,8 @@ def _refusal_stats(recs: List[dict]) -> Dict:
     """Share of arm-calls the provider reported as a refusal.
 
     Read from the per-call usage metadata the runner records
-    (`finish_reason == "refusal"`), so it reflects what the provider said rather
+    (a provider decline reason in REFUSAL_REASONS), so it reflects what the
+    provider said rather
     than an inference from empty output. Null where no arm carried usage at all,
     which is the case for runs made before usage metering existed.
     """
@@ -208,7 +321,7 @@ def _refusal_stats(recs: List[dict]) -> Dict:
             if not usage:
                 continue
             arms += 1
-            refused += usage.get("finish_reason") == "refusal"
+            refused += _is_refusal_reason(usage.get("finish_reason"))
     if not arms:
         return {"refusal_rate": None, "n_refusals": 0, "n_metered_arms": 0}
     return {
@@ -229,7 +342,12 @@ def metrics_for_cell(recs: List[dict], task: str) -> Dict:
     strict = cluster_bootstrap_ci(scored, lambda r: jss(r, "disagree"), "item", n_bootstrap=2000)
     out = {
         "n_rows": len(recs),
+        # n_items counts every item in the cell; n_items_analysed is the cluster
+        # count the interval was actually computed over, which is smaller
+        # wherever pairs were dropped from the support. Printing only the first
+        # beside a CI overstated the analysed support by 43% on one cell.
         "n_items": len({r["item_id"] for r in recs}),
+        "n_items_analysed": strict.get("n_clusters"),
         "jss_strict": round(strict["estimate"], 4),
         "ci95": [round(strict["ci_lower"], 4), round(strict["ci_upper"], 4)],
         "cluster_unit": "item",
@@ -239,9 +357,13 @@ def metrics_for_cell(recs: List[dict], task: str) -> Dict:
         # Malformed output is counted over BOTH arms: a judge can fail to parse
         # on either phrasing, and reporting one side under-states the rate that
         # the strict-mode JSS is charging for.
-        "malformed_rate": round(
-            (format_failure_rate(recs, "a")["n_failed"]
-             + format_failure_rate(recs, "b")["n_failed"]) / (2 * len(recs)), 4),
+        # Refusals are SUBTRACTED here. A refused arm yields empty content,
+        # which parses to UNCLEAR and would otherwise be counted a second time
+        # as malformed output -- so the two "distinct outcomes" did not
+        # partition, and a judge's safety behaviour was reported as a
+        # format-following failure. Measured on one cell before the fix:
+        # malformed 0.500 of which 0.298 was refusal.
+        "malformed_rate": _round4(_malformed_rate(recs)),
         "malformed_rate_arm_a": round(format_failure_rate(recs, "a")["format_failure_rate"], 4),
         "malformed_rate_arm_b": round(format_failure_rate(recs, "b")["format_failure_rate"], 4),
         # A judge that DECLINES an item is not the same measurement as one whose
@@ -252,6 +374,7 @@ def metrics_for_cell(recs: List[dict], task: str) -> Dict:
         # together would attribute a safety behaviour to format-following.
         **_refusal_stats(recs),
         **_refusal_taxonomy(recs),
+        "outcome_partition": _outcome_partition(recs),
         # Sensitivity analysis: every refused arm counted as disagreement, the
         # most punitive reading. Reported so a reviewer can see what the
         # conditioning above is worth rather than having to take it on trust.
@@ -265,15 +388,72 @@ def metrics_for_cell(recs: List[dict], task: str) -> Dict:
     if task not in POINTWISE:
         out["pairwise"] = _accuracy(recs, task)
     if any(r.get("decision_a_repeat") is not None for r in recs):
-        rep = [{"decision_a": r["decision_a"], "decision_b": r["decision_a_repeat"],
-                "item_id": r["item_id"]} for r in recs if r.get("decision_a_repeat")]
-        out["jss_repeat_delta"] = jss_repeat_delta(recs, rep, "item", n_bootstrap=2000)
+        out["jss_repeat_delta"] = _repeat_delta(verdict or recs)
+    return out
+
+
+# A cell whose primary endpoint rests on a handful of items is not a result. The
+# floor is declared here, in code, rather than left to a reader to notice: one
+# committed cell carried a delta computed on THREE clusters with a zero-width
+# 95% interval and no warning attached.
+MIN_DELTA_CLUSTERS = 100
+MAX_ITEM_LOSS_FRACTION = 0.5
+
+
+def _repeat_delta(recs: List[dict]) -> Dict:
+    """ΔJSS on a support both terms actually share.
+
+    Two defects made the earlier call uninterpretable.
+
+    First, the repeat arm is issued only on the canonical ordering, while the
+    paraphrase term averaged canonical AND position-swapped rows. Swapped rows
+    are by design the harder half -- they exist to defeat a position-anchored
+    judge -- so the difference absorbed a canonical-versus-swapped contrast that
+    has nothing to do with wording, biasing the endpoint toward the hypothesised
+    sign by construction. Both terms are now restricted to the canonical rows.
+
+    Second, the paraphrase term was computed refusal-inclusive while the JSS
+    reported beside it was computed over verdict pairs, so one cell carried
+    three different JSS values under one estimation rule. The caller now passes
+    the same support used for jss_strict.
+    """
+    canonical = [r for r in recs if r.get("ab_order") in (None, "original")]
+    rep = [{"decision_a": r["decision_a"], "decision_b": r["decision_a_repeat"],
+            "item_id": r["item_id"]}
+           for r in canonical if r.get("decision_a_repeat") is not None]
+    if not rep:
+        return {"delta": None, "reason": "no repeat arm on the canonical ordering"}
+
+    para_items = {r["item_id"] for r in canonical}
+    rep_items = {r["item_id"] for r in rep}
+    common = para_items & rep_items
+    loss = 1.0 - (len(common) / len(para_items)) if para_items else 1.0
+    if len(common) < MIN_DELTA_CLUSTERS:
+        return {"delta": None, "n_clusters": len(common),
+                "reason": f"support {len(common)} below the declared floor of "
+                          f"{MIN_DELTA_CLUSTERS} clusters"}
+    if loss > MAX_ITEM_LOSS_FRACTION:
+        return {"delta": None, "n_clusters": len(common),
+                "item_loss_fraction": round(loss, 4),
+                "reason": f"{loss:.0%} of items lack a usable pair on one side; "
+                          f"above the declared {MAX_ITEM_LOSS_FRACTION:.0%} ceiling"}
+
+    out = jss_repeat_delta(canonical, rep, "item", n_bootstrap=2000)
+    out["support"] = "canonical ordering, verdict pairs"
+    out["item_loss_fraction"] = round(loss, 4)
     return out
 
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Regenerate v2 results from raw outputs.")
     ap.add_argument("--raw", default=str(RAW))
+    # The main results are declared to use the matched budget; selecting it here
+    # means a cell polluted by a smoke test at another policy is excluded rather
+    # than silently pooled. Pass --budget-policy "" to score every row and let
+    # the mixed-configuration guard fire instead.
+    ap.add_argument("--budget-policy", default="matched",
+                    help="score only rows produced under this decoding budget "
+                         "(default: matched; empty string disables the filter)")
     args = ap.parse_args(argv)
     raw = Path(args.raw)
     files = sorted(raw.glob("*_*.jsonl"))
@@ -284,7 +464,7 @@ def main(argv=None) -> int:
     summary: Dict[str, Dict] = {}
     for f in files:
         judge, task = f.stem.rsplit("_", 1)
-        recs = _records(f)
+        recs = _records(f, args.budget_policy or None)
         if len(recs) < 2:
             continue
         try:

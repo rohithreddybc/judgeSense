@@ -99,12 +99,17 @@ def test_errored_row_is_reattempted_on_resume(tiny_dataset, monkeypatch):
     assert stats["new"] == 3
 
 
-def test_repeat_baseline_adds_a_third_arm(tiny_dataset, monkeypatch):
-    # a,b,repeat per row x1 row
-    monkeypatch.setattr(run_v2, "_call", _answers(["YES", "YES", "NO"]))
+def test_repeat_baseline_repeats_both_templates_not_just_arm_a(tiny_dataset, monkeypatch):
+    """The ceiling must be measurable on the same template whose disagreement it
+    explains. Repeating only arm A left noise under template B charged to
+    paraphrasing, so the endpoint was partly a property of which template was
+    designated A."""
+    # a, b, repeat-a, repeat-b for one row
+    monkeypatch.setattr(run_v2, "_call", _answers(["YES", "YES", "NO", "YES"]))
     run_v2.run_cell("gpt-4o", "factuality", "native", repeat_baseline=True, limit=1)
     rec = json.loads(open(run_v2._out_path("gpt-4o", "factuality"), encoding="utf-8").readline())
     assert rec["decision_a"] == "YES" and rec["decision_a_repeat"] == "NO"
+    assert rec["decision_b"] == "YES" and rec["decision_b_repeat"] == "YES"
 
 
 def test_unparseable_output_is_unclear_not_a_crash(tiny_dataset, monkeypatch):
@@ -178,9 +183,11 @@ def test_repeat_baseline_fires_once_per_item_not_per_row(tmp_path, monkeypatch):
     monkeypatch.setattr(run_v2, "_call", counting)
     run_v2.run_cell("gpt-4o", "relevance", "native", repeat_baseline=True, limit=None)
 
-    # 2 rows x 2 arms = 4, plus exactly ONE repeat (on the original ordering)
-    assert len(calls) == 5, f"expected 5 calls (4 arms + 1 repeat), got {len(calls)}"
+    # 2 rows x 2 arms = 4, plus TWO repeats (both templates, canonical row only)
+    assert len(calls) == 6, f"expected 6 calls (4 arms + 2 repeats), got {len(calls)}"
     recs = [json.loads(l) for l in open(run_v2._out_path("gpt-4o", "relevance"), encoding="utf-8")]
     by_order = {r["ab_order"]: r for r in recs}
     assert "decision_a_repeat" in by_order["original"]
+    assert "decision_b_repeat" in by_order["original"]
     assert "decision_a_repeat" not in by_order["swapped"]
+    assert "decision_b_repeat" not in by_order["swapped"]

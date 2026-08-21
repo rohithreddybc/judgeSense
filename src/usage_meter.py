@@ -32,6 +32,7 @@ replacing this slot with a thread-local or an explicit return value.
 
 from __future__ import annotations
 
+import hashlib
 import time
 from typing import Any, Dict, Optional, Tuple
 
@@ -91,6 +92,24 @@ def extract_usage(provider: str, response: Any) -> Tuple[Optional[int], Optional
     return _g(response, "usage", "prompt_tokens"), _g(response, "usage", "completion_tokens")
 
 
+def extract_served_model(provider: str, response: Any) -> Optional[str]:
+    """The model string the PROVIDER echoed back, not the one we asked for.
+
+    Most judge ids in the registry are floating aliases: an alias resolves to
+    whatever snapshot the provider currently serves, so a replication a year
+    from now can silently run a different model under the same name. Where the
+    provider echoes a resolved id, recording it makes that drift detectable
+    after the fact even though it cannot be prevented at request time.
+    """
+    if response is None:
+        return None
+    for attr in ("model", "model_version", "modelVersion"):
+        value = getattr(response, attr, None)
+        if isinstance(value, str) and value:
+            return value
+    return None
+
+
 def extract_finish_reason(provider: str, response: Any) -> Optional[str]:
     """Why the provider stopped generating, or None if it did not say.
 
@@ -126,22 +145,62 @@ def _first_text(parts) -> str:
     return (text or "").strip()
 
 
+# The decoding configuration is ONE constant applied to every provider, because
+# a judge-class comparison is uninterpretable if the classes were sampled
+# differently. The earlier per-branch construction diverged on two axes at once:
+# the Anthropic branch passed no temperature at all (defaulting to 1.0, which
+# produced a 13.6% self-disagreement rate on byte-identical prompts and was very
+# nearly read as a decoding-noise ceiling), HuggingFace used 0.01, and three of
+# the five branches sent no system prompt -- so those judges were never given the
+# instruction that suppresses the preamble the strict parser rejects, and their
+# malformed output was charged as paraphrase disagreement.
+#
+# Every resolved parameter is recorded on the call record; nothing about the
+# configuration is inferred from this source at analysis time.
+TEMPERATURE = 0.0
+
+# Models that reject an explicit temperature. The parameter is omitted and the
+# omission is RECORDED, so the provider default is visible in the data rather
+# than silently mixed in with the matched judges.
+_NO_TEMPERATURE_PREFIXES = ("gpt-5",)
+
+
+def accepts_temperature(model_id: str) -> bool:
+    return not model_id.lower().startswith(_NO_TEMPERATURE_PREFIXES)
+
+
+def decoding_config(model_id: str, max_tokens: int) -> Dict[str, Any]:
+    """What was actually requested, for the record. Never re-derived later."""
+    return {
+        "temperature": TEMPERATURE if accepts_temperature(model_id) else None,
+        "temperature_omitted_provider_default": not accepts_temperature(model_id),
+        "max_tokens": max_tokens,
+        "system_prompt_sent": True,
+        "system_prompt_sha": hashlib.sha256(_SYSTEM_PROMPT.encode()).hexdigest()[:12],
+    }
+
+
 def _request(provider: str, client, model_id: str, prompt: str, max_tokens: int) -> Tuple[str, Any]:
-    """Make one SDK request; return (text, raw_response). Mirrors evaluate's
-    per-provider calls exactly so the metered path is not a different
-    experiment from the one the v1 code documents."""
+    """One SDK request; returns (text, raw_response).
+
+    Every branch sends the same system prompt and the same temperature. Where a
+    provider expresses those differently (Google takes a system instruction on
+    the config object; the chat APIs take a system message), the transport
+    differs but the request does not.
+    """
+    messages = [
+        {"role": "system", "content": _SYSTEM_PROMPT},
+        {"role": "user", "content": prompt},
+    ]
     if provider in ("openai", "novita", "dashscope", "groq"):
         kwargs = {
             "model": model_id,
-            "messages": [
-                {"role": "system", "content": _SYSTEM_PROMPT},
-                {"role": "user", "content": prompt},
-            ],
+            "messages": messages,
             "timeout": _TIMEOUT,
             _openai_token_param(model_id): max_tokens,
         }
-        if not model_id.lower().startswith("gpt-5"):
-            kwargs["temperature"] = 0.0
+        if accepts_temperature(model_id):
+            kwargs["temperature"] = TEMPERATURE
         r = client.chat.completions.create(**kwargs)
         if not getattr(r, "choices", None):
             return "", r
@@ -149,13 +208,14 @@ def _request(provider: str, client, model_id: str, prompt: str, max_tokens: int)
     if provider == "anthropic":
         r = client.messages.create(
             model=model_id, max_tokens=max_tokens, system=_SYSTEM_PROMPT,
+            temperature=TEMPERATURE,
             messages=[{"role": "user", "content": prompt}],
         )
         return _first_text(getattr(r, "content", None)), r
     if provider == "huggingface":
         r = client.chat.completions.create(
-            model=model_id, messages=[{"role": "user", "content": prompt}],
-            max_tokens=max_tokens, temperature=0.01,
+            model=model_id, messages=messages,
+            max_tokens=max_tokens, temperature=TEMPERATURE,
         )
         if not getattr(r, "choices", None):
             return "", r
@@ -165,15 +225,16 @@ def _request(provider: str, client, model_id: str, prompt: str, max_tokens: int)
         r = client.models.generate_content(
             model=model_id, contents=prompt,
             config=types.GenerateContentConfig(
-                max_output_tokens=max_tokens, temperature=0.0,
+                max_output_tokens=max_tokens, temperature=TEMPERATURE,
+                system_instruction=_SYSTEM_PROMPT,
                 thinking_config=types.ThinkingConfig(thinking_budget=0),
             ),
         )
         return (getattr(r, "text", None) or "").strip(), r
     if provider == "mistral":
         r = client.chat.complete(
-            model=model_id, messages=[{"role": "user", "content": prompt}],
-            temperature=0.0, max_tokens=max_tokens,
+            model=model_id, messages=messages,
+            temperature=TEMPERATURE, max_tokens=max_tokens,
         )
         if not getattr(r, "choices", None):
             return "", r
@@ -202,6 +263,10 @@ def metered_call(provider: str, client, model_id: str, prompt: str, max_tokens: 
             LAST_CALL_META = {
                 "input_tokens": tin,
                 "output_tokens": tout,
+                "decoding": decoding_config(model_id, max_tokens),
+                "model_id": model_id,
+                "model_served": extract_served_model(provider, response),
+                "provider": provider,
                 "finish_reason": extract_finish_reason(provider, response),
                 "empty_content": text == "",
                 "total_tokens": (tin + tout) if (tin is not None and tout is not None) else None,
@@ -220,6 +285,9 @@ def metered_call(provider: str, client, model_id: str, prompt: str, max_tokens: 
         "input_tokens": None,
         "output_tokens": None,
         "total_tokens": None,
+        "decoding": decoding_config(model_id, max_tokens),
+        "model_id": model_id,
+        "provider": provider,
         "finish_reason": None,
         "empty_content": None,
         "latency_ms": int((time.time() - t0) * 1000),

@@ -94,3 +94,37 @@ def test_runs_without_usage_metadata_behave_exactly_as_before():
     assert out["n_verdict_pairs"] == 10
     assert out["refusal_rate"] is None, "absent metering is unknown, not zero refusals"
     assert out["jss_strict"] == 1.0
+
+
+# ── regression: a decline must be recognised on EVERY provider ───────────────
+# Matching only Anthropic's "refusal" made an OpenAI-compatible decline classify
+# as a verdict; its empty content parsed to UNCLEAR and was then charged as
+# paraphrase disagreement, which is precisely what the taxonomy exists to
+# prevent. Those judges would have reported refusal_rate 0.0 regardless.
+
+@pytest.mark.parametrize("reason", [
+    "refusal", "content_filter", "safety", "recitation", "blocklist",
+    "SAFETY", "Content_Filter", "  refusal  ",
+])
+def test_every_provider_decline_spelling_counts_as_refusal(reason):
+    regen = _regen()
+    rec = _rec(0, "UNCLEAR", "UNCLEAR", reason, reason)
+    assert regen._arm_refused(rec, "a"), f"{reason!r} must count as a refusal"
+    assert regen._pair_class(rec) == "both_refused"
+
+
+@pytest.mark.parametrize("reason", ["end_turn", "stop", "max_tokens", "length", None, 123])
+def test_normal_terminations_are_not_refusals(reason):
+    regen = _regen()
+    assert not regen._arm_refused(_rec(0, fa=reason), "a")
+
+
+def test_openai_decline_is_not_charged_as_paraphrase_disagreement():
+    """The end-to-end consequence of the bug this guards."""
+    regen = _regen()
+    recs = [_rec(i, "UNCLEAR", "UNCLEAR", "content_filter", "content_filter")
+            for i in range(10)]
+    out = regen.metrics_for_cell(recs, "factuality")
+    assert out["n_verdict_pairs"] == 0, "declines must not be scored as verdicts"
+    assert out["refusal_rate"] == 1.0
+    assert out["consistent_refusal_rate"] == 1.0

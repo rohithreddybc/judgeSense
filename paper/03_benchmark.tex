@@ -1,0 +1,148 @@
+% ---------------------------------------------------------------------------
+% Benchmark construction. Number-independent: everything here is a property of
+% the artifact, not of any judge's behaviour, so it is stable across runs.
+% ---------------------------------------------------------------------------
+\section{The JudgeSense benchmark}
+\label{sec:benchmark}
+
+JudgeSense measures whether an LLM judge returns the same verdict when the same
+evaluation request is worded differently. The construct is deliberately narrow:
+we are not asking whether a judge is \emph{correct}, but whether it is
+\emph{stable}. A judge that is consistently wrong is reproducible; a judge whose
+verdict depends on which of two equivalent phrasings it received is not usable as
+a measuring instrument, however accurate it looks on average.
+
+\subsection{Tasks and sources}
+\label{sec:sources}
+
+The benchmark covers four evaluation tasks, each drawn from an existing
+human-labelled corpus. No item is authored by us, and no label is assigned or
+inferred by us; every label is the one the source corpus already carried.
+
+\begin{description}
+  \item[Factuality] (250 items, TruthfulQA). A statement is judged accurate or
+    inaccurate. Items whose question is ill-posed, and whose only defensible
+    answer is a refusal to answer, are excluded at load time.
+  \item[Coherence] (250 items, SummEval). A summary is rated 1--5 for
+    coherence against expert annotations. Summaries with identical text but
+    conflicting expert labels are dropped rather than merged.
+  \item[Relevance] (250 items, 500 rows, BEIR TREC-COVID). Given a topic, the
+    judge picks the more relevant of two passages. \emph{Both} candidates carry
+    a human relevance grade: the positive is graded fully relevant (2) and the
+    distractor is one a human assessor explicitly rejected (0). Partially
+    relevant documents (grade 1) are used for neither role.
+  \item[Preference] (226 items, 452 rows, MT-Bench human judgments). The judge
+    picks the response humans preferred. Only comparisons with at least two
+    annotator votes and a clear majority are used.
+\end{description}
+
+The relevance construction is the substantive departure from the usual practice
+of drawing distractors from a positives-only collection. There, a negative can
+only be a document \emph{absent} from an incomplete relevance judgment set, so a
+topically similar distractor may in fact be relevant but unjudged, and the item
+penalises a defensible answer. TREC-COVID carries graded judgments including
+tens of thousands of explicit non-relevant assessments, so here both candidates
+are human-labelled and the distractor is one a human affirmatively rejected.
+
+Every shipped item records its source dataset, configuration, split, and
+per-record identifier, so any item can be traced to the row it came from.
+Loaders raise rather than substitute when a source is unavailable; there is no
+fallback path that could silently generate an item.
+
+\subsection{Paraphrase design}
+
+Each item is issued under two instruction templates that differ in wording and
+not in what they ask. Templates are held to a fixed label space: a check run in
+continuous integration asserts that no template alters the set of admissible
+answers or inverts their polarity.
+
+This constraint is a correction of our own earlier design. An earlier version of
+this benchmark included a factuality template that inverted the answer polarity
+(``does this response contain factual errors? answer NO if accurate''). Under a
+single shared label space, ``YES'' then denoted opposite conclusions in different
+arms, so a judge that answered both arms correctly was recorded as having
+disagreed with itself. That is a label-convention defect in the benchmark rather
+than a property of any model, and it measures a different construct: handling a
+polarity flip is a comprehension task, whereas we ask whether equivalent
+phrasings yield equivalent verdicts.
+
+We state the direction of the resulting bias rather than leave it implicit.
+Polarity-inverted pairings are among the hardest items in the set, so excluding
+them can only push measured consistency \emph{upward}; our stability figures are
+conditioned on that exclusion and should be read accordingly. The alternative ---
+retaining the inverted templates and remapping each template's raw answers onto a
+single canonical decision space before comparison --- is implemented in the
+released code, and we report the remapped analysis alongside the
+excluded-pairing analysis so the exclusion's effect on the reported numbers is
+visible rather than assumed.
+
+\subsection{Position control}
+
+Both pairwise tasks present every item twice, once in each candidate ordering.
+The correct answer therefore sits at position A in exactly half the rows, and a
+judge that ignores content and always answers ``A'' scores $0.500$ rather than
+$1.000$.
+
+This too corrects an earlier version, in which the correct candidate always
+appeared first. Under that construction a position-anchored judge was
+indistinguishable from a perfect one, and most judges scored a degenerate
+$\mathrm{JSS}=1.000$ that reflected the layout rather than any judgment.
+
+\subsection{Shortcut controls}
+\label{sec:shortcuts}
+
+A benchmark measures what it claims to measure only if it cannot be passed by a
+heuristic that ignores the intended construct. We therefore evaluate the shipped
+splits against judges that use no judgment at all. Each is run over the released
+files, not over the loaders, so these are properties of the artifact:
+
+\begin{itemize}
+  \item \textbf{Position only} (always answer A): $0.500$ on relevance
+    ($n=500$) and $0.500$ on preference ($n=452$), by construction of the swap
+    design.
+  \item \textbf{Length only} (pick the longer candidate): $0.482$ on relevance
+    ($n=494$), $0.514$ on preference ($n=440$).
+  \item \textbf{Lexical overlap only} (pick the candidate sharing more terms with
+    the query): $0.508$ on relevance ($n=248$).
+\end{itemize}
+
+Support counts fall below the row counts because a heuristic that ties has no
+signal to act on; tied rows are excluded rather than split, which is why the
+overlap control rests on roughly half the relevance rows. All three figures are
+computed from the released files by \texttt{scripts/shortcut\_controls.py} and
+its committed output, so each is reproducible without rerunning any judge.
+
+None of these exceeds chance in either direction, and the length control is
+enforced rather than observed. Human annotators in the preference corpus
+preferred the longer
+response in roughly 70\% of usable comparisons, so an unfiltered sample rewards
+verbosity directly; we hold the winner-longer share at exactly 50\% by taking an
+equal number of items from each length bucket. That $50\%$ is a construction
+invariant of the item set and is a different quantity from the $0.514$ above,
+which is what a length-following judge scores on the rendered rows once ties are
+dropped. The smaller bucket caps the
+preference split at 226 items rather than the round 250. We regard that as the
+correct trade: the alternative is 24 additional items that reintroduce a
+measurable verbosity shortcut across the whole task.
+
+The lexical control required a similar correction. Selecting each distractor to
+maximise its term overlap with the topic --- the obvious way to make an item
+``hard'' --- made distractors \emph{denser} in query terms than the genuinely
+relevant passages, so the heuristic ``pick the passage with \emph{lower} overlap''
+recovered the answer far above chance. Matching the distractor's retrieval score
+to the positive's, rather than maximising it, removes overlap as a signal in
+either direction. We report the control two-sided for this reason: a split whose
+answer is reliably the \emph{shorter} or \emph{less overlapping} candidate is
+exploited exactly as cheaply as one biased the other way.
+
+\subsection{Release and integrity}
+
+The dataset is released with Croissant metadata, per-item provenance, and a
+content hash for each split that excludes retrieval timestamps, so a rebuild can
+be verified as identical in content without being byte-identical in metadata. A
+28-check audit gate runs in continuous integration and fails the build on
+duplicate content, unbacked provenance claims, label degeneracy, insufficient
+clustering support, contradictory ground truth, or a length shortcut exceeding
+its bound. Checks that cannot read the data they are meant to inspect fail
+rather than pass, so a check that silently measures nothing cannot be mistaken
+for a check that found nothing wrong.

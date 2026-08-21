@@ -1,0 +1,153 @@
+% ---------------------------------------------------------------------------
+% Metric definitions and the analysis plan. Number-independent.
+% ---------------------------------------------------------------------------
+\section{Measuring sensitivity}
+\label{sec:metrics}
+
+\subsection{Judge Sensitivity Score}
+
+For an item issued under two equivalent templates, let $d_1(p)$ and $d_2(p)$ be
+the judge's parsed decisions on pair $p$. The Judge Sensitivity Score is the
+agreement rate
+
+\[
+  \mathrm{JSS} = \frac{1}{|P|}\sum_{p \in P} \mathbb{1}[d_1(p) = d_2(p)],
+\]
+
+over the set of scored pairs $P$. JSS never consults the ground-truth label. A
+judge that is wrong on every item but wrong \emph{identically} under both
+phrasings scores $1.0$, and this is intended: it is a measure of reproducibility,
+not of accuracy. We report accuracy separately, and the two answer different
+questions. On the pairwise tasks the companion measure is \emph{position-corrected}
+accuracy --- whether the judge selected the side carrying the ground truth, given
+that the swap design places it at position A in exactly half the rows --- and on
+the pointwise tasks it is ordinary accuracy against the source label. The
+distinction matters: a judge that always answers ``A'' has an ordinary accuracy
+that depends only on the layout, while its position-corrected accuracy is
+$0.500$ and its behaviour is immediately visible.
+
+Because raw agreement is inflated when a judge's output distribution is
+compressed --- a judge answering ``YES'' almost always agrees with itself --- we
+report the chance-corrected form (Cohen's $\kappa$; quadratic-weighted for the
+ordinal coherence task) alongside every raw figure.
+
+\subsection{The repeat baseline, and why it is the endpoint}
+\label{sec:repeat}
+
+Raw JSS below $1.0$ does not by itself demonstrate sensitivity to \emph{wording}.
+A judge sampling at nonzero temperature, or one served through a
+non-deterministic backend, disagrees with itself on the identical prompt. Some
+portion of any measured disagreement is therefore ordinary decoding noise, and a
+paper that reports raw JSS attributes all of it to paraphrasing.
+
+We separate the two by issuing one template a second time, unchanged. The
+resulting $\mathrm{JSS}_{\text{rep}}$ is that judge's reproducibility ceiling on
+that task: the agreement it achieves when nothing varies. The primary endpoint is
+the difference
+
+\[
+  \Delta\mathrm{JSS} = \mathrm{JSS}_{\text{paraphrase}} - \mathrm{JSS}_{\text{rep}},
+\]
+
+which is negative when rewording costs more stability than resampling does. This
+is the quantity the paper's claim is about, and it was fixed in a pre-registered
+analysis plan committed to the repository before any judge was run.
+
+\subsection{Uncertainty}
+
+All intervals are 95\% cluster bootstrap intervals over 2{,}000 resamples, with
+the item as the resampling unit. Item-level clustering is required rather than
+preferred: a pairwise item contributes two rows (one per candidate ordering) and
+its repeat arm nests inside it, so resampling rows independently treats
+correlated observations as independent and understates uncertainty. The
+clustering unit is a mandatory argument in our implementation, with no default,
+so it cannot be omitted by accident.
+
+An effect is reported as present for a judge--task cell when the interval for
+$\Delta\mathrm{JSS}$ excludes zero. The direction is read from the sign.
+
+\subsection{Outcome categories: verdict, refusal, malformed}
+\label{sec:refusal}
+
+Each call terminates in exactly one of three outcomes.
+
+A \textbf{verdict} is a response the strict parser maps to a label in the task's
+answer space. A \textbf{refusal} is a response the provider itself flags as
+declined, typically with empty content. Providers spell this differently ---
+\texttt{stop\_reason="refusal"} for Anthropic, \texttt{finish\_reason=
+"content\_filter"} for OpenAI-compatible APIs, \texttt{SAFETY} or
+\texttt{RECITATION} for Google --- so the accepted set is enumerated in a single
+place in the released code and matched case-insensitively, and the raw string the
+provider returned is retained on every record. Recognising only one family's
+spelling would report a refusal rate of zero for every other family regardless of
+what those judges did, and would silently charge their declines as paraphrase
+disagreement.
+\textbf{Malformed output} is a completed response the parser cannot map. Parsing
+is strict and never coerces: an unmappable response is recorded with its raw text
+retained, never rounded to the nearest label.
+
+Malformed output and refusal are treated differently, and the asymmetry is
+deliberate. A malformed arm is \emph{charged as disagreement} and stays in the
+support: the model completed a response, so the pair reflects a judgment the
+parser could not read rather than one that was never rendered. A refused arm is
+removed from the support, because no judgment was rendered at all. Malformed-output
+rate is reported per cell alongside the refusal statistics below, so neither is
+absorbed into the other.
+
+Refusals and malformed output are indistinguishable after parsing --- both yield
+no usable label --- but they are different measurements, and we do not merge
+them. A refusal occurs \emph{upstream} of any judgment: the provider halted
+before the model rendered a verdict. Scoring it as paraphrase disagreement
+asserts that the judge produced two conflicting judgments, which it did not.
+Treating refusal as a third label is worse still, since a judge that refuses
+everything would then score $\mathrm{JSS} = 1.0$.
+
+We therefore compute JSS over pairs in which both arms returned verdicts, and
+report the support size $n$ alongside every figure. Refusal is reported as its
+own construct, per cell:
+
+\begin{itemize}
+  \item \emph{refusal rate}: refused calls over all calls;
+  \item \emph{refusal discordance rate} (RDR): pairs in which exactly one arm was
+    refused;
+  \item \emph{consistent refusal rate}: pairs in which both arms were refused.
+\end{itemize}
+
+RDR is itself a sensitivity statistic, and the most interesting of the three: a
+nonzero RDR means a meaning-preserving rewording changed whether the judge was
+willing to judge at all. That is prompt sensitivity of the willingness-to-answer
+layer, and it is invisible to any analysis that scores refusals as disagreement
+or discards them.
+
+Conditioning on verdict pairs restricts a refusing judge to the items it agreed
+to judge, which raises the fair objection that judges are then compared on
+different subsets. We answer it with a measurement rather than an argument: every
+cross-judge comparison in a task with nonzero refusals is recomputed on the
+common support --- the items every compared judge answered under both phrasings
+--- and we additionally report a refusal-inclusive figure in which every refused
+arm counts as disagreement, the most punitive available reading. Both appear
+beside the conditioned figure, so the effect of the conditioning is visible
+rather than asserted.
+
+\subsection{Decoding budget}
+\label{sec:budget}
+
+Every judge is run with an identical output token limit. This is not a neutral
+default: a class-dependent limit --- a tight cap for instruction-tuned judges and
+a generous one for reasoning-tuned judges, on the reasoning that the latter emit
+chain-of-thought --- confounds judge class with inference configuration, so any
+difference between the classes admits an explanation that has nothing to do with
+the models. It also truncates real responses: under such a configuration we
+observed judges terminating at the cap mid-sentence, with the fragment retained
+as the answer. Disagreement so produced is a property of the cap rather than of
+the judge. We do not quote a rate here, because the rate is a property of the
+configuration under study and is reported with its denominator by the ablation
+below rather than asserted in passing.
+
+The matched budget removes the explanation by construction. Because a token
+limit is a ceiling and not a target, compliant judges that emit a single-token
+answer are unaffected in cost; only verbose non-compliers cost more, and those
+are precisely the calls that were previously being truncated into noise. We
+quantify the budget's effect directly rather than assert it away, reporting a
+subsample ablation under the class-dependent configuration together with the
+cap-termination rate under each (Appendix~\ref{app:budget}).

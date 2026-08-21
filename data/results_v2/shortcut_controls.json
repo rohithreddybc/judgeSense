@@ -1,0 +1,52 @@
+{
+  "position_only": {
+    "description": "always answer A",
+    "tasks": {
+      "relevance": {
+        "accuracy": 0.5,
+        "n": 500,
+        "n_ties_excluded": 0,
+        "n_rows": 500
+      },
+      "preference": {
+        "accuracy": 0.5,
+        "n": 452,
+        "n_ties_excluded": 0,
+        "n_rows": 452
+      }
+    }
+  },
+  "length_only": {
+    "description": "pick the longer candidate",
+    "tasks": {
+      "relevance": {
+        "accuracy": 0.4818,
+        "n": 494,
+        "n_ties_excluded": 6,
+        "n_rows": 500
+      },
+      "preference": {
+        "accuracy": 0.5136,
+        "n": 440,
+        "n_ties_excluded": 12,
+        "n_rows": 452
+      }
+    }
+  },
+  "lexical_overlap_only": {
+    "description": "pick the candidate sharing more query terms",
+    "tasks": {
+      "relevance": {
+        "accuracy": 0.5081,
+        "n": 248,
+        "n_ties_excluded": 252,
+        "n_rows": 500
+      }
+    }
+  },
+  "band": {
+    "lower": 0.44,
+    "upper": 0.56,
+    "note": "two-sided: a reliably-shorter or reliably-lower-overlap answer is as exploitable as the reverse"
+  }
+}

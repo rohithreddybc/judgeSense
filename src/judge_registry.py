@@ -20,6 +20,14 @@ v1 registry carried:
   xmQT Limitations   no purpose-built judge models were evaluated, though those
                      are built precisely to resist the failures under study.
 
+`pinned` records whether the model id is a DATED SNAPSHOT or a floating alias.
+Most provider aliases resolve to whatever the vendor currently serves, so a
+replication cannot be guaranteed to run the same weights. Where a dated snapshot
+exists it is used; where it does not, `pinned=False` marks the entry and the
+runner records the provider-echoed model string on every call so drift is
+detectable after the fact. A scale or family claim must not rest on an unpinned
+entry without saying so.
+
 `verified` records whether a checkpoint identifier has been confirmed against
 the provider. Entries added from documentation but not yet exercised are marked
 False and are excluded from run selection unless explicitly requested — an
@@ -64,9 +72,15 @@ JUDGES: Dict[str, dict] = {
     "llama3-70b": dict(provider="groq", model_id="llama-3.1-70b-versatile",
                        key="GROQ_API_KEY", kind=INSTRUCT, family="llama-3.1",
                        size_b=70, native_max_tokens=20, verified=True),
-    "mistral-7b": dict(provider="mistral", model_id="mistral-small-latest",
-                       key="MISTRAL_API_KEY", kind=INSTRUCT, family="mistral",
-                       size_b=7, native_max_tokens=20, verified=True),
+    # NOT a 7B model. "mistral-small-latest" is a floating alias that does not
+    # resolve to a 7B checkpoint, and size_b feeds family_ladders, so a scale
+    # claim would have been built on a parameter count the name asserted and the
+    # checkpoint did not have. Renamed, and size_b is None until a versioned
+    # checkpoint with a published parameter count is pinned.
+    "mistral-small": dict(provider="mistral", model_id="mistral-small-latest",
+                          key="MISTRAL_API_KEY", kind=INSTRUCT, family="mistral",
+                          size_b=None, native_max_tokens=20, verified=True,
+                          pinned=False),
     "qwen": dict(provider="novita", model_id="qwen/qwen-2.5-72b-instruct",
                  key="NOVITA_API_KEY", kind=INSTRUCT, family="qwen-2.5",
                  size_b=72, native_max_tokens=20, verified=True),
@@ -180,7 +194,7 @@ def purpose_built_judges(verified_only: bool = True) -> List[str]:
 STRUCTURAL_AXIS_JUDGES = (
     "gpt-5.5", "claude-opus-4-7",   # frontier
     "gpt-4o", "qwen",               # mid
-    "mistral-7b", "llama3-8b",      # small
+    "mistral-small", "llama3-8b",   # small
 )
 
 

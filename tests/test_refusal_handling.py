@@ -82,7 +82,11 @@ def test_refusals_are_reported_separately_from_malformed_output():
     assert out["n_refusals"] == 5
     assert out["n_metered_arms"] == 20
     assert out["refusal_rate"] == pytest.approx(0.25)
-    assert out["malformed_rate"] > 0, "refused arms still count as malformed"
+    # Refused arms are EXCLUDED from the malformed rate now: counting them in
+    # both places meant the two "distinct outcomes" did not partition, and a
+    # judge's safety behaviour was reported as a format-following failure.
+    assert out["malformed_rate"] == 0.0, "a refusal is not malformed output"
+    assert out["outcome_partition"]["partitions"] is True
 
 
 def test_refusal_rate_is_null_when_no_arm_carried_usage():

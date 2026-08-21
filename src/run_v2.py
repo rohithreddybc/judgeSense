@@ -84,8 +84,8 @@ def _out_path(judge: str, task: str) -> Path:
     return _OUT_DIR / f"{judge}_{task}.jsonl"
 
 
-def _completed_pair_ids(path: Path) -> Set[str]:
-    """pair_ids whose LAST written record succeeded — skipped on resume.
+def _completed_pair_ids(path: Path, budget_policy: Optional[str] = None) -> Set[str]:
+    """pair_ids whose LAST written record succeeded UNDER THIS POLICY.
 
     Last-write-wins, not any-write-wins: the file is append-only, so a row that
     errored and was retried has both records present. Judging completion by the
@@ -99,8 +99,16 @@ def _completed_pair_ids(path: Path) -> Set[str]:
     last: Dict[str, Optional[str]] = {}
     for rec in _load_jsonl(path):
         pid = rec.get("pair_id")
-        if pid is not None:
-            last[str(pid)] = rec.get("error")
+        if pid is None:
+            continue
+        # A row already run under a DIFFERENT decoding budget is not done: it is
+        # a different measurement. Keying completion on pair_id alone made a
+        # cheap --limit smoke test at one policy permanently shadow the real
+        # rows at another, because the runner would never re-issue them and the
+        # reader had no idea the cell was a mixture.
+        if budget_policy is not None and rec.get("budget_policy") != budget_policy:
+            continue
+        last[str(pid)] = rec.get("error")
     return {pid for pid, err in last.items() if err is None}
 
 
@@ -156,7 +164,7 @@ def run_cell(judge: str, task: str, budget_policy: str, repeat_baseline: bool,
     if limit:
         rows = rows[:limit]
     out = _out_path(judge, task)
-    done = _completed_pair_ids(out)
+    done = _completed_pair_ids(out, budget_policy)
     client, model_id, provider = _resolve_client(judge)
     max_tokens = max_tokens_for(judge, budget_policy)
 
@@ -195,12 +203,23 @@ def run_cell(judge: str, task: str, budget_policy: str, repeat_baseline: bool,
         # 1,000 the run plan budgets — a 12.5% overspend on the total sweep.
         # The noise ceiling only needs one prompt repeated, so it is taken on the
         # canonical ordering.
+        # BOTH arms are repeated, not just arm A. The ceiling has to be
+        # measured on the same template whose disagreement it is meant to
+        # explain: if template B is intrinsically higher-entropy -- longer, more
+        # likely to draw a preamble the strict parser rejects -- then noise
+        # under B is charged to paraphrasing, because a ceiling measured only
+        # under A cannot absorb it. With one arm repeated, the endpoint was
+        # partly a property of which template happened to be designated A.
         if repeat_baseline and row.get("ab_order") in (None, "original"):
             raw_r, dec_r, err_r, use_r = _decide(provider, client, model_id, row["prompt_a"], task, max_tokens)
             rec["prompt_a_repeat_raw"] = raw_r
             rec["decision_a_repeat"] = dec_r
             rec["usage_a_repeat"] = use_r
-            rec["error"] = rec["error"] or err_r
+            raw_rb, dec_rb, err_rb, use_rb = _decide(provider, client, model_id, row["prompt_b"], task, max_tokens)
+            rec["prompt_b_repeat_raw"] = raw_rb
+            rec["decision_b_repeat"] = dec_rb
+            rec["usage_b_repeat"] = use_rb
+            rec["error"] = rec["error"] or err_r or err_rb
         _append_jsonl(rec, out)
         n_new += 1
         if rec["error"]:

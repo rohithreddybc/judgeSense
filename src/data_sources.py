@@ -646,6 +646,21 @@ def load_preference_items(
 
     Each item records its vote margin, margin ratio, and total vote count in
     `source_fields`, so per-item difficulty is auditable.
+
+    ``length_balance`` (default True) holds winner-longer at exactly 50% AND
+    matches the two length buckets on vote margin. Because MT-Bench supplies
+    only 113 winner-shorter comparisons against 272 winner-longer ones, a trim
+    that took the most-contested 113 of the longer bucket while keeping the
+    shorter bucket whole left the buckets matched on length but systematically
+    UNMATCHED on annotator agreement (measured: mean margin ratio 0.567 longer
+    vs 0.745 shorter; 16% vs 54% unanimous). Length was then decorrelated from
+    the label at the price of correlating it with how contested the comparison
+    is — a judge good on close calls reads as length-biased, and vice versa.
+    The selection is therefore STRATIFIED on margin: the smaller bucket fixes
+    the target margin distribution and the larger bucket is filled stratum by
+    stratum to match it, so neither length nor agreement carries information
+    about the label. ``difficulty`` still orders the smaller bucket when the
+    request is smaller than the pool, and breaks ties within a stratum.
     """
     _require_difficulty(difficulty)
     ds = (_loader or _load_hf_dataset)(dataset_id, config, split)
@@ -779,6 +794,10 @@ def load_preference_items(
     # split exactly even regardless of what the filters remove, so length
     # carries no information about the label.
     bucket_of: Dict[str, bool] = {}
+    # (margin ratio, absolute margin, total votes) per shipped item, so the trim
+    # below can stratify the two length buckets on annotator agreement as well
+    # as on length.
+    margin_of: Dict[str, Tuple[float, int, int]] = {}
     for key in keys:
         # No early break at n_items: the whole eligible pool is collected so the
         # balanced trim below can choose from all of it.
@@ -840,8 +859,10 @@ def load_preference_items(
             )
         )
         bucket_of[items[-1].item_id] = winner_is_longer
+        margin_of[items[-1].item_id] = (margin_ratio, margin, total_votes)
 
-    # Exact length balance, chosen over hitting a round item count.
+    # Exact length balance AND margin balance, chosen over hitting a round
+    # item count.
     #
     # MT-Bench annotators preferred the longer response in 272 of the 385 usable
     # pairs (70.6%), so "always pick the longer response" is a shortcut that
@@ -852,18 +873,92 @@ def load_preference_items(
     # signal. Taking an equal number from each bucket makes it exactly 50%, so
     # length carries no information about the label.
     #
-    # The smaller bucket therefore caps the split at 2 x 113 = 226 items rather
+    # Taking the FIRST per_bucket of each bucket in most-contested-first order,
+    # however, applies that selection asymmetrically. The shorter bucket has
+    # exactly 113 members, so all of them survive unselected; the longer bucket
+    # has 272, so only its most contested 113 survive. Measured on this pool the
+    # two buckets then differ sharply in annotator agreement — mean vote-margin
+    # ratio 0.5665 (median 0.500, 18/113 unanimous) for winner-longer against
+    # 0.7453 (median 1.000, 61/113 unanimous) for winner-shorter — which trades
+    # a length confound for an agreement confound: a judge that is good on close
+    # calls scores better on the longer bucket and reads as length-biased.
+    #
+    # The fix stratifies. The bucket that binds (the smaller one, or either one
+    # when n_items caps both) is selected first and fixes the target margin
+    # distribution; the other bucket is then filled stratum by stratum to match
+    # it, so the two buckets are matched on margin as well as on length. Strata
+    # are exact vote shapes (absolute margin, total votes), so the match covers
+    # the margin ratio, the raw margin and the annotation depth at once. On this
+    # pool 111 of 113 match exactly; the two 5-0 and 6-0 winner-shorter
+    # comparisons have no winner-longer counterpart at that vote shape and are
+    # filled from the nearest-ratio stratum.
+    #
+    # The smaller bucket still caps the split at 2 x 113 = 226 items rather
     # than the requested 250. That is a real limit of the human-labelled pool,
     # not padding: the alternative is to ship 24 more items that reintroduce a
-    # measurable verbosity shortcut across the whole task.
+    # measurable verbosity shortcut across the whole task. Note that the trim
+    # DISCARDS 159 eligible majority-labelled comparisons (385 - 226), not 24:
+    # 24 is only the gap between the request and what ships.
     longer_items = [it for it in items if bucket_of[it.item_id]]
     shorter_items = [it for it in items if not bucket_of[it.item_id]]
     n_eligible = len(items)
+
+    def _match_margin_distribution(pool: List[SourceItem],
+                                   reference: List[SourceItem]) -> List[SourceItem]:
+        """Pick len(reference) items from `pool` whose vote margins have the
+        same distribution as `reference`'s.
+
+        A stratum is the exact vote shape (absolute margin, total votes), which
+        also fixes the margin ratio — so matching strata matches the ratio, the
+        raw margin and the annotation depth together. Within a stratum `pool` is
+        already in difficulty order, so `difficulty` breaks ties. A stratum the
+        pool cannot fill is topped up from the stratum with the nearest margin
+        ratio (on a tie, the more contested side under "hard" and the more
+        decisive side under "easy"), which keeps the count exact when the pool's
+        support does not cover the reference's.
+        """
+        def _stratum(it: SourceItem) -> Tuple[int, int]:
+            _ratio, margin_, total_ = margin_of[it.item_id]
+            return (margin_, total_)
+
+        need = Counter(_stratum(it) for it in reference)
+        available: Dict[Tuple[int, int], List[SourceItem]] = defaultdict(list)
+        for it in pool:
+            available[_stratum(it)].append(it)
+        chosen: List[SourceItem] = []
+        deficit: Counter = Counter()
+        for stratum in sorted(need, reverse=True):
+            take = min(need[stratum], len(available[stratum]))
+            chosen.extend(available[stratum][:take])
+            available[stratum] = available[stratum][take:]
+            if take < need[stratum]:
+                deficit[stratum] = need[stratum] - take
+        for stratum in sorted(deficit, reverse=True):
+            want_ratio = stratum[0] / stratum[1]
+            for _ in range(deficit[stratum]):
+                open_strata = [s for s, v in available.items() if v]
+                if not open_strata:
+                    break
+                nearest = min(open_strata, key=lambda s: (
+                    abs(s[0] / s[1] - want_ratio),
+                    (s[0] / s[1]) if difficulty == "hard" else -(s[0] / s[1]),
+                    s,
+                ))
+                chosen.append(available[nearest].pop(0))
+        return chosen
+
     if length_balance:
         per_bucket = min(len(longer_items), len(shorter_items), n_items // 2)
         n_excluded_length_quota = n_eligible - 2 * per_bucket
-        keep = {it.item_id for it in longer_items[:per_bucket]}
-        keep |= {it.item_id for it in shorter_items[:per_bucket]}
+        # The bucket with less headroom fixes the margin distribution; the other
+        # is matched to it. Ties go to the shorter bucket, which is the scarce
+        # one on every real MT-Bench build.
+        if len(shorter_items) <= len(longer_items):
+            reference, pool = shorter_items[:per_bucket], longer_items
+        else:
+            reference, pool = longer_items[:per_bucket], shorter_items
+        keep = {it.item_id for it in reference}
+        keep |= {it.item_id for it in _match_margin_distribution(pool, reference)}
         items = [it for it in items if it.item_id in keep]
         # A shortfall the balance itself caused is a deliberate trade, reported
         # rather than raised. A shortfall the POOL caused is still fatal: too
@@ -887,11 +982,21 @@ def load_preference_items(
             f"{n_excluded_duplicate} as duplicate content); refusing to pad."
         )
     if balance_limited:
+        kept_longer = [it for it in items if bucket_of[it.item_id]]
+        kept_shorter = [it for it in items if not bucket_of[it.item_id]]
+        mean_l = sum(margin_of[it.item_id][0] for it in kept_longer) / max(len(kept_longer), 1)
+        mean_s = sum(margin_of[it.item_id][0] for it in kept_shorter) / max(len(kept_shorter), 1)
         print(
             f"  [preference] length-balanced to {len(items)} items "
             f"({per_bucket} winner-longer + {per_bucket} winner-shorter); "
-            f"{n_excluded_length_quota} eligible pairs dropped to hold the "
-            f"balance exactly at 50%. Requested {n_items}."
+            f"{n_excluded_length_quota} of {n_eligible} eligible majority-labeled "
+            f"pairs dropped to hold the balance exactly at 50%. "
+            f"Requested {n_items}."
+        )
+        print(
+            f"  [preference] margin-matched buckets: mean vote-margin ratio "
+            f"{mean_l:.4f} (winner-longer) vs {mean_s:.4f} (winner-shorter), "
+            f"delta {abs(mean_l - mean_s):.4f}."
         )
     return items
 

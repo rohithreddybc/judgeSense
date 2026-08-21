@@ -112,3 +112,105 @@ def test_no_candidate_is_a_placeholder(task):
             if text is not None and placeholder.match(text.strip()):
                 bad.append((r["pair_id"], text[:40]))
     assert not bad, f"placeholder candidates: {bad[:5]}"
+
+
+# ── Preference: the length buckets must be matched on ANNOTATOR AGREEMENT ────
+#
+# Holding winner-longer at exactly 50% removes length as a label signal, but the
+# trim that achieves it selects only from the larger bucket: MT-Bench supplies
+# 272 winner-longer comparisons against 113 winner-shorter ones, so the shorter
+# bucket ships whole while the longer bucket is cut to 113. An earlier build cut
+# it by taking the MOST CONTESTED 113, which left the two buckets matched on
+# length but far apart on agreement (mean vote-margin ratio 0.567 vs 0.745,
+# 16% vs 54% unanimous) -- one confound traded for another, and a judge that is
+# good on close calls reads as length-biased. These assert against the SHIPPED
+# file that the buckets are matched on margin too.
+
+_MARGIN_TOL = 0.05          # absolute, on the mean margin ratio
+_SHARE_TOL = 0.05           # absolute, on the unanimous share
+_CDF_TOL = 0.05             # max gap between the two buckets' margin CDFs
+
+
+def _preference_margin_buckets():
+    """(winner-longer ratios, winner-shorter ratios) over shipped items."""
+    seen, longer, shorter = set(), [], []
+    for r in _rows("preference"):
+        if r["item_id"] in seen:
+            continue
+        seen.add(r["item_id"])
+        sf = r["source"]["source_fields"]
+        ratio = float(sf["vote_margin_ratio"])
+        (longer if sf["winner_is_longer"] == "yes" else shorter).append(ratio)
+    assert longer and shorter, "preference split has an empty length bucket"
+    return longer, shorter
+
+
+def test_preference_margin_mean_matches_across_length_buckets():
+    """Mean vote-margin ratio must not differ by more than 0.05 between the
+    winner-longer and winner-shorter buckets."""
+    longer, shorter = _preference_margin_buckets()
+    ml = sum(longer) / len(longer)
+    ms = sum(shorter) / len(shorter)
+    assert abs(ml - ms) <= _MARGIN_TOL, (
+        f"mean vote_margin_ratio {ml:.4f} (winner-longer, n={len(longer)}) vs "
+        f"{ms:.4f} (winner-shorter, n={len(shorter)}); delta {abs(ml - ms):.4f} "
+        f"exceeds {_MARGIN_TOL}"
+    )
+
+
+def test_preference_margin_median_matches_across_length_buckets():
+    """Same for the median, which the mean can hide: the defective build had
+    medians 0.500 and 1.000 -- the buckets did not even overlap at the centre."""
+    import statistics
+    longer, shorter = _preference_margin_buckets()
+    dl, ds_ = statistics.median(longer), statistics.median(shorter)
+    assert abs(dl - ds_) <= _MARGIN_TOL, (
+        f"median vote_margin_ratio {dl:.4f} (winner-longer) vs {ds_:.4f} "
+        f"(winner-shorter); delta {abs(dl - ds_):.4f} exceeds {_MARGIN_TOL}"
+    )
+
+
+def test_preference_unanimous_share_matches_across_length_buckets():
+    """The share of comparisons the annotators agreed on unanimously must be the
+    same in both buckets. This is the coarse, readable form of the same
+    property: 18/113 vs 61/113 was the defect."""
+    longer, shorter = _preference_margin_buckets()
+    ul = sum(1 for x in longer if x >= 1.0) / len(longer)
+    us = sum(1 for x in shorter if x >= 1.0) / len(shorter)
+    assert abs(ul - us) <= _SHARE_TOL, (
+        f"unanimous share {ul:.4f} (winner-longer) vs {us:.4f} (winner-shorter); "
+        f"delta {abs(ul - us):.4f} exceeds {_SHARE_TOL}"
+    )
+
+
+def test_preference_margin_distributions_match_across_length_buckets():
+    """Whole-distribution check, not just two summary statistics: the largest
+    gap between the buckets' empirical CDFs of vote_margin_ratio."""
+    longer, shorter = _preference_margin_buckets()
+    grid = sorted(set(longer) | set(shorter))
+
+    def cdf(sample, x):
+        return sum(1 for v in sample if v <= x) / len(sample)
+
+    gap = max(abs(cdf(longer, x) - cdf(shorter, x)) for x in grid)
+    assert gap <= _CDF_TOL, (
+        f"max CDF gap between the length buckets' vote_margin_ratio "
+        f"distributions is {gap:.4f}, above {_CDF_TOL}"
+    )
+
+
+def test_preference_is_not_all_coin_flips():
+    """Selecting the most-contested comparisons minimises the mutual information
+    between EVERY feature and the label -- length and lexical overlap, but also
+    genuine answer quality. A split built that way passes the shortcut controls
+    by construction while losing the ability to separate a competent judge from
+    an incompetent one, which is the non-discriminating-task defect that
+    withdrew v1. Require that a substantial share of shipped comparisons carry a
+    decisive human majority."""
+    longer, shorter = _preference_margin_buckets()
+    ratios = longer + shorter
+    unanimous = sum(1 for x in ratios if x >= 1.0) / len(ratios)
+    assert unanimous >= 0.30, (
+        f"only {unanimous:.3f} of shipped preference items have a unanimous "
+        f"human majority; the split may be too contested to discriminate"
+    )
