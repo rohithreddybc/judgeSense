@@ -1,0 +1,478 @@
+{
+  "claude-haiku": {
+    "coherence": {
+      "n_rows": 5,
+      "n_items": 5,
+      "jss_strict": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ],
+      "cluster_unit": "item",
+      "chance_corrected_jss": 1.0,
+      "decision_entropy_bits": 1.371,
+      "label_histogram": {
+        "2": 2,
+        "4": 6,
+        "3": 2
+      },
+      "malformed_rate": 0.0,
+      "malformed_rate_arm_a": 0.0,
+      "malformed_rate_arm_b": 0.0,
+      "refusal_rate": 0.0,
+      "n_refusals": 0,
+      "n_metered_arms": 15,
+      "quadratic_weighted_kappa": 1.0,
+      "jss_repeat_delta": {
+        "jss": 1.0,
+        "jss_rep": 1.0,
+        "delta": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "cluster_unit": "item",
+        "n_clusters": 5,
+        "n_items_paraphrase_only": 0,
+        "n_items_repeat_only": 0,
+        "n_bootstrap": 2000,
+        "confidence": 0.95,
+        "unclear_policy": "disagree"
+      }
+    },
+    "factuality": {
+      "n_rows": 5,
+      "n_items": 5,
+      "jss_strict": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ],
+      "cluster_unit": "item",
+      "chance_corrected_jss": 1.0,
+      "decision_entropy_bits": 0.971,
+      "label_histogram": {
+        "YES": 4,
+        "NO": 6
+      },
+      "malformed_rate": 0.0,
+      "malformed_rate_arm_a": 0.0,
+      "malformed_rate_arm_b": 0.0,
+      "refusal_rate": 0.0,
+      "n_refusals": 0,
+      "n_metered_arms": 15,
+      "jss_repeat_delta": {
+        "jss": 1.0,
+        "jss_rep": 1.0,
+        "delta": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "cluster_unit": "item",
+        "n_clusters": 5,
+        "n_items_paraphrase_only": 0,
+        "n_items_repeat_only": 0,
+        "n_bootstrap": 2000,
+        "confidence": 0.95,
+        "unclear_policy": "disagree"
+      }
+    },
+    "preference": {
+      "n_rows": 5,
+      "n_items": 3,
+      "jss_strict": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ],
+      "cluster_unit": "item",
+      "chance_corrected_jss": 1.0,
+      "decision_entropy_bits": 0.971,
+      "label_histogram": {
+        "B": 4,
+        "A": 6
+      },
+      "malformed_rate": 0.0,
+      "malformed_rate_arm_a": 0.0,
+      "malformed_rate_arm_b": 0.0,
+      "refusal_rate": 0.0,
+      "n_refusals": 0,
+      "n_metered_arms": 13,
+      "pairwise": {
+        "accuracy": 0.8,
+        "answer_A_rate": 0.6,
+        "n": 5
+      },
+      "jss_repeat_delta": {
+        "jss": 1.0,
+        "jss_rep": 1.0,
+        "delta": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "cluster_unit": "item",
+        "n_clusters": 3,
+        "n_items_paraphrase_only": 0,
+        "n_items_repeat_only": 0,
+        "n_bootstrap": 2000,
+        "confidence": 0.95,
+        "unclear_policy": "disagree"
+      }
+    },
+    "relevance": {
+      "n_rows": 5,
+      "n_items": 3,
+      "jss_strict": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ],
+      "cluster_unit": "item",
+      "chance_corrected_jss": 1.0,
+      "decision_entropy_bits": 0.971,
+      "label_histogram": {
+        "A": 6,
+        "B": 4
+      },
+      "malformed_rate": 0.0,
+      "malformed_rate_arm_a": 0.0,
+      "malformed_rate_arm_b": 0.0,
+      "refusal_rate": 0.0,
+      "n_refusals": 0,
+      "n_metered_arms": 13,
+      "pairwise": {
+        "accuracy": 1.0,
+        "answer_A_rate": 0.6,
+        "n": 5
+      },
+      "jss_repeat_delta": {
+        "jss": 1.0,
+        "jss_rep": 1.0,
+        "delta": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "cluster_unit": "item",
+        "n_clusters": 3,
+        "n_items_paraphrase_only": 0,
+        "n_items_repeat_only": 0,
+        "n_bootstrap": 2000,
+        "confidence": 0.95,
+        "unclear_policy": "disagree"
+      }
+    }
+  },
+  "claude-opus-4-7": {
+    "coherence": {
+      "n_rows": 5,
+      "n_items": 5,
+      "jss_strict": 0.4,
+      "ci95": [
+        0.0,
+        0.8
+      ],
+      "cluster_unit": "item",
+      "chance_corrected_jss": 0.1176,
+      "decision_entropy_bits": 1.571,
+      "label_histogram": {
+        "2": 1,
+        "1": 1,
+        "4": 6,
+        "5": 2
+      },
+      "malformed_rate": 0.0,
+      "malformed_rate_arm_a": 0.0,
+      "malformed_rate_arm_b": 0.0,
+      "refusal_rate": 0.0,
+      "n_refusals": 0,
+      "n_metered_arms": 15,
+      "quadratic_weighted_kappa": 0.7887,
+      "jss_repeat_delta": {
+        "jss": 0.4,
+        "jss_rep": 1.0,
+        "delta": -0.6,
+        "ci_lower": -1.0,
+        "ci_upper": -0.19999999999999996,
+        "cluster_unit": "item",
+        "n_clusters": 5,
+        "n_items_paraphrase_only": 0,
+        "n_items_repeat_only": 0,
+        "n_bootstrap": 2000,
+        "confidence": 0.95,
+        "unclear_policy": "disagree"
+      }
+    },
+    "factuality": {
+      "n_rows": 5,
+      "n_items": 5,
+      "jss_strict": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ],
+      "cluster_unit": "item",
+      "chance_corrected_jss": 1.0,
+      "decision_entropy_bits": 0.971,
+      "label_histogram": {
+        "YES": 6,
+        "NO": 4
+      },
+      "malformed_rate": 0.0,
+      "malformed_rate_arm_a": 0.0,
+      "malformed_rate_arm_b": 0.0,
+      "refusal_rate": 0.0,
+      "n_refusals": 0,
+      "n_metered_arms": 15,
+      "jss_repeat_delta": {
+        "jss": 1.0,
+        "jss_rep": 1.0,
+        "delta": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "cluster_unit": "item",
+        "n_clusters": 5,
+        "n_items_paraphrase_only": 0,
+        "n_items_repeat_only": 0,
+        "n_bootstrap": 2000,
+        "confidence": 0.95,
+        "unclear_policy": "disagree"
+      }
+    },
+    "preference": {
+      "n_rows": 5,
+      "n_items": 3,
+      "jss_strict": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ],
+      "cluster_unit": "item",
+      "chance_corrected_jss": 1.0,
+      "decision_entropy_bits": 0.971,
+      "label_histogram": {
+        "B": 6,
+        "A": 4
+      },
+      "malformed_rate": 0.0,
+      "malformed_rate_arm_a": 0.0,
+      "malformed_rate_arm_b": 0.0,
+      "refusal_rate": 0.0,
+      "n_refusals": 0,
+      "n_metered_arms": 13,
+      "pairwise": {
+        "accuracy": 0.6,
+        "answer_A_rate": 0.4,
+        "n": 5
+      },
+      "jss_repeat_delta": {
+        "jss": 1.0,
+        "jss_rep": 1.0,
+        "delta": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "cluster_unit": "item",
+        "n_clusters": 3,
+        "n_items_paraphrase_only": 0,
+        "n_items_repeat_only": 0,
+        "n_bootstrap": 2000,
+        "confidence": 0.95,
+        "unclear_policy": "disagree"
+      }
+    },
+    "relevance": {
+      "n_rows": 5,
+      "n_items": 3,
+      "jss_strict": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ],
+      "cluster_unit": "item",
+      "chance_corrected_jss": 1.0,
+      "decision_entropy_bits": 0.7219,
+      "label_histogram": {
+        "A": 8,
+        "B": 2
+      },
+      "malformed_rate": 0.0,
+      "malformed_rate_arm_a": 0.0,
+      "malformed_rate_arm_b": 0.0,
+      "refusal_rate": 0.0,
+      "n_refusals": 0,
+      "n_metered_arms": 13,
+      "pairwise": {
+        "accuracy": 0.8,
+        "answer_A_rate": 0.8,
+        "n": 5
+      },
+      "jss_repeat_delta": {
+        "jss": 1.0,
+        "jss_rep": 1.0,
+        "delta": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "cluster_unit": "item",
+        "n_clusters": 3,
+        "n_items_paraphrase_only": 0,
+        "n_items_repeat_only": 0,
+        "n_bootstrap": 2000,
+        "confidence": 0.95,
+        "unclear_policy": "disagree"
+      }
+    }
+  },
+  "claude-sonnet": {
+    "coherence": {
+      "n_rows": 5,
+      "n_items": 5,
+      "jss_strict": 0.8,
+      "ci95": [
+        0.4,
+        1.0
+      ],
+      "cluster_unit": "item",
+      "chance_corrected_jss": 0.6667,
+      "decision_entropy_bits": 1.361,
+      "label_histogram": {
+        "2": 4,
+        "4": 5,
+        "3": 1
+      },
+      "malformed_rate": 0.0,
+      "malformed_rate_arm_a": 0.0,
+      "malformed_rate_arm_b": 0.0,
+      "refusal_rate": 0.0,
+      "n_refusals": 0,
+      "n_metered_arms": 15,
+      "quadratic_weighted_kappa": 0.8889,
+      "jss_repeat_delta": {
+        "jss": 0.8,
+        "jss_rep": 1.0,
+        "delta": -0.19999999999999996,
+        "ci_lower": -0.6,
+        "ci_upper": 0.0,
+        "cluster_unit": "item",
+        "n_clusters": 5,
+        "n_items_paraphrase_only": 0,
+        "n_items_repeat_only": 0,
+        "n_bootstrap": 2000,
+        "confidence": 0.95,
+        "unclear_policy": "disagree"
+      }
+    },
+    "factuality": {
+      "n_rows": 5,
+      "n_items": 5,
+      "jss_strict": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ],
+      "cluster_unit": "item",
+      "chance_corrected_jss": 1.0,
+      "decision_entropy_bits": 0.971,
+      "label_histogram": {
+        "YES": 6,
+        "NO": 4
+      },
+      "malformed_rate": 0.0,
+      "malformed_rate_arm_a": 0.0,
+      "malformed_rate_arm_b": 0.0,
+      "refusal_rate": 0.0,
+      "n_refusals": 0,
+      "n_metered_arms": 15,
+      "jss_repeat_delta": {
+        "jss": 1.0,
+        "jss_rep": 1.0,
+        "delta": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "cluster_unit": "item",
+        "n_clusters": 5,
+        "n_items_paraphrase_only": 0,
+        "n_items_repeat_only": 0,
+        "n_bootstrap": 2000,
+        "confidence": 0.95,
+        "unclear_policy": "disagree"
+      }
+    },
+    "preference": {
+      "n_rows": 5,
+      "n_items": 3,
+      "jss_strict": 0.8,
+      "ci95": [
+        0.5,
+        1.0
+      ],
+      "cluster_unit": "item",
+      "chance_corrected_jss": 0.0,
+      "decision_entropy_bits": 0.469,
+      "label_histogram": {
+        "B": 9,
+        "A": 1
+      },
+      "malformed_rate": 0.0,
+      "malformed_rate_arm_a": 0.0,
+      "malformed_rate_arm_b": 0.0,
+      "refusal_rate": 0.0,
+      "n_refusals": 0,
+      "n_metered_arms": 13,
+      "pairwise": {
+        "accuracy": 0.8,
+        "answer_A_rate": 0.2,
+        "n": 5
+      },
+      "jss_repeat_delta": {
+        "jss": 0.8,
+        "jss_rep": 1.0,
+        "delta": -0.19999999999999996,
+        "ci_lower": -0.5,
+        "ci_upper": 0.0,
+        "cluster_unit": "item",
+        "n_clusters": 3,
+        "n_items_paraphrase_only": 0,
+        "n_items_repeat_only": 0,
+        "n_bootstrap": 2000,
+        "confidence": 0.95,
+        "unclear_policy": "disagree"
+      }
+    },
+    "relevance": {
+      "n_rows": 60,
+      "n_items": 30,
+      "jss_strict": 0.5833,
+      "ci95": [
+        0.4333,
+        0.7333
+      ],
+      "cluster_unit": "item",
+      "chance_corrected_jss": 0.6933,
+      "decision_entropy_bits": 1.5424,
+      "label_histogram": {
+        "UNCLEAR": 32,
+        "A": 34,
+        "B": 54
+      },
+      "malformed_rate": 0.2667,
+      "malformed_rate_arm_a": 0.3,
+      "malformed_rate_arm_b": 0.2333,
+      "refusal_rate": 0.2602,
+      "n_refusals": 32,
+      "n_metered_arms": 123,
+      "pairwise": {
+        "accuracy": 0.8571428571428571,
+        "answer_A_rate": 0.40476190476190477,
+        "n": 42
+      },
+      "jss_repeat_delta": {
+        "jss": 0.6666666666666666,
+        "jss_rep": 0.6666666666666666,
+        "delta": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "cluster_unit": "item",
+        "n_clusters": 3,
+        "n_items_paraphrase_only": 27,
+        "n_items_repeat_only": 0,
+        "n_bootstrap": 2000,
+        "confidence": 0.95,
+        "unclear_policy": "disagree"
+      }
+    }
+  }
+}

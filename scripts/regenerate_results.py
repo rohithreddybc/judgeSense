@@ -90,6 +90,12 @@ def _records(path: Path) -> List[dict]:
             "ground_truth_label": r.get("ground_truth_label"),
             "ground_truth_position": r.get("ground_truth_position"),
             "decision_a_repeat": r.get("decision_a_repeat"),
+            # Per-call metadata is carried through because a provider-reported
+            # refusal is a distinct outcome from an unparseable answer, and the
+            # two are indistinguishable once both are UNCLEAR. Absent on runs
+            # made before usage metering existed, which _refusal_stats reports
+            # as null rather than as zero refusals.
+            **{k: r[k] for k in ("usage_a", "usage_b", "usage_a_repeat") if k in r},
         })
     return recs
 
@@ -132,6 +138,33 @@ def _round4(value):
     return None if value is None else round(value, 4) + 0.0
 
 
+def _refusal_stats(recs: List[dict]) -> Dict:
+    """Share of arm-calls the provider reported as a refusal.
+
+    Read from the per-call usage metadata the runner records
+    (`finish_reason == "refusal"`), so it reflects what the provider said rather
+    than an inference from empty output. Null where no arm carried usage at all,
+    which is the case for runs made before usage metering existed.
+    """
+    refused = arms = 0
+    for r in recs:
+        for key in ("usage_a", "usage_b", "usage_a_repeat"):
+            if key not in r:
+                continue
+            usage = r.get(key) or {}
+            if not usage:
+                continue
+            arms += 1
+            refused += usage.get("finish_reason") == "refusal"
+    if not arms:
+        return {"refusal_rate": None, "n_refusals": 0, "n_metered_arms": 0}
+    return {
+        "refusal_rate": round(refused / arms, 4),
+        "n_refusals": refused,
+        "n_metered_arms": arms,
+    }
+
+
 def metrics_for_cell(recs: List[dict], task: str) -> Dict:
     likert = task == "coherence"
     strict = cluster_bootstrap_ci(recs, lambda r: jss(r, "disagree"), "item", n_bootstrap=2000)
@@ -152,6 +185,13 @@ def metrics_for_cell(recs: List[dict], task: str) -> Dict:
              + format_failure_rate(recs, "b")["n_failed"]) / (2 * len(recs)), 4),
         "malformed_rate_arm_a": round(format_failure_rate(recs, "a")["format_failure_rate"], 4),
         "malformed_rate_arm_b": round(format_failure_rate(recs, "b")["format_failure_rate"], 4),
+        # A judge that DECLINES an item is not the same measurement as one whose
+        # answer failed to parse, but both collapse to UNCLEAR and would be
+        # reported identically. claude-sonnet refuses 30% of the TREC-COVID
+        # relevance items while claude-haiku and claude-opus-4-7 refuse none of
+        # the same prompts, so a malformed_rate that silently folds the two
+        # together would attribute a safety behaviour to format-following.
+        **_refusal_stats(recs),
     }
     if likert:
         out["quadratic_weighted_kappa"] = _round4(

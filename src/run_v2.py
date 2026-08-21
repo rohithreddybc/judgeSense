@@ -50,6 +50,20 @@ except ImportError:  # `python src/run_v2.py`
     from judge_registry import JUDGES, max_tokens_for, select_judges, main_axis_run_plan  # type: ignore
     from structural_variants import parse_variant_output, UNCLEAR  # type: ignore
 
+# A Windows console defaults to cp1252, which cannot encode the box-drawing and
+# arrow characters this script prints. Left alone, the very first status line
+# raises UnicodeEncodeError and kills the process -- during a paid run that
+# would abort at an arbitrary point mid-sweep, after the calls were billed.
+# Printing must never be able to fail, so the streams are forced to UTF-8 with
+# replacement rather than the console's ANSI codepage.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except (ValueError, OSError):  # already detached, or a pipe that refuses
+            pass
+
+
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 

@@ -91,6 +91,41 @@ def extract_usage(provider: str, response: Any) -> Tuple[Optional[int], Optional
     return _g(response, "usage", "prompt_tokens"), _g(response, "usage", "completion_tokens")
 
 
+def extract_finish_reason(provider: str, response: Any) -> Optional[str]:
+    """Why the provider stopped generating, or None if it did not say.
+
+    Recorded because a judge that DECLINES an item is a different measurement
+    from one whose answer failed to parse, and the two are indistinguishable
+    once both have collapsed to UNCLEAR. Anthropic reports this as
+    stop_reason="refusal" with an empty content list; OpenAI-shaped APIs use
+    choices[0].finish_reason.
+    """
+    if response is None:
+        return None
+    if provider == "anthropic":
+        return getattr(response, "stop_reason", None)
+    if provider == "google":
+        cands = getattr(response, "candidates", None) or []
+        return str(getattr(cands[0], "finish_reason", None)) if cands else None
+    choices = getattr(response, "choices", None) or []
+    return getattr(choices[0], "finish_reason", None) if choices else None
+
+
+def _first_text(parts) -> str:
+    """Text of the first content block, or "" when the provider returned none.
+
+    An empty content list is a real response, not a malformed one: indexing it
+    raised IndexError ("list index out of range"), which the retry wrapper then
+    reported as an API error. That lost the usage the provider HAD returned,
+    burned a second call on a deterministic outcome, and mislabelled a refusal
+    as a transport failure.
+    """
+    if not parts:
+        return ""
+    text = getattr(parts[0], "text", None)
+    return (text or "").strip()
+
+
 def _request(provider: str, client, model_id: str, prompt: str, max_tokens: int) -> Tuple[str, Any]:
     """Make one SDK request; return (text, raw_response). Mirrors evaluate's
     per-provider calls exactly so the metered path is not a different
@@ -108,19 +143,23 @@ def _request(provider: str, client, model_id: str, prompt: str, max_tokens: int)
         if not model_id.lower().startswith("gpt-5"):
             kwargs["temperature"] = 0.0
         r = client.chat.completions.create(**kwargs)
+        if not getattr(r, "choices", None):
+            return "", r
         return (r.choices[0].message.content or "").strip(), r
     if provider == "anthropic":
         r = client.messages.create(
             model=model_id, max_tokens=max_tokens, system=_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": prompt}],
         )
-        return r.content[0].text.strip(), r
+        return _first_text(getattr(r, "content", None)), r
     if provider == "huggingface":
         r = client.chat.completions.create(
             model=model_id, messages=[{"role": "user", "content": prompt}],
             max_tokens=max_tokens, temperature=0.01,
         )
-        return r.choices[0].message.content.strip(), r
+        if not getattr(r, "choices", None):
+            return "", r
+        return (r.choices[0].message.content or "").strip(), r
     if provider == "google":
         from google.genai import types
         r = client.models.generate_content(
@@ -130,13 +169,15 @@ def _request(provider: str, client, model_id: str, prompt: str, max_tokens: int)
                 thinking_config=types.ThinkingConfig(thinking_budget=0),
             ),
         )
-        return r.text.strip(), r
+        return (getattr(r, "text", None) or "").strip(), r
     if provider == "mistral":
         r = client.chat.complete(
             model=model_id, messages=[{"role": "user", "content": prompt}],
             temperature=0.0, max_tokens=max_tokens,
         )
-        return r.choices[0].message.content.strip(), r
+        if not getattr(r, "choices", None):
+            return "", r
+        return (r.choices[0].message.content or "").strip(), r
     raise ValueError(f"unknown provider {provider!r}")
 
 
@@ -161,6 +202,8 @@ def metered_call(provider: str, client, model_id: str, prompt: str, max_tokens: 
             LAST_CALL_META = {
                 "input_tokens": tin,
                 "output_tokens": tout,
+                "finish_reason": extract_finish_reason(provider, response),
+                "empty_content": text == "",
                 "total_tokens": (tin + tout) if (tin is not None and tout is not None) else None,
                 "latency_ms": int((time.time() - t0) * 1000),
                 "attempts": attempts,
@@ -177,6 +220,8 @@ def metered_call(provider: str, client, model_id: str, prompt: str, max_tokens: 
         "input_tokens": None,
         "output_tokens": None,
         "total_tokens": None,
+        "finish_reason": None,
+        "empty_content": None,
         "latency_ms": int((time.time() - t0) * 1000),
         "attempts": attempts,
         "error": str(last_exc),

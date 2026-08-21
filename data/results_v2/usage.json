@@ -1,0 +1,199 @@
+{
+  "note": "every attempt is counted, including superseded records from retried rows, because those calls were paid for. Scoring uses last-write-wins and will show fewer records.",
+  "overall": {
+    "calls": 173,
+    "input_tokens": 70374,
+    "output_tokens": 916,
+    "calls_missing_usage": 5,
+    "retries": 5,
+    "errors": 5,
+    "wall_clock_ms": 217131,
+    "rows": 62,
+    "superseded_records": 2,
+    "cost": null
+  },
+  "per_judge": {
+    "claude-haiku": {
+      "calls": 56,
+      "input_tokens": 20331,
+      "output_tokens": 239,
+      "calls_missing_usage": 0,
+      "retries": 0,
+      "errors": 0,
+      "wall_clock_ms": 38092,
+      "rows": 20,
+      "superseded_records": 0,
+      "cost": null
+    },
+    "claude-opus-4-7": {
+      "calls": 56,
+      "input_tokens": 29695,
+      "output_tokens": 310,
+      "calls_missing_usage": 0,
+      "retries": 0,
+      "errors": 0,
+      "wall_clock_ms": 69410,
+      "rows": 20,
+      "superseded_records": 0,
+      "cost": null
+    },
+    "claude-sonnet": {
+      "calls": 61,
+      "input_tokens": 20348,
+      "output_tokens": 367,
+      "calls_missing_usage": 5,
+      "retries": 5,
+      "errors": 5,
+      "wall_clock_ms": 109629,
+      "rows": 22,
+      "superseded_records": 2,
+      "cost": null
+    }
+  },
+  "per_cell": {
+    "claude-haiku/coherence": {
+      "calls": 15,
+      "input_tokens": 2056,
+      "output_tokens": 75,
+      "calls_missing_usage": 0,
+      "retries": 0,
+      "errors": 0,
+      "wall_clock_ms": 9433,
+      "rows": 5,
+      "superseded_records": 0,
+      "cost": null
+    },
+    "claude-haiku/factuality": {
+      "calls": 15,
+      "input_tokens": 965,
+      "output_tokens": 60,
+      "calls_missing_usage": 0,
+      "retries": 0,
+      "errors": 0,
+      "wall_clock_ms": 9959,
+      "rows": 5,
+      "superseded_records": 0,
+      "cost": null
+    },
+    "claude-haiku/preference": {
+      "calls": 13,
+      "input_tokens": 6782,
+      "output_tokens": 52,
+      "calls_missing_usage": 0,
+      "retries": 0,
+      "errors": 0,
+      "wall_clock_ms": 10757,
+      "rows": 5,
+      "superseded_records": 0,
+      "cost": null
+    },
+    "claude-haiku/relevance": {
+      "calls": 13,
+      "input_tokens": 10528,
+      "output_tokens": 52,
+      "calls_missing_usage": 0,
+      "retries": 0,
+      "errors": 0,
+      "wall_clock_ms": 7943,
+      "rows": 5,
+      "superseded_records": 0,
+      "cost": null
+    },
+    "claude-opus-4-7/coherence": {
+      "calls": 15,
+      "input_tokens": 2842,
+      "output_tokens": 90,
+      "calls_missing_usage": 0,
+      "retries": 0,
+      "errors": 0,
+      "wall_clock_ms": 18625,
+      "rows": 5,
+      "superseded_records": 0,
+      "cost": null
+    },
+    "claude-opus-4-7/factuality": {
+      "calls": 15,
+      "input_tokens": 1463,
+      "output_tokens": 90,
+      "calls_missing_usage": 0,
+      "retries": 0,
+      "errors": 0,
+      "wall_clock_ms": 18753,
+      "rows": 5,
+      "superseded_records": 0,
+      "cost": null
+    },
+    "claude-opus-4-7/preference": {
+      "calls": 13,
+      "input_tokens": 9678,
+      "output_tokens": 65,
+      "calls_missing_usage": 0,
+      "retries": 0,
+      "errors": 0,
+      "wall_clock_ms": 14922,
+      "rows": 5,
+      "superseded_records": 0,
+      "cost": null
+    },
+    "claude-opus-4-7/relevance": {
+      "calls": 13,
+      "input_tokens": 15712,
+      "output_tokens": 65,
+      "calls_missing_usage": 0,
+      "retries": 0,
+      "errors": 0,
+      "wall_clock_ms": 17110,
+      "rows": 5,
+      "superseded_records": 0,
+      "cost": null
+    },
+    "claude-sonnet/coherence": {
+      "calls": 15,
+      "input_tokens": 2056,
+      "output_tokens": 75,
+      "calls_missing_usage": 0,
+      "retries": 0,
+      "errors": 0,
+      "wall_clock_ms": 15437,
+      "rows": 5,
+      "superseded_records": 0,
+      "cost": null
+    },
+    "claude-sonnet/factuality": {
+      "calls": 15,
+      "input_tokens": 965,
+      "output_tokens": 60,
+      "calls_missing_usage": 0,
+      "retries": 0,
+      "errors": 0,
+      "wall_clock_ms": 19033,
+      "rows": 5,
+      "superseded_records": 0,
+      "cost": null
+    },
+    "claude-sonnet/preference": {
+      "calls": 13,
+      "input_tokens": 6782,
+      "output_tokens": 88,
+      "calls_missing_usage": 0,
+      "retries": 0,
+      "errors": 0,
+      "wall_clock_ms": 16279,
+      "rows": 5,
+      "superseded_records": 0,
+      "cost": null
+    },
+    "claude-sonnet/relevance": {
+      "calls": 18,
+      "input_tokens": 10545,
+      "output_tokens": 144,
+      "calls_missing_usage": 5,
+      "retries": 5,
+      "errors": 5,
+      "wall_clock_ms": 58880,
+      "rows": 7,
+      "superseded_records": 2,
+      "cost": null
+    }
+  }
+}
