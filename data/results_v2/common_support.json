@@ -1,0 +1,98 @@
+{
+  "coherence": {
+    "n_common_items": 5,
+    "n_union_items": 5,
+    "judges": {
+      "claude-haiku": {
+        "n_answered": 5,
+        "jss_full_support": 1.0,
+        "jss_common_support": 1.0,
+        "shift": 0.0
+      },
+      "claude-opus-4-7": {
+        "n_answered": 5,
+        "jss_full_support": 0.4,
+        "jss_common_support": 0.4,
+        "shift": 0.0
+      },
+      "claude-sonnet": {
+        "n_answered": 5,
+        "jss_full_support": 0.8,
+        "jss_common_support": 0.8,
+        "shift": 0.0
+      }
+    }
+  },
+  "factuality": {
+    "n_common_items": 5,
+    "n_union_items": 5,
+    "judges": {
+      "claude-haiku": {
+        "n_answered": 5,
+        "jss_full_support": 1.0,
+        "jss_common_support": 1.0,
+        "shift": 0.0
+      },
+      "claude-opus-4-7": {
+        "n_answered": 5,
+        "jss_full_support": 1.0,
+        "jss_common_support": 1.0,
+        "shift": 0.0
+      },
+      "claude-sonnet": {
+        "n_answered": 5,
+        "jss_full_support": 1.0,
+        "jss_common_support": 1.0,
+        "shift": 0.0
+      }
+    }
+  },
+  "preference": {
+    "n_common_items": 3,
+    "n_union_items": 3,
+    "judges": {
+      "claude-haiku": {
+        "n_answered": 3,
+        "jss_full_support": 1.0,
+        "jss_common_support": 1.0,
+        "shift": 0.0
+      },
+      "claude-opus-4-7": {
+        "n_answered": 3,
+        "jss_full_support": 1.0,
+        "jss_common_support": 1.0,
+        "shift": 0.0
+      },
+      "claude-sonnet": {
+        "n_answered": 3,
+        "jss_full_support": 0.8,
+        "jss_common_support": 0.8,
+        "shift": 0.0
+      }
+    }
+  },
+  "relevance": {
+    "n_common_items": 2,
+    "n_union_items": 22,
+    "judges": {
+      "claude-haiku": {
+        "n_answered": 3,
+        "jss_full_support": 1.0,
+        "jss_common_support": 1.0,
+        "shift": 0.0
+      },
+      "claude-opus-4-7": {
+        "n_answered": 3,
+        "jss_full_support": 1.0,
+        "jss_common_support": 1.0,
+        "shift": 0.0
+      },
+      "claude-sonnet": {
+        "n_answered": 21,
+        "jss_full_support": 0.8333,
+        "jss_common_support": 1.0,
+        "shift": 0.1667
+      }
+    }
+  }
+}

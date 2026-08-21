@@ -1,14 +1,14 @@
 {
   "note": "every attempt is counted, including superseded records from retried rows, because those calls were paid for. Scoring uses last-write-wins and will show fewer records.",
   "overall": {
-    "calls": 173,
-    "input_tokens": 70374,
-    "output_tokens": 916,
+    "calls": 283,
+    "input_tokens": 149424,
+    "output_tokens": 1680,
     "calls_missing_usage": 5,
     "retries": 5,
     "errors": 5,
-    "wall_clock_ms": 217131,
-    "rows": 62,
+    "wall_clock_ms": 348926,
+    "rows": 117,
     "superseded_records": 2,
     "cost": null
   },
@@ -38,14 +38,14 @@
       "cost": null
     },
     "claude-sonnet": {
-      "calls": 61,
-      "input_tokens": 20348,
-      "output_tokens": 367,
+      "calls": 171,
+      "input_tokens": 99398,
+      "output_tokens": 1131,
       "calls_missing_usage": 5,
       "retries": 5,
       "errors": 5,
-      "wall_clock_ms": 109629,
-      "rows": 22,
+      "wall_clock_ms": 241424,
+      "rows": 77,
       "superseded_records": 2,
       "cost": null
     }
@@ -184,14 +184,14 @@
       "cost": null
     },
     "claude-sonnet/relevance": {
-      "calls": 18,
-      "input_tokens": 10545,
-      "output_tokens": 144,
+      "calls": 128,
+      "input_tokens": 89595,
+      "output_tokens": 908,
       "calls_missing_usage": 5,
       "retries": 5,
       "errors": 5,
-      "wall_clock_ms": 58880,
-      "rows": 7,
+      "wall_clock_ms": 190675,
+      "rows": 62,
       "superseded_records": 2,
       "cost": null
     }

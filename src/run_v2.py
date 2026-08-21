@@ -213,7 +213,19 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--judges", nargs="*", default=None,
                    help="judge names (default: all verified judges in the registry).")
     p.add_argument("--tasks", nargs="*", default=list(TASKS), choices=list(TASKS))
-    p.add_argument("--budget-policy", default="native", choices=("native", "matched"))
+    # Matched is the DEFAULT, not an option to remember. Two reviewers (xmQT W1,
+    # qkzU Q3) named the class-asymmetric budget -- 20 tokens for
+    # instruction-tuned judges against 1024 for reasoning-tuned ones -- as
+    # confounding architecture with inference configuration. Under the native
+    # policy 27 of 120 measured relevance calls terminated at the 20-token cap
+    # mid-sentence, so part of that cell's disagreement was truncation rather
+    # than sensitivity. The sweep runs once; defaulting to the configuration a
+    # reviewer already rejected would waste it. Native remains available for the
+    # budget ablation, where it is the object of study rather than an accident.
+    p.add_argument("--budget-policy", default="matched", choices=("native", "matched"),
+                   help="matched (default): every judge gets the same max_tokens, so "
+                        "judge-class differences cannot be explained by the budget. "
+                        "native: reproduces the v1 asymmetry, for the ablation only.")
     p.add_argument("--repeat-baseline", action="store_true",
                    help="issue arm A twice to measure the decoding-noise ceiling.")
     p.add_argument("--limit", type=int, default=None,

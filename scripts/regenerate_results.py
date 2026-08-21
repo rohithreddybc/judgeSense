@@ -138,6 +138,59 @@ def _round4(value):
     return None if value is None else round(value, 4) + 0.0
 
 
+REFUSAL = "refusal"
+
+
+def _arm_refused(rec: dict, arm: str) -> bool:
+    """Whether the provider flagged this arm as declined.
+
+    Read from the per-call metadata the runner records, never inferred from the
+    text: a judge that writes "I cannot help with that" in parseable prose is
+    malformed output, not a provider-flagged refusal, and the two must not be
+    silently merged.
+    """
+    usage = rec.get(f"usage_{arm}") or {}
+    return usage.get("finish_reason") == REFUSAL
+
+
+def _pair_class(rec: dict) -> str:
+    """One of: both_verdict, one_refused, both_refused.
+
+    Records with no usage metadata at all (runs predating metering) cannot carry
+    a refusal, so they classify as both_verdict and behave exactly as before.
+    """
+    a, b = _arm_refused(rec, "a"), _arm_refused(rec, "b")
+    if a and b:
+        return "both_refused"
+    if a or b:
+        return "one_refused"
+    return "both_verdict"
+
+
+def _refusal_taxonomy(recs: List[dict]) -> Dict:
+    """Refusal as an outcome category, decomposed.
+
+    A refusal is upstream of any judgement: the provider halted before the model
+    rendered a verdict. Scoring it as paraphrase DISAGREEMENT asserts the judge
+    produced two conflicting judgements, which it did not; scoring it as a third
+    LABEL would award JSS 1.0 to a judge that refuses everything. So JSS is
+    computed over pairs where both arms returned verdicts, and refusal is
+    reported separately.
+
+    The discordance rate is itself a sensitivity statistic, and the most
+    interesting quantity here: a pair where one arm was refused and the other
+    judged means a meaning-preserving rewording changed whether the judge was
+    willing to judge at all.
+    """
+    classes = [_pair_class(r) for r in recs]
+    n = len(recs) or 1
+    return {
+        "n_verdict_pairs": classes.count("both_verdict"),
+        "refusal_discordance_rate": round(classes.count("one_refused") / n, 4),
+        "consistent_refusal_rate": round(classes.count("both_refused") / n, 4),
+    }
+
+
 def _refusal_stats(recs: List[dict]) -> Dict:
     """Share of arm-calls the provider reported as a refusal.
 
@@ -167,15 +220,21 @@ def _refusal_stats(recs: List[dict]) -> Dict:
 
 def metrics_for_cell(recs: List[dict], task: str) -> Dict:
     likert = task == "coherence"
-    strict = cluster_bootstrap_ci(recs, lambda r: jss(r, "disagree"), "item", n_bootstrap=2000)
+    # The sensitivity construct is measured on its proper support: pairs where
+    # the judge actually rendered a verdict on both phrasings. The
+    # refusal-inclusive figure is reported below as a sensitivity analysis, so
+    # nothing is hidden by the conditioning.
+    verdict = [r for r in recs if _pair_class(r) == "both_verdict"]
+    scored = verdict or recs
+    strict = cluster_bootstrap_ci(scored, lambda r: jss(r, "disagree"), "item", n_bootstrap=2000)
     out = {
         "n_rows": len(recs),
         "n_items": len({r["item_id"] for r in recs}),
         "jss_strict": round(strict["estimate"], 4),
         "ci95": [round(strict["ci_lower"], 4), round(strict["ci_upper"], 4)],
         "cluster_unit": "item",
-        "chance_corrected_jss": _round4(_defined(chance_corrected_jss, recs, "disagree")),
-        "decision_entropy_bits": _round4(_defined(decision_entropy, recs)),
+        "chance_corrected_jss": _round4(_defined(chance_corrected_jss, scored, "disagree")),
+        "decision_entropy_bits": _round4(_defined(decision_entropy, scored)),
         "label_histogram": label_histogram(recs),
         # Malformed output is counted over BOTH arms: a judge can fail to parse
         # on either phrasing, and reporting one side under-states the rate that
@@ -192,6 +251,13 @@ def metrics_for_cell(recs: List[dict], task: str) -> Dict:
         # the same prompts, so a malformed_rate that silently folds the two
         # together would attribute a safety behaviour to format-following.
         **_refusal_stats(recs),
+        **_refusal_taxonomy(recs),
+        # Sensitivity analysis: every refused arm counted as disagreement, the
+        # most punitive reading. Reported so a reviewer can see what the
+        # conditioning above is worth rather than having to take it on trust.
+        "jss_strict_refusal_inclusive": _round4(
+            _defined(lambda rs: jss(rs, "disagree"), recs)) if len(verdict) != len(recs) else None,
+        "jss_support": "verdict_pairs" if verdict else "all_rows",
     }
     if likert:
         out["quadratic_weighted_kappa"] = _round4(

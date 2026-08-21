@@ -1,0 +1,98 @@
+# Pre-registered analysis plan
+
+Written before the full sweep was run and committed ahead of it, so the primary
+endpoint cannot be chosen after seeing which comparison happens to be
+significant. A one-shot run is credible only if the analysis was fixed in
+advance; this file is that fixture, and the paper cites its commit hash.
+
+## Primary endpoint
+
+**ΔJSS = JSS_repeat − JSS_paraphrase**, per judge–task cell.
+
+JSS_paraphrase is agreement between the judge's decisions on two
+meaning-equivalent phrasings of the same item. JSS_repeat is agreement between
+two calls on the *identical* phrasing, which establishes the decoding-noise
+ceiling for that judge and task.
+
+ΔJSS is the endpoint rather than raw JSS because raw JSS confounds paraphrase
+sensitivity with a judge's ordinary sampling variance. A judge that is merely
+noisy scores low on both; only a judge that is specifically destabilised by
+rewording shows a positive Δ. The claim the paper makes is about the second
+thing.
+
+Uncertainty: 95% cluster bootstrap CI, 2,000 resamples, `cluster_unit="item"`,
+via `metrics_v2.cluster_bootstrap_ci`. Item-level clustering is mandatory and
+enforced in code: the two `ab_order` rows of a pairwise item share an `item_id`
+and the repeat arm nests inside it, so any looser unit understates uncertainty.
+
+The finding is declared present for a cell when the CI for ΔJSS excludes zero.
+
+## Support: which pairs enter JSS
+
+Each arm call ends in exactly one outcome: a **verdict** (parsed to a label), a
+**refusal** (the provider flagged the response as declined — Anthropic
+`stop_reason="refusal"`, OpenAI-compatible `finish_reason="content_filter"`), or
+**malformed output** (a completed response the strict parser cannot map).
+
+JSS and its chance-corrected form are computed over pairs where **both arms
+returned verdicts**. A refusal is upstream of any judgement: scoring it as
+disagreement asserts the judge rendered two conflicting judgements, which it did
+not, and scoring it as a third label would award JSS 1.0 to a judge that refuses
+everything.
+
+Refusal is therefore reported as its own construct, per cell:
+
+- `refusal_rate` — refused arm calls / all arm calls
+- `refusal_discordance_rate` (RDR) — pairs where exactly one arm was refused
+- `consistent_refusal_rate` — pairs where both arms were refused
+- `n_verdict_pairs` — the support underlying JSS
+
+RDR is itself a sensitivity statistic and is analysed as one: a nonzero RDR
+means a meaning-preserving rewording changed whether the judge was willing to
+judge at all.
+
+`jss_strict_refusal_inclusive`, in which every refused arm counts as
+disagreement, is reported alongside as a sensitivity analysis, so the
+conditioning above can be checked rather than trusted.
+
+Any cross-judge comparison in a cell with nonzero refusals is recomputed on the
+**common support** — items every compared judge answered on both arms — so a
+reviewer's natural objection, that the judges are being compared on different
+subsets, is answered with a reported result rather than an argument.
+
+## Secondary endpoints
+
+1. Judge ranking stability: Kendall's τ between judge rankings under the two
+   phrasings, per task.
+2. Chance-corrected JSS (Cohen's κ; quadratic-weighted for the Likert coherence
+   task), guarding against agreement inflated by a compressed output
+   distribution.
+3. Position-corrected accuracy on the pairwise tasks, which makes a ceiling
+   effect or a position-anchored judge visible directly.
+4. Malformed-output rate over both arms.
+
+## Decoding budget
+
+All main results use the **matched** policy: `max_tokens=1024` for every judge
+regardless of class. The class-asymmetric alternative confounds judge class with
+inference configuration, and measurably truncated real responses mid-sentence.
+
+The budget effect is quantified rather than asserted: an appendix ablation runs a
+small subsample under the native policy and reports the ΔJSS difference and the
+cap-termination rate under each policy.
+
+## Stopping and staging
+
+The sweep runs cheapest-family-first, with metrics regenerated between waves. If
+wave one shows no separation between judges beyond the repeat baseline, that is
+recorded as the result rather than treated as a reason to keep spending until
+something separates.
+
+## Declared in advance: both outcomes are results
+
+If modern judges turn out to be as stable under paraphrase as under resampling,
+that is the paper's finding and it is reported as such. The benchmark's value
+does not depend on the sign of the effect: the shortcut controls establish that
+the tasks cannot be passed by position, length, or lexical overlap
+(0.482–0.514 for each heuristic judge), so a null result is informative about
+judges rather than about the instrument.
