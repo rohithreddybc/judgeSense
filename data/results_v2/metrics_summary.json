@@ -26,6 +26,10 @@
       "n_metered_arms": 735,
       "n_verdict_pairs": 245,
       "refusal_discordance_rate": 0.0,
+      "refusal_discordance_ci95": [
+        0.0,
+        0.0
+      ],
       "consistent_refusal_rate": 0.0,
       "outcome_partition": {
         "n_arm_calls": 490,
@@ -33,6 +37,13 @@
         "n_refused_arms": 0,
         "n_malformed_arms": 0,
         "partitions": true
+      },
+      "jss_bounds": {
+        "lower": 0.8,
+        "upper": 0.8,
+        "width": 0.0,
+        "n_unidentified_pairs": 0,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
       },
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
@@ -78,6 +89,10 @@
       "n_metered_arms": 735,
       "n_verdict_pairs": 245,
       "refusal_discordance_rate": 0.0,
+      "refusal_discordance_ci95": [
+        0.0,
+        0.0
+      ],
       "consistent_refusal_rate": 0.0,
       "outcome_partition": {
         "n_arm_calls": 490,
@@ -85,6 +100,13 @@
         "n_refused_arms": 0,
         "n_malformed_arms": 0,
         "partitions": true
+      },
+      "jss_bounds": {
+        "lower": 0.951,
+        "upper": 0.951,
+        "width": 0.0,
+        "n_unidentified_pairs": 0,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
       },
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
@@ -130,6 +152,10 @@
       "n_metered_arms": 1117,
       "n_verdict_pairs": 447,
       "refusal_discordance_rate": 0.0,
+      "refusal_discordance_ci95": [
+        0.0,
+        0.0
+      ],
       "consistent_refusal_rate": 0.0,
       "outcome_partition": {
         "n_arm_calls": 894,
@@ -137,6 +163,13 @@
         "n_refused_arms": 0,
         "n_malformed_arms": 38,
         "partitions": true
+      },
+      "jss_bounds": {
+        "lower": 0.8389,
+        "upper": 0.8389,
+        "width": 0.0,
+        "n_unidentified_pairs": 0,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
       },
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
@@ -187,6 +220,10 @@
       "n_metered_arms": 1237,
       "n_verdict_pairs": 495,
       "refusal_discordance_rate": 0.0,
+      "refusal_discordance_ci95": [
+        0.0,
+        0.0
+      ],
       "consistent_refusal_rate": 0.0,
       "outcome_partition": {
         "n_arm_calls": 990,
@@ -194,6 +231,13 @@
         "n_refused_arms": 0,
         "n_malformed_arms": 16,
         "partitions": true
+      },
+      "jss_bounds": {
+        "lower": 0.9293,
+        "upper": 0.9293,
+        "width": 0.0,
+        "n_unidentified_pairs": 0,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
       },
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
@@ -248,6 +292,10 @@
       "n_metered_arms": 735,
       "n_verdict_pairs": 245,
       "refusal_discordance_rate": 0.0,
+      "refusal_discordance_ci95": [
+        0.0,
+        0.0
+      ],
       "consistent_refusal_rate": 0.0,
       "outcome_partition": {
         "n_arm_calls": 490,
@@ -255,6 +303,13 @@
         "n_refused_arms": 0,
         "n_malformed_arms": 0,
         "partitions": true
+      },
+      "jss_bounds": {
+        "lower": 0.751,
+        "upper": 0.751,
+        "width": 0.0,
+        "n_unidentified_pairs": 0,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
       },
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
@@ -300,6 +355,10 @@
       "n_metered_arms": 735,
       "n_verdict_pairs": 245,
       "refusal_discordance_rate": 0.0,
+      "refusal_discordance_ci95": [
+        0.0,
+        0.0
+      ],
       "consistent_refusal_rate": 0.0,
       "outcome_partition": {
         "n_arm_calls": 490,
@@ -307,6 +366,13 @@
         "n_refused_arms": 0,
         "n_malformed_arms": 0,
         "partitions": true
+      },
+      "jss_bounds": {
+        "lower": 0.9796,
+        "upper": 0.9796,
+        "width": 0.0,
+        "n_unidentified_pairs": 0,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
       },
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
@@ -352,6 +418,10 @@
       "n_metered_arms": 357,
       "n_verdict_pairs": 137,
       "refusal_discordance_rate": 0.014,
+      "refusal_discordance_ci95": [
+        0.0,
+        0.0423
+      ],
       "consistent_refusal_rate": 0.028,
       "outcome_partition": {
         "n_arm_calls": 286,
@@ -359,6 +429,13 @@
         "n_refused_arms": 10,
         "n_malformed_arms": 0,
         "partitions": true
+      },
+      "jss_bounds": {
+        "lower": 0.9441,
+        "upper": 0.986,
+        "width": 0.042,
+        "n_unidentified_pairs": 6,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
       },
       "jss_strict_refusal_inclusive": 0.9441,
       "jss_support": "verdict_pairs",
@@ -402,6 +479,10 @@
       "n_metered_arms": 735,
       "n_verdict_pairs": 245,
       "refusal_discordance_rate": 0.0,
+      "refusal_discordance_ci95": [
+        0.0,
+        0.0
+      ],
       "consistent_refusal_rate": 0.0,
       "outcome_partition": {
         "n_arm_calls": 490,
@@ -409,6 +490,13 @@
         "n_refused_arms": 0,
         "n_malformed_arms": 0,
         "partitions": true
+      },
+      "jss_bounds": {
+        "lower": 0.8122,
+        "upper": 0.8122,
+        "width": 0.0,
+        "n_unidentified_pairs": 0,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
       },
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
@@ -455,6 +543,10 @@
       "n_metered_arms": 735,
       "n_verdict_pairs": 245,
       "refusal_discordance_rate": 0.0,
+      "refusal_discordance_ci95": [
+        0.0,
+        0.0
+      ],
       "consistent_refusal_rate": 0.0,
       "outcome_partition": {
         "n_arm_calls": 490,
@@ -462,6 +554,13 @@
         "n_refused_arms": 0,
         "n_malformed_arms": 6,
         "partitions": true
+      },
+      "jss_bounds": {
+        "lower": 0.9592,
+        "upper": 0.9592,
+        "width": 0.0,
+        "n_unidentified_pairs": 0,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
       },
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
@@ -507,6 +606,10 @@
       "n_metered_arms": 450,
       "n_verdict_pairs": 124,
       "refusal_discordance_rate": 0.0222,
+      "refusal_discordance_ci95": [
+        0.0,
+        0.05
+      ],
       "consistent_refusal_rate": 0.2889,
       "outcome_partition": {
         "n_arm_calls": 360,
@@ -514,6 +617,13 @@
         "n_refused_arms": 108,
         "n_malformed_arms": 72,
         "partitions": true
+      },
+      "jss_bounds": {
+        "lower": 0.4444,
+        "upper": 0.7556,
+        "width": 0.3111,
+        "n_unidentified_pairs": 56,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
       },
       "jss_strict_refusal_inclusive": 0.35,
       "jss_support": "verdict_pairs",

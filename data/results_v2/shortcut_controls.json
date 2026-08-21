@@ -4,15 +4,25 @@
     "tasks": {
       "relevance": {
         "accuracy": 0.5,
+        "ci95": [
+          0.4563,
+          0.5437
+        ],
         "n": 500,
         "n_ties_excluded": 0,
-        "n_rows": 500
+        "n_rows": 500,
+        "coverage": 1.0
       },
       "preference": {
         "accuracy": 0.5,
+        "ci95": [
+          0.4541,
+          0.5459
+        ],
         "n": 452,
         "n_ties_excluded": 0,
-        "n_rows": 452
+        "n_rows": 452,
+        "coverage": 1.0
       }
     }
   },
@@ -21,15 +31,25 @@
     "tasks": {
       "relevance": {
         "accuracy": 0.4818,
+        "ci95": [
+          0.438,
+          0.5258
+        ],
         "n": 494,
         "n_ties_excluded": 6,
-        "n_rows": 500
+        "n_rows": 500,
+        "coverage": 0.988
       },
       "preference": {
         "accuracy": 0.5136,
+        "ci95": [
+          0.467,
+          0.56
+        ],
         "n": 440,
         "n_ties_excluded": 12,
-        "n_rows": 452
+        "n_rows": 452,
+        "coverage": 0.9735
       }
     }
   },
@@ -38,9 +58,14 @@
     "tasks": {
       "relevance": {
         "accuracy": 0.5081,
+        "ci95": [
+          0.4462,
+          0.5697
+        ],
         "n": 248,
         "n_ties_excluded": 252,
-        "n_rows": 500
+        "n_rows": 500,
+        "coverage": 0.496
       }
     }
   },

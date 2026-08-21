@@ -895,10 +895,11 @@ def load_preference_items(
     #
     # The smaller bucket still caps the split at 2 x 113 = 226 items rather
     # than the requested 250. That is a real limit of the human-labelled pool,
-    # not padding: the alternative is to ship 24 more items that reintroduce a
+    # not padding: the alternative is to ship more items that reintroduce a
     # measurable verbosity shortcut across the whole task. Note that the trim
-    # DISCARDS 159 eligible majority-labelled comparisons (385 - 226), not 24:
-    # 24 is only the gap between the request and what ships.
+    # DISCARDS 159 eligible majority-labelled comparisons (385 - 226). The
+    # often-quoted "24" is only the gap between the request and what ships, and
+    # understates the cost of the balance by 135 comparisons.
     longer_items = [it for it in items if bucket_of[it.item_id]]
     shorter_items = [it for it in items if not bucket_of[it.item_id]]
     n_eligible = len(items)

@@ -121,9 +121,29 @@ equal number of items from each length bucket. That $50\%$ is a construction
 invariant of the item set and is a different quantity from the $0.514$ above,
 which is what a length-following judge scores on the rendered rows once ties are
 dropped. The smaller bucket caps the
-preference split at 226 items rather than the round 250. We regard that as the
-correct trade: the alternative is 24 additional items that reintroduce a
-measurable verbosity shortcut across the whole task.
+preference split at 226 items rather than the round 250. The cost is larger than
+that gap suggests and we state it plainly: the pool holds 385 usable
+majority-labelled comparisons, 272 winner-longer against 113 winner-shorter, so
+the balance discards 159 of them, not 24. We regard that as the correct trade:
+the alternative is to ship items that reintroduce a measurable verbosity
+shortcut across the whole task.
+
+Balancing on length alone would install a second confound in place of the first.
+Because the winner-shorter bucket ships whole and only the winner-longer bucket
+is cut, any criterion used to make that cut applies to one bucket and not the
+other. Cutting by vote margin --- keeping the most contested comparisons, as an
+earlier build did --- left the buckets matched on length but far apart on
+annotator agreement: mean vote-margin ratio $0.567$ against $0.745$, and $16\%$
+against $54\%$ unanimous. A judge that is stronger on close calls would then
+read as length-biased. We therefore \emph{stratify}: the winner-shorter bucket
+fixes the target distribution of vote shapes (absolute margin and total votes),
+and the winner-longer bucket is filled stratum by stratum to match it. The
+shipped buckets agree to $0.0007$ in mean vote-margin ratio, have identical
+medians and quartiles, and contain the same number of unanimous comparisons
+($61$ each). Matching also stops the split from collapsing onto coin-flips:
+$54\%$ of shipped comparisons carry a unanimous human majority, so the task
+retains items on which a competent judge can separate itself from an
+incompetent one.
 
 The lexical control required a similar correction. Selecting each distractor to
 maximise its term overlap with the topic --- the obvious way to make an item

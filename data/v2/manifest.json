@@ -33,8 +33,9 @@
       "rows": 452,
       "unique_items": 226,
       "unique_prompt_pairs": 226,
-      "distinct_source_records": 208,
+      "distinct_source_records": 211,
       "source_dataset": "lmsys/mt_bench_human_judgments"
     }
-  }
+  },
+  "preference_rebuilt_at": "2026-08-21T21:47:12.980874+00:00"
 }

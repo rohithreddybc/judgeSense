@@ -36,8 +36,62 @@ via `metrics_v2.cluster_bootstrap_ci`. Item-level clustering is mandatory and
 enforced in code: the two `ab_order` rows of a pairwise item share an `item_id`
 and the repeat arm nests inside it, so any looser unit understates uncertainty.
 
-The finding is declared present for a cell when the CI for ΔJSS excludes zero.
-The direction of the effect is read from the sign, not chosen after the fact.
+### Multiplicity and the decision rule
+
+Fourteen judges across four tasks is 56 intervals. A per-cell "CI excludes zero"
+rule applied to all of them yields roughly three spurious findings under a global
+null, and whichever cells clear will inevitably be the ones the narrative
+foregrounds. So the rule is stated in three parts, before the data exist:
+
+1. **One primary contrast.** The confirmatory claim is the ΔJSS pooled across
+   judges within each task, not any individual judge–task cell. Four intervals,
+   one per task, Holm-corrected across the four.
+2. **Everything per-cell is exploratory.** The 56 cell-level intervals are
+   reported in full with Benjamini–Hochberg adjusted values at a 10% false
+   discovery rate, and are described as exploratory in the text. No individual
+   judge is named as unstable on the basis of an unadjusted cell.
+3. **A smallest effect of interest.** |ΔJSS| < 0.02 is declared not practically
+   meaningful in advance, whatever its interval does. A judge that loses two
+   points of agreement under rewording is not thereby unusable, and an interval
+   that excludes zero at that magnitude is a statement about sample size rather
+   than about judges.
+
+The minimum detectable effect at the shipped cluster counts is reported with the
+results, so a null is distinguishable from an underpowered test.
+
+The direction of an effect is read from the sign, never chosen after the fact.
+
+### Discrimination floor: the control that stops "clean" meaning "useless"
+
+The shortcut controls above establish that no tested heuristic beats chance.
+That is a floor, and a floor alone is satisfiable by a benchmark on which
+*nothing* works, including a competent judge. A construction that suppresses
+exploitable signal can suppress genuine signal by the same mechanism, and the
+prior version of this work was withdrawn partly for tasks that did not
+discriminate.
+
+We therefore pre-commit a ceiling as well as a floor. On each task, the
+best-performing judge must exceed the following position-corrected accuracy for
+the task to be reported as discriminating:
+
+| Task | Required | Chance |
+|---|---|---|
+| factuality | 0.75 | 0.50 |
+| coherence (exact-match on 1–5) | 0.40 | 0.20 |
+| relevance | 0.70 | 0.50 |
+| preference | 0.65 | 0.50 |
+
+A task whose best judge falls below its threshold is reported as
+non-discriminating, and no judge ranking is drawn from it. This is declared here
+so that it constrains the write-up rather than being chosen once the numbers are
+visible; the thresholds are deliberately modest, since the claim they support is
+only that the task carries signal a judge can find.
+
+### Support floors
+
+ΔJSS is not emitted for a cell with fewer than 100 clusters, or where more than
+50% of items lack a usable pair on either side. Both are enforced in
+`scripts/regenerate_results.py` rather than left to inspection.
 
 ## Support: which pairs enter JSS
 

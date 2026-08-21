@@ -296,9 +296,21 @@ def _refusal_taxonomy(recs: List[dict]) -> Dict:
                 "consistent_refusal_rate": None}
     classes = [_pair_class(r) for r in recs]
     n = len(recs) or 1
+    # RDR is called the most interesting of these statistics, so it carries an
+    # interval on the same clustering unit as everything else. Reporting it as a
+    # bare proportion over ROWS also double-counted every pairwise item.
+    rdr_ci = _defined(
+        cluster_bootstrap_ci,
+        recs, lambda rs: sum(1 for r in rs if _pair_class(r) == "one_refused") / len(rs),
+        "item", n_bootstrap=2000,
+    )
     return {
         "n_verdict_pairs": classes.count("both_verdict"),
         "refusal_discordance_rate": round(classes.count("one_refused") / n, 4),
+        "refusal_discordance_ci95": (
+            [round(rdr_ci["ci_lower"], 4), round(rdr_ci["ci_upper"], 4)]
+            if rdr_ci else None
+        ),
         "consistent_refusal_rate": round(classes.count("both_refused") / n, 4),
     }
 
@@ -375,6 +387,7 @@ def metrics_for_cell(recs: List[dict], task: str) -> Dict:
         **_refusal_stats(recs),
         **_refusal_taxonomy(recs),
         "outcome_partition": _outcome_partition(recs),
+        **_refusal_bounds(recs),
         # Sensitivity analysis: every refused arm counted as disagreement, the
         # most punitive reading. Reported so a reviewer can see what the
         # conditioning above is worth rather than having to take it on trust.
@@ -398,6 +411,53 @@ def metrics_for_cell(recs: List[dict], task: str) -> Dict:
 # 95% interval and no warning attached.
 MIN_DELTA_CLUSTERS = 100
 MAX_ITEM_LOSS_FRACTION = 0.5
+
+
+def _rule_of_three_upper(n_trials: int) -> Optional[float]:
+    """Upper 95% bound on an event rate after n trials with zero events.
+
+    When a judge never self-disagrees, every bootstrap replicate returns a
+    repeat agreement of exactly 1.000, the ceiling contributes ZERO variance to
+    the delta, and the percentile interval collapses onto the paraphrase term
+    alone. But one repeat call per item bounds the true self-disagreement rate
+    only at 3/n -- on 250 items that is 1.2%, the same order as the effects
+    being claimed. Reporting it stops a zero-width ceiling from reading as a
+    known quantity.
+    """
+    return (3.0 / n_trials) if n_trials else None
+
+
+def _refusal_bounds(recs: List[dict]) -> Dict:
+    """Worst-case bounds on JSS under the refusal conditioning.
+
+    Conditioning on both-arms-answered is selection on a POST-TREATMENT
+    variable: the paper's own RDR construct concedes that rewording can change
+    whether a judge answers at all, which makes refusal an outcome rather than a
+    nuisance. The conditioned estimate is therefore point-identified only under
+    an assumption nobody can check.
+
+    These are the Manski bounds: every refused pair counted as agreement gives
+    the upper edge, every one as disagreement the lower. The truth lies inside
+    regardless of why the judge declined, so the width states how much the
+    conditioning is actually worth.
+    """
+    classes = [_pair_class(r) for r in recs]
+    verdict = [r for r, c in zip(recs, classes) if c == "both_verdict"]
+    n_refused = sum(1 for c in classes if c != "both_verdict")
+    n = len(recs)
+    if not n or not verdict:
+        return {"jss_bounds": None}
+    agree = sum(1 for r in verdict if r["decision_a"] == r["decision_b"])
+    return {
+        "jss_bounds": {
+            "lower": round(agree / n, 4),
+            "upper": round((agree + n_refused) / n, 4),
+            "width": round(n_refused / n, 4),
+            "n_unidentified_pairs": n_refused,
+            "basis": "Manski worst case: refused pairs counted as all-disagree "
+                     "then all-agree; no assumption about why the judge declined",
+        }
+    }
 
 
 def _repeat_delta(recs: List[dict]) -> Dict:
@@ -441,6 +501,18 @@ def _repeat_delta(recs: List[dict]) -> Dict:
     out = jss_repeat_delta(canonical, rep, "item", n_bootstrap=2000)
     out["support"] = "canonical ordering, verdict pairs"
     out["item_loss_fraction"] = round(loss, 4)
+    # At a ceiling of exactly 1.000 the percentile bootstrap reports zero
+    # uncertainty for a quantity estimated from one draw per item. State the
+    # rule-of-three bound so the ceiling is not read as known.
+    if out.get("jss_rep") is not None and out["jss_rep"] >= 1.0:
+        bound = _rule_of_three_upper(len(rep))
+        out["ceiling_at_boundary"] = True
+        out["ceiling_disagreement_upper_95"] = round(bound, 4) if bound else None
+        out["ceiling_note"] = (
+            "repeat agreement is exactly 1.000, so the bootstrap attributes no "
+            "variance to the ceiling; with one repeat per item the true "
+            "self-disagreement rate is bounded above by 3/n, not zero"
+        )
     return out
 
 

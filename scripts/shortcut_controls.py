@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -58,6 +59,24 @@ def _candidates(prompt: str) -> Tuple[Optional[str], Optional[str]]:
     return (a, b) if a and b else (None, None)
 
 
+def _wilson(k: int, n: int, z: float = 1.96) -> Optional[Tuple[float, float]]:
+    """Wilson score interval for a binomial proportion.
+
+    A point estimate alone is not evidence of absence. At n=248 an accuracy of
+    0.508 is consistent with a shortcut worth 0.57, so a control reported
+    without an interval cannot support the claim it is being used to make.
+    Wilson rather than normal-approximation because it stays inside [0,1] and
+    behaves near the boundaries.
+    """
+    if not n:
+        return None
+    p = k / n
+    d = 1 + z * z / n
+    centre = (p + z * z / (2 * n)) / d
+    half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+    return round(centre - half, 4), round(centre + half, 4)
+
+
 def _score(task: str, pick) -> Dict:
     """Fraction of rows a heuristic gets right, over rows where it has a signal."""
     rows = [r for r in _rows(task) if r.get("ground_truth_position") in ("A", "B")]
@@ -72,11 +91,15 @@ def _score(task: str, pick) -> Dict:
             continue
         scored += 1
         correct += choice == r["ground_truth_position"]
+    ci = _wilson(correct, scored)
     return {
         "accuracy": round(correct / scored, 4) if scored else None,
+        "ci95": list(ci) if ci else None,
         "n": scored,
         "n_ties_excluded": ties,
         "n_rows": len(rows),
+        # A control computed on a small fraction of the split bounds very little.
+        "coverage": round(scored / len(rows), 4) if rows else None,
     }
 
 
@@ -118,7 +141,7 @@ def main(argv=None) -> int:
 
     report: Dict[str, Dict] = {}
     failures: List[str] = []
-    print(f"{'control':<22}{'task':<12}{'accuracy':>10}{'n':>7}{'ties':>7}  verdict")
+    print(f"{'control':<22}{'task':<12}{'accuracy':>10}{'ci95':>17}{'n':>7}{'cov':>7}  verdict")
     for key, description, fn, tasks in CONTROLS:
         report[key] = {"description": description, "tasks": {}}
         for task in tasks:
@@ -128,8 +151,10 @@ def main(argv=None) -> int:
             ok = acc is not None and BAND[0] <= acc <= BAND[1]
             if not ok:
                 failures.append(f"{key}/{task} = {acc}")
-            print(f"{key:<22}{task:<12}{acc:>10}{result['n']:>7}"
-                  f"{result['n_ties_excluded']:>7}  {'chance' if ok else 'EXPLOITABLE'}")
+            ci = result["ci95"]
+            ci_s = f"[{ci[0]:.3f},{ci[1]:.3f}]" if ci else "-"
+            print(f"{key:<22}{task:<12}{acc:>10}{ci_s:>17}{result['n']:>7}"
+                  f"{result['coverage']:>7}  {'chance' if ok else 'EXPLOITABLE'}")
 
     report["band"] = {"lower": BAND[0], "upper": BAND[1],
                       "note": "two-sided: a reliably-shorter or reliably-lower-overlap "
