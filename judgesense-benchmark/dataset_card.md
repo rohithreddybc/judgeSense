@@ -107,8 +107,19 @@ control is the weakest: its interval is consistent with a residual lexical signa
 worth about 0.57, and it reads only half the relevance rows because the rest tie.
 
 The complement also holds — a benchmark nothing can pass is useless. The best
-judge we measured clears a pre-registered floor on every task: 0.944 factuality,
-0.452 coherence, 0.882 relevance, 0.873 preference.
+judge we measured scores 0.944 on factuality, 0.882 on relevance, 0.873 on
+preference and 0.452 on coherence.
+
+Read the last of those against the right baseline. Coherence gold is skewed
+(`{4: 87, 3: 71, 2: 55, 5: 32, 1: 5}`), so a judge that answers "4" every time
+scores **0.348** — not the 0.20 a five-point scale suggests. The best judge beats
+that constant by ten points, which makes coherence only weakly discriminating,
+and we would rather you knew that before building on it. The other three tasks
+clear their majority-class baseline of 0.500 by 37 points or more.
+
+These thresholds were fixed after the first results were in hand, so they are
+descriptive checks rather than pre-registered tests, and we describe them that
+way.
 
 ## Version history, stated plainly
 
@@ -176,7 +187,7 @@ record, not the item, if you need conservative uncertainty.
 ```bibtex
 @misc{bellibatlu2026judgesense,
   title         = {JudgeSense: Measuring the Prompt Sensitivity of LLM-as-a-Judge},
-  author        = {Bellibatlu, Rohith Reddy},
+  author        = {Bellibatlu, Rohith Reddy and Raff, Edward and Zhang, Wenbin},
   year          = {2026},
   eprint        = {2604.23478},
   archivePrefix = {arXiv},
