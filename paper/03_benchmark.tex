@@ -52,14 +52,56 @@ fallback path that could silently generate an item.
 
 \subsection{Paraphrase design}
 
-Each item is issued under two instruction templates that differ in wording and
-not in what they ask. Templates are held to a fixed label space: a check run in
-continuous integration asserts that no factuality or coherence template alters
-the set of admissible answers or inverts their polarity. The pairwise templates
-share a two-option answer space by construction and are not covered by that
-check.
+Each item is issued under two of five instruction templates, intended to differ
+in wording and not in what they ask. That intent is a construct assumption, and
+if it fails the benchmark stops measuring what it claims to: were one template
+to ask a subtly different question, a judge answering both correctly would be
+scored as unstable, and semantic drift rather than prompt sensitivity would
+explain the result. We therefore state plainly what we have checked and what we
+have not.
 
-This constraint is a correction of our own earlier design. An earlier version of
+We audit the released files themselves --- recovering each template from the
+shipped prompts and the payload recorded alongside them, rather than trusting
+the generator --- across all four tasks. The audit is offline and deterministic;
+it makes no model calls, and it is run in continuous integration. Four
+properties are enforced. \emph{Label space}: the set of admissible answers each
+template requests, parsed from the instruction with the item text and the
+candidate frame removed, is identical within every pair (\{YES, NO\} for
+factuality, $\{1,\dots,5\}$ for coherence, \{A, B\} for both pairwise tasks).
+\emph{Polarity}: no answer token is bound to opposite conclusions across
+templates, no template asks the inverted question, and where a template glosses
+its scale endpoints the low anchor is the negative one. \emph{Construct}: every
+template names a term from its own task's declared vocabulary and none from
+another task's. \emph{Non-triviality}: no pair is a near-duplicate, so every
+pair is a real manipulation. All four hold on the shipped templates for all four
+tasks. This supersedes our earlier check, which iterated only the factuality and
+coherence templates --- leaving the two pairwise tasks entirely uncovered --- and
+tested substring presence rather than the answer set requested.
+
+Two further properties are measured and reported rather than enforced, because
+we cannot show they are harmless. Templates place the payload at different
+points in the instruction: in relevance, T1 opens the query at $46.4\%$ of the
+template against T3 at $9.0\%$, a within-pair divergence of up to $37.4$
+percentage points. Instruction reading difficulty also varies, by up to $3.7$
+Flesch--Kincaid grade levels within a pair (preference T3--T4). Either could
+make one arm intrinsically harder, and neither is controlled by our design.
+
+We do not claim these checks establish semantic equivalence. They bound specific
+failure modes; nothing computable from the template strings settles whether a
+competent reader maps two wordings onto the same question. Three residuals
+remain open. The audit groups surface forms into one construct by an authored
+mapping --- factuality templates ask variously about a statement being
+``factually correct'', ``accurate'' or worth ``fact-checking'', and preference
+templates ask which response is ``better'', ``of higher quality'' or
+``stronger'' --- and whether those are synonyms for a given judge is an
+assumption, not a measurement. Implicit thresholds may shift between such
+phrasings even when the construct does not. And tokenisation or pretraining
+frequency may favour one phrasing for a particular model. Semantic drift is
+therefore reduced as an alternative explanation for measured sensitivity, not
+eliminated; establishing equivalence would require human annotation or a
+model-in-the-loop study we have not run.
+
+The polarity constraint is a correction of our own earlier design. An earlier version of
 this benchmark included a factuality template that inverted the answer polarity
 (``does this response contain factual errors? answer NO if accurate''). Under a
 single shared label space, ``YES'' then denoted opposite conclusions in different
@@ -78,6 +120,22 @@ single canonical decision space before comparison --- is implemented in the
 released code, and we report the remapped analysis alongside the
 excluded-pairing analysis so the exclusion's effect on the reported numbers is
 visible rather than assumed.
+
+A limitation of the assignment follows from how templates are allocated. Each
+item is issued under exactly one of the ten unordered template pairs, balanced
+across pairs: 25 items per pair for factuality, coherence and relevance, and 13
+for preference. Every item is therefore seen under exactly two of the five
+templates, and no item is seen under more than one pair. Template identity is
+consequently nested perfectly inside item identity: the items behind template
+$T_i$ and those behind $T_j$ are disjoint sets, so any apparent difference
+between two templates is equally a difference between the items they were shown,
+and no estimator applied to this design can separate the two. Statements of the
+form ``template A is more stable than template B'' are not identifiable here,
+and we make none. What the design does support is the within-item contrast it
+was built for: the two arms of a pair differ only in wording, with the item held
+fixed, so pair-level sensitivity is unaffected by this confound. Separating
+per-template effects would require crossing items over multiple template pairs,
+which this release does not do.
 
 \subsection{Position control}
 

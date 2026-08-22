@@ -1,6 +1,12 @@
 """
 Validate prompt pair semantic equivalence using GPT-4o-mini.
 
+V1 ONLY. This reads data/prompt_pairs/ and makes API calls. It cannot see
+data/v2/ and is not part of the v2 evidence chain. For the shipped v2 templates
+use scripts/validate_paraphrases_v2.py, which covers all four tasks and runs
+entirely offline; the two scripts share no code, so this one is unaffected by
+changes there.
+
 Usage — run 4 terminals in parallel for maximum speed (from judgeSense/):
 
     python scripts/validate_paraphrases.py --task factuality --workers 20
