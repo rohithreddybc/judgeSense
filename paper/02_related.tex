@@ -1,0 +1,63 @@
+\section{Related work}
+\label{sec:related}
+
+\paragraph{LLM judges and their validation.}
+Using a strong language model to score the output of another is now standard
+practice, established at scale by MT-Bench and Chatbot Arena
+\citep{zheng2023judging} and adopted across holistic evaluation efforts
+\citep{liang2023holistic}. Validation of these judges is almost always
+\emph{correlational}: a judge is trusted when its scores agree with human ratings
+in aggregate \citep{chiang2023can, liu2023geval}. That criterion is necessary and
+not sufficient. Aggregate correlation is compatible with per-item instability,
+because errors that cancel across a corpus still make any individual verdict
+unreliable, and a researcher who reruns an evaluation with differently worded
+instructions has no guarantee of reproducing it. Our measurement is orthogonal to
+accuracy by construction: it never consults the ground-truth label, and a judge
+that is uniformly wrong scores perfectly on it.
+
+\paragraph{Known judge biases.}
+A body of work documents specific, systematic ways judges fail. Position bias ---
+preferring whichever candidate is presented first --- is strong enough to require
+explicit correction \citep{wang2023fair}. Judges reward verbosity and surface
+polish independently of content \citep{zhuo2024prosa, shi2024judging}, and are
+vulnerable to superficial manipulations of the response
+\citep{razavi2025benchmarking}. These are findings about \emph{what} judges
+prefer. We take them as constraints on benchmark construction rather than as our
+object of study: because position and length bias are known, a benchmark that
+does not control them measures the bias instead of the judge, so we present both
+candidate orderings for every pairwise item and balance the length distribution
+exactly, then verify on the released files that neither heuristic beats chance.
+
+\paragraph{Prompt sensitivity in language models generally.}
+That model behaviour moves under meaning-preserving reformulation is
+well-established outside the evaluation setting. Formatting choices alone shift
+accuracy across a wide spread \citep{sclar2024quantifying}; paraphrasing task
+instructions changes measured capability enough to alter model rankings
+\citep{mizrahi2024state}; and consistency under rephrasing has been treated as a
+first-class property of pretrained models \citep{elazar2021measuring}. Systematic
+surveys of evaluation practice reach the same conclusion from the other direction
+\citep{wei2024systematic}. Our contribution is to apply this lens where it has
+the most leverage: not to a model being tested, but to the model doing the
+testing, where instability propagates silently into every downstream number.
+
+\paragraph{Judging judges.}
+Recent work evaluates LLM judges as objects in their own right, including in
+retrieval settings \citep{thakur2024judging, arabzadeh2025human} and as general
+capability benchmarks \citep{li2024llms}. These efforts mostly ask whether judges
+are \emph{right}. We ask whether they are \emph{repeatable}, and separate that
+question from decoding variance by measuring each judge against its own
+repeat-agreement ceiling rather than against an assumed noise floor of zero.
+
+\paragraph{Sources and statistical machinery.}
+The items come from existing human-labelled corpora: TruthfulQA for factual
+accuracy \citep{lin2022truthfulqa}, SummEval for expert coherence ratings
+\citep{fabbri2021summeval}, BEIR's TREC-COVID split for graded relevance
+judgements \citep{thakur2021beir}, and MT-Bench's human preference votes
+\citep{zheng2023judging}. No label in this benchmark is assigned or inferred by
+us. Agreement is chance-corrected with Cohen's $\kappa$ \citep{cohen1960coefficient},
+quadratic-weighted on the ordinal task, and all intervals are cluster bootstrap
+\citep{efron1979bootstrap} resampled at the item, since the two candidate
+orderings of a pairwise item and its repeat arms are not independent
+observations. The judges evaluated are drawn from current instruction-tuned and
+reasoning-tuned families \citep{openai2023gpt4, gemini2023gemini,
+grattafiori2024llama3, qwen2024qwen25, jiang2023mistral, deepseek2025r1}.

@@ -1,0 +1,94 @@
+\section{Introduction}
+\label{sec:intro}
+
+Language models are now routinely used to evaluate the output of other language
+models. The practice is cheap, fast, and correlates well enough with human
+preference to have displaced human annotation across large parts of the
+evaluation stack \citep{zheng2023judging}. Leaderboards are built on it, training
+signals are derived from it, and papers report it as evidence.
+
+An evaluator earns that role by being reproducible. If two researchers ask the
+same judge the same question in different words and receive different verdicts,
+the judge is not measuring the property it claims to measure --- it is partly
+measuring the phrasing. That failure is invisible in the usual validation, which
+asks whether a judge agrees with humans on average. A judge can correlate well
+with human ratings in aggregate while being unstable on any individual item, and
+aggregate correlation cannot distinguish the two.
+
+Instability under rephrasing is well documented for language models performing
+ordinary tasks. Small, meaning-preserving changes to a prompt --- formatting,
+ordering, the choice between synonyms --- move accuracy substantially
+\citep{sclar2024quantifying, mizrahi2024state, elazar2021measuring}. The
+evaluation literature has separately established that judges carry systematic
+biases: they favour the first-presented candidate \citep{wang2023fair}, prefer
+longer answers, and can be swayed by surface features unrelated to quality
+\citep{zhuo2024prosa, shi2024judging}. What has been measured less is the
+property that matters most for a measuring instrument: whether the same judge,
+asked the same question two ways, returns the same answer.
+
+This paper measures that directly. We introduce JudgeSense, a benchmark of 880
+items across four evaluation tasks, each issued under two instruction templates
+that differ in wording and not in what they ask. The central quantity is not
+accuracy. A judge that is wrong on every item but wrong \emph{identically} under
+both phrasings is perfectly reproducible, and our metric assigns it a perfect
+score. We are asking whether the instrument is stable, and treating whether it is
+correct as a separate question.
+
+\paragraph{Separating sensitivity from noise.}
+A judge sampling at nonzero temperature disagrees with itself on the identical
+prompt, so some part of any measured disagreement is ordinary decoding variance
+rather than sensitivity to wording. Reporting raw agreement attributes all of it
+to paraphrasing. We therefore issue each template a second time, unchanged, and
+report the \emph{difference} between paraphrase agreement and repeat agreement.
+The repeat arm is the judge's own reproducibility ceiling on that task, and the
+gap below it is the quantity the paper is about. This distinction is not
+cosmetic: in a pilot we discarded, a misconfigured decoding parameter produced a
+repeat ceiling low enough to absorb the entire effect we report, and nothing in
+the output distinguished it from a genuine one.
+
+\paragraph{A benchmark has to be attackable before it is trustworthy.}
+A measurement of judge stability is only as good as the items it is measured on.
+If a task can be passed by a heuristic that ignores the intended construct ---
+always answer A, pick the longer candidate, pick the passage sharing more words
+with the query --- then a high score says nothing about judgment. We therefore
+run those heuristics against the released files and report what they score, with
+intervals and support counts. Equally, a benchmark on which \emph{nothing} works,
+including a competent judge, is shortcut-free and useless; so we also
+pre-register a floor that the best judge must clear for a task to count as
+discriminating at all. Both directions are checked, because a construction that
+suppresses exploitable signal can suppress genuine signal by the same mechanism.
+
+\paragraph{This paper is a correction as well as a contribution.}
+An earlier version of this benchmark was withdrawn after review. Its items were
+hardcoded in source while being described as benchmark-sourced; it shipped 75
+unique items; it presented the correct candidate first in every pairwise item, so
+a judge that always answered ``A'' was indistinguishable from a perfect one; and
+one factuality template inverted the answer polarity, inflating measured
+disagreement uniformly across every judge. We rebuilt from real corpora with
+per-item provenance and fixed each defect. In doing so we found further
+defects of the same class in our own rebuild --- a template assignment that
+functioned as an answer key, candidate responses carrying contradictory gold
+labels, a length-balancing step that installed a difficulty confound in place of
+the verbosity one it removed --- and we report those too, with the measurements
+that exposed them. The failure mode we are documenting is not exotic. It is
+ordinary, it is quiet, and it survives every check that does not specifically
+look for it.
+
+\paragraph{Contributions.}
+\begin{enumerate}
+  \item \textbf{A benchmark with attack surface measured, not asserted.} 880
+    items from four human-labelled corpora with per-item provenance, released
+    with the heuristic baselines that would beat it, their confidence intervals,
+    and their support counts.
+  \item \textbf{An endpoint that separates wording sensitivity from decoding
+    noise.} $\Delta\mathrm{JSS}$, the gap between paraphrase agreement and a
+    judge's own repeat-agreement ceiling, pre-registered before the sweep with
+    its clustering unit, support floors and decision rule fixed in advance.
+  \item \textbf{Refusal treated as a measurement rather than a nuisance.}
+    Provider-flagged declines are recorded and reported separately from
+    unparseable output, which are indistinguishable after parsing but are
+    different facts about a judge.
+  \item \textbf{Evidence that sensitivity is a property of the task.} Across
+    three judges the ordering of tasks by sensitivity is identical, and the
+    spread within a task is smaller than the spread within a judge across tasks.
+\end{enumerate}

@@ -1,0 +1,98 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{What the result means for practice}
+
+The finding that sensitivity tracks the task more than the judge has a direct
+consequence: choosing a stronger judge is not a reliable way to buy stability.
+Across the three judges measured, the most and least sensitive judge on coherence
+differ by $0.044$ $\Delta\mathrm{JSS}$, while the most and least sensitive
+\emph{task} within a single judge differ by $0.162$. A practitioner worried about
+reproducibility gains more by reconsidering what they are asking the judge to do
+than by upgrading the model.
+
+The ordinal task is the least stable of the four, and we think the mechanism is
+general rather than particular to coherence. A five-point scale gives a rewording
+more ways to move the answer, and the weighted kappa shows most of that movement
+is a single scale point. Evaluation designs that collect a graded score and then
+threshold it are absorbing this instability silently; a binary or pairwise
+formulation of the same underlying question is measurably more reproducible.
+
+\subsection{Refusal is an evaluation failure mode, not an aside}
+
+One judge declined a quarter of the relevance items while another, on identical
+prompts, declined none. For anyone using an LLM judge over medical or otherwise
+sensitive corpora this is a first-order problem: the missing verdicts are not
+missing at random, and an evaluation harness that silently treats a decline as a
+parse failure will report a format-adherence problem that does not exist.
+
+It also breaks a convenience that most analyses assume. Because a rewording can
+itself change whether a judge answers, refusal is an outcome of the manipulation
+rather than a nuisance to be dropped, and conditioning on the answered subset is
+selection on a post-treatment variable. We report worst-case bounds alongside the
+conditioned estimate for this reason. Where refusals are common those bounds are
+wide, and we would rather show a wide identified region than a precise number
+that depends on an assumption nobody can check.
+
+\subsection{On building a benchmark that can be wrong}
+
+The defects we found in our own rebuild are, we think, the most transferable part
+of this work. Each one passed every check that existed at the time.
+
+A deterministic rotation assigning template pairs to items ran in lockstep with
+the alternating emission of correct and incorrect answers, making the template
+pair a perfect answer key --- and skewing two templates' label balance to
+$75/25$, so a constant-answer judge would have appeared to have a large
+template preference. Candidate responses reused across pairings carried
+contradictory gold labels, so a judge reasoning correctly and consistently was
+scored wrong on nearly half the preference items. A length-balancing step that
+correctly removed a verbosity shortcut cut only one of the two buckets, and cut
+it by vote margin, leaving the buckets matched on length and far apart on
+annotator agreement.
+
+None of these is detectable by inspecting labels, provenance, or aggregate
+statistics. All three were found by asking what a heuristic with no understanding
+would score, and by checking whether the artifact contained a rule that predicted
+the answer. We would encourage that as routine practice: before reporting what
+models score on a benchmark, report what nothing scores on it, and report it
+with an interval and a support count rather than a bare number.
+
+\subsection{Limitations}
+
+The evidence base is three judges from one vendor family. The task ordering is
+consistent across them, but that consistency is a within-family observation and
+we do not claim it generalises; the harness supports fourteen judges across seven
+providers and eleven are unrun. Two of the twelve judge--task cells report no
+endpoint, their support having fallen below the pre-registered floor. One judge
+rejects an explicit temperature parameter and therefore ran at a provider
+default while the others ran at zero; this is recorded per call rather than
+inferred, and that judge's cells should be read accordingly.
+
+The design measures sensitivity within an item across a template pair, and cannot
+compare templates to one another: no item appears under more than one pair, so
+template identity is nested inside item identity and the two effects are not
+separable. Our equivalence checks bound specific failure modes --- label space,
+polarity, construct, non-triviality --- but nothing computable from the template
+strings establishes that a competent reader maps two wordings onto the same
+question. Semantic drift is reduced as an alternative explanation, not
+eliminated.
+
+Finally, the effect sizes are modest in absolute terms. A $\Delta\mathrm{JSS}$ of
+$-0.04$ on factuality means a judge that reproduces itself on the identical
+prompt loses four points of agreement under rewording. Whether that matters
+depends on the decision being made downstream, and we have declared in advance
+that we do not regard anything below $0.02$ as practically meaningful.
+
+\section{Conclusion}
+
+We set out to measure whether LLM judges return the same verdict when asked the
+same question in different words, and to do so on a benchmark that could not be
+passed without judging. Across three judges and four tasks, every measurable cell
+shows a real loss of agreement under meaning-preserving rewording, beyond what
+the judge's own decoding variance explains. The size of that loss depends more on
+the evaluation task than on the model performing it.
+
+The benchmark, the analysis plan fixed before the sweep, the raw judge outputs,
+and the heuristic baselines that would beat the tasks are all released. So are
+the defects we found in our own construction, and the measurements that exposed
+them.
