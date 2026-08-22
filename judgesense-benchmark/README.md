@@ -1,225 +1,172 @@
-# JudgeSense: A Benchmark for Prompt Sensitivity in LLM-as-a-Judge Systems
-
-[![License: CC-BY-4.0](https://img.shields.io/badge/License-CC--BY--4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
-[![arXiv](https://img.shields.io/badge/arXiv-2604.23478-red.svg)](https://arxiv.org/abs/2604.23478)
-[![HuggingFace](https://img.shields.io/badge/dataset-HuggingFace-orange.svg)](https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark)
-
+---
+license: cc-by-4.0
+task_categories:
+  - text-classification
+language:
+  - en
+tags:
+  - llm-as-a-judge
+  - evaluation
+  - benchmark
+  - prompt-sensitivity
+  - reproducibility
+pretty_name: JudgeSense
+size_categories:
+  - 1K<n<10K
 ---
 
-> ## ⚠️ This dataset should not be used
->
-> The accompanying paper was **withdrawn from NeurIPS 2026** in July 2026 after
-> defects were verified against this released artifact. The dataset is smaller
-> than described, its stated provenance is inaccurate, and some ground-truth
-> labels are wrong. Details and reproducible numbers:
-> [ERRATA.md](https://github.com/rohithreddybc/judgeSense/blob/main/ERRATA.md).
->
-> A rebuilt v2 dataset — 250 unique items per task loaded from the real upstream
-> benchmarks with per-item provenance — is in progress on the `v2-rebuild`
-> branch.
+# JudgeSense
 
-## Overview
+A benchmark for measuring whether an LLM judge returns the **same verdict when
+the same evaluation request is worded differently**.
 
-**JudgeSense** is a benchmark dataset for measuring prompt sensitivity in
-LLM-as-a-Judge evaluation systems. Each row contains two differently phrased
-judge prompts applied to the same item, enabling measurement of how much a
-judge's decision changes due to prompt wording alone.
+The question is deliberately narrow. This dataset does not measure whether a
+judge is *correct*; it measures whether it is *reproducible*. A judge that is
+wrong on every item but wrong identically under both phrasings scores perfectly
+here, and that is intended — a measuring instrument whose reading depends on how
+you phrase the question is not usable, however accurate it looks on average.
 
-### Composition — corrected
+## Composition
 
-The dataset was previously described as 500 hand-validated prompt pairs. It
-contains **500 rows, spanning 202 unique prompt pairs over 75 unique underlying
-items**:
+| Task | Source corpus | Items | Rows | Label |
+|---|---|---|---|---|
+| factuality | `truthful_qa` (generation) | 250 | 250 | accurate / inaccurate |
+| coherence | `mteb/summeval` | 250 | 250 | 1–5 expert rating |
+| relevance | `BeIR/trec-covid` + graded qrels | 250 | 500 | which passage is relevant |
+| preference | `lmsys/mt_bench_human_judgments` | 130 | 260 | which response humans preferred |
+| **total** | | **880** | **1,260** | |
 
-| Task | Rows | Unique items | Unique prompt pairs | Labels |
-|------|-----:|-------------:|--------------------:|--------|
-| **Factuality** | 125 | 60 | 80 | accurate / inaccurate |
-| **Coherence** | 125 | **5** | **25** | score_1 … score_5 |
-| **Preference** | 125 | 5 | 48 | A / B |
-| **Relevance** | 125 | 5 | 49 | A / B |
+Pairwise tasks carry two rows per item, one for each candidate ordering.
 
-### Provenance — corrected
+Every label is the one the source corpus already carried. No item is authored by
+us and no label is assigned or inferred by us. Every row records its source
+dataset, split, per-record identifier, and the source configuration where the
+source defines one, so any item traces back to the row it came from.
 
-Records carry a `source_benchmark` field naming TruthfulQA, SummEval, MT-Bench,
-or BEIR. **Those strings are hardcoded constants.** The dataset builder contains
-no data-loading code — no download, no read from any source file — and every
-item is a Python literal written in the builder. The items are **not drawn from
-those benchmarks** and the field must not be relied on as provenance.
+## How to use it
 
-### Ground-truth labels — corrected
-
-Coherence `ground_truth_label` values (`score_1` … `score_5`) are **enumeration
-indices, not coherence ratings**. They do not enter the JSS computation, which
-compares two prompt phrasings and never consults ground truth, but they are
-unusable for any accuracy evaluation.
-
-Additionally, **ten items carry contradictory ground truth** — identical judged
-content appearing with opposite correct answers (5 in relevance, 5 in
-preference).
-
-### Human validation — corrected
-
-All 500 pairs were reviewed for paraphrase equivalence by **a single annotator**
-(450 labelled equivalent, 50 polarity-inverted Template 4 pairs non-equivalent).
-
-A previous version of this card stated the pairs were independently validated by
-two human annotators with full agreement. **That claim is not supported by the
-annotation records — all 500 carry one annotator — and is withdrawn.**
-
----
-
-## What This Enables
-
-- **Prompt sensitivity evaluation** — measure how fragile a judge is to phrasing variation
-- **LLM judge robustness benchmarking** — compare models on decision consistency
-- **Detection of prompt-induced artifacts** — identify polarity inversions (T4) and other systematic biases
-
----
-
-## Quick Start
+Each row carries `prompt_a` and `prompt_b`: the same item under two instruction
+templates that differ in wording and not in what they ask. Send both to your
+judge, parse both answers, and measure how often they agree.
 
 ```python
-from utils.load_judgesense import load_task, load_all
-from utils.compute_jss import compute_jss
+from datasets import load_dataset
 
-# Load one task
-pairs = load_task("factuality")
-print(f"{len(pairs)} pairs loaded")
-
-# Load all tasks
-all_data = load_all()
-
-# Compute JSS from your judge's decisions
-jss = compute_jss(decisions_a, decisions_b)
-print(f"JSS: {jss:.3f}")
+ds = load_dataset("Rohithreddybc/judgesense-benchmark", "factuality", split="test")
+row = ds[0]
+a = my_judge(row["prompt_a"])
+b = my_judge(row["prompt_b"])
+agree = (a == b)          # this is the measurement; ground truth is not consulted
 ```
 
-Run the full example:
+**Measure against a repeat baseline, not against zero.** A judge sampling at
+nonzero temperature disagrees with itself on the identical prompt, so part of any
+disagreement you observe is ordinary decoding variance rather than sensitivity to
+wording. Issue `prompt_a` a second time unchanged, and report the *difference*
+between paraphrase agreement and repeat agreement. Without that subtraction you
+will attribute a judge's sampling noise to paraphrasing. In our own work a
+misconfigured temperature produced a repeat ceiling low enough to absorb the
+entire effect, and nothing in the output distinguished it from a genuine one.
 
-```bash
-cd judgesense-benchmark
-python examples/run_jss_example.py
+Run judges at a **matched decoding budget and a fixed temperature across
+families**, or differences between judge classes are confounded with inference
+configuration.
+
+## What we checked so you do not have to assume it
+
+A benchmark measures what it claims only if it cannot be passed by a heuristic
+that ignores the intended construct. These are computed on the released files:
+
+| Heuristic | Task | Accuracy | 95% CI | n | coverage |
+|---|---|---|---|---|---|
+| always answer A | relevance | 0.500 | [0.456, 0.544] | 500 | 1.00 |
+| always answer A | preference | 0.500 | [0.454, 0.546] | 260 | 1.00 |
+| pick the longer candidate | relevance | 0.482 | [0.438, 0.526] | 494 | 0.99 |
+| pick the longer candidate | preference | 0.508 | [0.446, 0.570] | 256 | 0.98 |
+| pick higher query overlap | relevance | 0.540 | [0.478, 0.600] | 252 | 0.50 |
+
+Reproduce with `scripts/shortcut_controls.py` in the code repository. The overlap
+control is the weakest: its interval is consistent with a residual lexical signal
+worth about 0.57, and it reads only half the relevance rows because the rest tie.
+
+The complement also holds — a benchmark nothing can pass is useless. The best
+judge we measured clears a pre-registered floor on every task: 0.944 factuality,
+0.452 coherence, 0.882 relevance, 0.873 preference.
+
+## Version history, stated plainly
+
+**This dataset has been rebuilt twice, and the earlier versions were defective.**
+If you downloaded before 2026-08-21, replace it.
+
+*v1 (withdrawn).* Items were hardcoded in source while described as
+benchmark-sourced. 75 unique items. The correct candidate appeared first in every
+pairwise item, so a judge that always answered "A" was indistinguishable from a
+perfect one. One factuality template inverted the answer polarity, inflating
+measured disagreement uniformly across every judge.
+
+*v2.0 (superseded).* Rebuilt from real corpora with provenance, but three defects
+survived into the released files and were found afterwards by adversarial audit:
+
+- The template-pair assignment ran in lockstep with the alternating
+  correct/incorrect emission, so **the template pair predicted the label on all
+  250 factuality items**. File line parity was also a perfect oracle.
+- Two templates carried a 75/25 label imbalance, so a constant-answer judge would
+  show a large fake template preference.
+- **108 of 226 preference items shared candidate text under contradictory gold
+  labels** — the same response winning one item and losing another — so a judge
+  reasoning correctly and consistently was scored wrong.
+- 73 items violated the label rule printed inside them, having been decided by a
+  single decisive vote against a plurality of "neither".
+
+*v2.1 (current).* Template pairs are assigned by a label-stratified seeded
+permutation and rows are shuffled, so no positional or template rule predicts the
+label above chance. The label rule is enforced on decisive votes. Items with
+contradictory gold on shared candidate text are removed. Length balance is held
+at exactly 50/50 with the buckets matched on vote shape, so removing the verbosity
+shortcut does not install a difficulty confound in its place. The preference split
+is smaller as a result — 130 items rather than 226 — and we regard that as the
+correct trade.
+
+Content hashes (excluding retrieval timestamps):
+
+```
+factuality  8875a1f210c7b07f
+coherence   37e5caceca0cff3c
+relevance   379a228fe28fe422
+preference  ceff37f1bf1091ef
 ```
 
----
+## Limitations
 
-## Dataset Schema
+The two templates in each pair are intended to be meaning-equivalent. We enforce
+that their requested answer sets are identical, that neither inverts polarity,
+that each names its own task's construct, and that no pair is a near-duplicate —
+but no offline check establishes semantic equivalence, and whether a competent
+reader maps two wordings onto the same question is not computable from the
+strings.
 
-Each JSONL record has eight fields:
+**No item appears under more than one template pair.** Template identity is
+therefore nested inside item identity, and no estimator on this data separates a
+template effect from an item-set effect. The within-item comparison the benchmark
+is built for is unaffected; between-template claims are not identifiable.
 
-```json
-{
-  "pair_id": "fact_001",
-  "task_type": "factuality",
-  "source_benchmark": "TruthfulQA",
-  "prompt_a": "Is this factually correct? Answer YES or NO only.\n\nResponse: ...",
-  "prompt_b": "Fact-check this response. Reply YES (correct) or NO (incorrect).\n\nResponse: ...",
-  "response_being_judged": "The Earth orbits around the Sun.",
-  "ground_truth_label": "accurate",
-  "semantic_equivalence_score": 1.0,
-  "ab_swapped": false
-}
-```
-
----
-
-## Metric: Judge Sensitivity Score (JSS)
-
-JSS is the fraction of pairs where both prompt variants elicit the same decision from the judge:
-
-```
-JSS = (1/N) * sum( decisions_a[i] == decisions_b[i] )
-```
-
-- **JSS = 1.0** — perfectly consistent; the judge never changes its decision due to prompt phrasing
-- **JSS = 0.0** — maximally sensitive; every decision flips between prompts
-
-A high flip rate (= 1 - JSS) indicates the judge's apparent decisions are largely driven by prompt design rather than the content being evaluated.
-
----
-
-## Benchmark Results (13 judges, pass-2)
-
-### Coherence (most discriminating task)
-
-| Model | JSS | Cohen's kappa |
-|---|---|---|
-| Claude Sonnet 4.5 | 0.99 | 0.986 |
-| Qwen-2.5-72B | 0.92 | 0.842 |
-| GPT-4o | 0.91 | 0.828 |
-| GPT-5.5 | 0.83 | 0.694 |
-| GPT-4o-mini | 0.78 | 0.627 |
-| Claude Haiku 4.5 | 0.73 | 0.583 |
-| Claude Opus 4.7 | 0.70 | 0.580 |
-| LLaMA-3.1-70B | 0.55 | 0.338 |
-| DeepSeek-R1 | 0.53 | 0.332 |
-| Qwen 3.6 Flash | 0.51 | 0.372 |
-| DeepSeek-V4 Flash | 0.50 | 0.349 |
-| Mistral-7B | 0.48 | -0.082 |
-| Gemini 2.5 Flash | 0.39 | -0.057 |
-
-### Factuality (after T4 polarity correction)
-
-| Model | JSS (raw) | JSS (corrected) | Delta |
-|---|---|---|---|
-| GPT-4o | 0.63 | 0.98 | +0.35 |
-| GPT-4o-mini | 0.63 | 0.96 | +0.33 |
-| Claude Haiku 4.5 | 0.63 | 0.97 | +0.34 |
-| Claude Sonnet 4.5 | 0.63 | 0.97 | +0.34 |
-| DeepSeek-R1 | 0.63 | 0.96 | +0.33 |
-| LLaMA-3.1-70B | 0.63 | 0.99 | +0.36 |
-| Gemini 2.5 Flash | 0.63 | 0.98 | +0.35 |
-| Qwen-2.5-72B | 0.63 | 0.98 | +0.35 |
-| Mistral-7B | 0.71 | 0.89 | +0.18 |
-| GPT-5.5 | 0.63 | 0.98 | +0.35 |
-| Claude Opus 4.7 | 0.63 | 0.99 | +0.36 |
-| Qwen 3.6 Flash | 0.63 | 0.97 | +0.34 |
-| DeepSeek-V4 Flash | 0.62 | 0.95 | +0.33 |
-
----
-
-## Key Insights
-
-> **Coherence JSS varies by more than 0.6 units across 13 judges and does not track model scale or recency.**
-
-- Claude Opus 4.7 (0.70) scores lower than Claude Haiku 4.5 (0.73); GPT-5.5 (0.83) scores lower than GPT-4o (0.91)
-- Factuality sensitivity is entirely driven by Template 4 polarity inversion, not by model-level inconsistency
-- Preference and relevance JSS are degenerate (12 of 13 judges always select option A)
-- Total API cost for the 13-model sweep: Novita AI $3.67, Alibaba Cloud $1.00, Anthropic $2.07, OpenAI $3.36
-
----
-
-## Links
-
-- **GitHub**: [github.com/rohithreddybc/judgesense](https://github.com/rohithreddybc/judgesense)
-- **arXiv**: [2604.23478](https://arxiv.org/abs/2604.23478)
-- **HuggingFace**: [Rohithreddybc/judgesense-benchmark](https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark)
-
----
+Relevance draws on 50 TREC-COVID topics and preference on 62 MT-Bench questions,
+so items within a task are not independent. Cluster your intervals at the source
+record, not the item, if you need conservative uncertainty.
 
 ## Citation
 
-If you use JudgeSense in your research, please cite:
+The accompanying paper is under revision; the preprint below describes the
+withdrawn v1 and its numbers do not apply to this data.
 
 ```bibtex
-@misc{bellibatlu2026judgesense,
-      title={JudgeSense: A Benchmark for Prompt Sensitivity in LLM-as-a-Judge Systems},
-      author={Rohith Reddy Bellibatlu},
-      year={2026},
-      eprint={2604.23478},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL},
-      url={https://arxiv.org/abs/2604.23478}
+@misc{judgesense2026,
+  title  = {JudgeSense: Measuring the Prompt Sensitivity of LLM-as-a-Judge},
+  author = {Bellibatlu, Rohith Reddy},
+  year   = {2026},
+  note   = {Dataset v2.1. Code and analysis:
+            https://github.com/rohithreddybc/judgeSense}
 }
 ```
 
----
-
-## License
-
-- **Dataset**: [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/)
-- **Code**: MIT License
-
----
-
-*JudgeSense — Independent research. All evaluations conducted on public benchmarks and APIs.*
+Licensed CC-BY-4.0. Source corpora retain their own licences.

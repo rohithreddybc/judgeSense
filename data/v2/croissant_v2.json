@@ -27,7 +27,7 @@
       "description": "250 records over 250 unique source items for the factuality task. Every record carries a per-item provenance chain (source dataset, config, split, record id).",
       "contentUrl": "data/factuality.jsonl",
       "encodingFormat": "application/jsonlines",
-      "sha256": "52b211978b38fbf9efad6ce75a3d0644a95fc02350d520c9f86d903a24b85bfc"
+      "sha256": "ef8a5d6ae04acdeb4d26ed6769cd15fea8215c404eb0653fa4c64a61e1ae4c4b"
     },
     {
       "@type": "cr:FileObject",
@@ -36,7 +36,7 @@
       "description": "250 records over 250 unique source items for the coherence task. Every record carries a per-item provenance chain (source dataset, config, split, record id).",
       "contentUrl": "data/coherence.jsonl",
       "encodingFormat": "application/jsonlines",
-      "sha256": "08fbb7458668e40c41bf60e2fbc751fd219dd7624d3d85a5da3870471f48a8e9"
+      "sha256": "1a5fb7c89003ba6b3960ad77a46e85001aecf2fbac3abd409e218040a1eda513"
     },
     {
       "@type": "cr:FileObject",
@@ -45,16 +45,16 @@
       "description": "500 records over 250 unique source items for the relevance task. Every record carries a per-item provenance chain (source dataset, config, split, record id).",
       "contentUrl": "data/relevance.jsonl",
       "encodingFormat": "application/jsonlines",
-      "sha256": "0067f6ad4784b17acf990ebbf5e076173ffd624fc5c482182a892c8d398b7af9"
+      "sha256": "3b2535f526d4795c6482211bea4296c2dc1ea0cde1dbf743db6866f7739d726f"
     },
     {
       "@type": "cr:FileObject",
       "@id": "preference-v2-jsonl",
       "name": "preference.jsonl",
-      "description": "212 records over 106 unique source items for the preference task. Every record carries a per-item provenance chain (source dataset, config, split, record id).",
+      "description": "260 records over 130 unique source items for the preference task. Every record carries a per-item provenance chain (source dataset, config, split, record id).",
       "contentUrl": "data/preference.jsonl",
       "encodingFormat": "application/jsonlines",
-      "sha256": "f2f93e0e494cbade2965157052df353aaeedbccbb58821254c0b7baeb03ecbbe"
+      "sha256": "9d2aff1fc649d1da3b4fcb6c34e8b5a5a40169783d487c598ec7d4f5959a3ddf"
     }
   ],
   "recordSet": [
@@ -95,7 +95,7 @@
       "@type": "cr:RecordSet",
       "@id": "preference-v2-records",
       "name": "preference prompt-paraphrase records (v2)",
-      "description": "212 records, 106 unique items, label space ['candidate_1', 'candidate_2'].",
+      "description": "260 records, 130 unique items, label space ['candidate_1', 'candidate_2'].",
       "source": {
         "fileObject": {
           "@id": "preference-v2-jsonl"

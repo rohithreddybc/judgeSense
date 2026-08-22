@@ -1,0 +1,40 @@
+{
+  "builder_version": "2.0.0",
+  "built_at": "2026-08-22T04:50:17.258715+00:00",
+  "seed": 42,
+  "items_per_task": 250,
+  "tasks": {
+    "factuality": {
+      "file": "factuality.jsonl",
+      "rows": 250,
+      "unique_items": 250,
+      "unique_prompt_pairs": 250,
+      "distinct_source_records": 125,
+      "source_dataset": "truthful_qa"
+    },
+    "coherence": {
+      "file": "coherence.jsonl",
+      "rows": 250,
+      "unique_items": 250,
+      "unique_prompt_pairs": 250,
+      "distinct_source_records": 92,
+      "source_dataset": "mteb/summeval"
+    },
+    "relevance": {
+      "file": "relevance.jsonl",
+      "rows": 500,
+      "unique_items": 250,
+      "unique_prompt_pairs": 250,
+      "distinct_source_records": 50,
+      "source_dataset": "BeIR/trec-covid"
+    },
+    "preference": {
+      "file": "preference.jsonl",
+      "rows": 260,
+      "unique_items": 130,
+      "unique_prompt_pairs": 130,
+      "distinct_source_records": 127,
+      "source_dataset": "lmsys/mt_bench_human_judgments"
+    }
+  }
+}
