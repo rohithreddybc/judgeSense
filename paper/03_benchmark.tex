@@ -31,7 +31,7 @@ inferred by us; every label is the one the source corpus already carried.
     a human relevance grade: the positive is graded fully relevant (2) and the
     distractor is one a human assessor explicitly rejected (0). Partially
     relevant documents (grade 1) are used for neither role.
-  \item[Preference] (226 items, 452 rows, MT-Bench human judgments). The judge
+  \item[Preference] (130 items, 260 rows, MT-Bench human judgments). The judge
     picks the response humans preferred. Only comparisons with at least two
     annotator votes and a clear majority are used.
 \end{description}
@@ -101,12 +101,12 @@ files, not over the loaders, so these are properties of the artifact:
 
 \begin{itemize}
   \item \textbf{Position only} (always answer A): $0.500$ on relevance
-    ($n=500$) and $0.500$ on preference ($n=452$), by construction of the swap
+    ($n=500$) and $0.500$ on preference ($n=260$), by construction of the swap
     design.
   \item \textbf{Length only} (pick the longer candidate): $0.482$ on relevance
-    ($n=494$), $0.514$ on preference ($n=440$).
+    ($n=494$), $0.508$ on preference ($n=256$).
   \item \textbf{Lexical overlap only} (pick the candidate sharing more terms with
-    the query): $0.508$ on relevance ($n=248$).
+    the query): $0.540$ on relevance ($n=252$).
 \end{itemize}
 
 Support counts fall below the row counts because a heuristic that ties has no
@@ -116,21 +116,32 @@ computed from the released files by \texttt{scripts/shortcut\_controls.py}, whos
 output is committed, so every figure above is reproducible without rerunning any
 judge.
 
-None of these exceeds chance in either direction, and the length control is
-enforced rather than observed. Human annotators in the preference corpus
-preferred the longer
-response in roughly 70\% of usable comparisons, so an unfiltered sample rewards
-verbosity directly; we hold the winner-longer share at exactly 50\% by taking an
-equal number of items from each length bucket. That $50\%$ is a construction
-invariant of the item set and is a different quantity from the $0.514$ above,
-which is what a length-following judge scores on the rendered rows once ties are
-dropped. The smaller bucket caps the
-preference split at 226 items rather than the round 250. The cost is larger than
-that gap suggests and we state it plainly: the pool holds 385 usable
-majority-labelled comparisons, 272 winner-longer against 113 winner-shorter, so
-the balance discards 159 of them, not 24. We regard that as the correct trade:
-the alternative is to ship items that reintroduce a measurable verbosity
-shortcut across the whole task.
+None of these exceeds chance in either direction, though the overlap control is
+the weakest of the three and we do not overstate it: its 95\% Wilson interval is
+$[0.478, 0.600]$, so the data are consistent with a residual lexical signal worth
+about $0.57$. It also reads only half the relevance rows, because the remainder
+tie on the overlap statistic and a heuristic with no signal on a row is not
+evidence about that row. The length and position controls are far tighter.
+
+The length control is enforced rather than observed. Human annotators in the
+preference corpus preferred the longer response in roughly 70\% of usable
+comparisons, so an unfiltered sample rewards verbosity directly; we hold the
+winner-longer share at exactly 50\% by taking an equal number of items from each
+length bucket. That $50\%$ is a construction invariant of the item set and is a
+different quantity from the $0.508$ above, which is what a length-following judge
+scores on the rendered rows once ties are dropped.
+
+The preference split ships 130 items rather than the round 250, and we state the
+full attribution rather than the net gap. Of the source comparisons, 607 failed
+the decisive-vote label rule or carried no strict majority, one was duplicate
+content, 67 were dropped because their gold contradicted another item's gold on
+shared candidate text, and 102 more were dropped to hold the length balance
+exactly. Each filter removes a way the benchmark could be passed or contradicted
+without judging, and the last two were added after we found both failures in our
+own shipped data. We regard the reduced split as the correct trade: the
+alternative is a larger set that a verbosity heuristic beats, and one that scores
+a consistent judge as wrong whenever the same response appears on both sides of
+two different comparisons.
 
 Balancing on length alone would install a second confound in place of the first.
 Because the winner-shorter bucket ships whole and only the winner-longer bucket
@@ -142,12 +153,23 @@ against $54\%$ unanimous. A judge that is stronger on close calls would then
 read as length-biased. We therefore \emph{stratify}: the winner-shorter bucket
 fixes the target distribution of vote shapes (absolute margin and total votes),
 and the winner-longer bucket is filled stratum by stratum to match it. The
-shipped buckets agree to $0.0007$ in mean vote-margin ratio, have identical
-medians and quartiles, and contain the same number of unanimous comparisons
-($61$ each). Matching also stops the split from collapsing onto coin-flips:
-$54\%$ of shipped comparisons carry a unanimous human majority, so the task
-retains items on which a competent judge can separate itself from an
-incompetent one.
+shipped buckets agree to $0.0003$ in mean vote-margin ratio ($0.8603$ against
+$0.8605$), have identical medians, and contain the same number of unanimous
+comparisons ($49$ each).
+
+Matching stops the split from collapsing onto coin-flips, but the opposite
+failure is equally real and less obvious. The filter that removes contradictory
+gold is a greedy selection over a conflict graph, so the order in which items are
+considered determines both which survive and how hard the survivors are. Keeping
+the firmest human majorities first is the intuitive rule and is worse on both
+counts, measured on this pool: $106$ items at $90.6\%$ unanimous, against $130$
+items at $75.4\%$ when the most contested are kept first. A split on which the
+annotators were nearly always unanimous cannot separate a competent judge from a
+mediocre one --- both score near the top --- which is the ceiling effect that
+made the earlier version of this benchmark uninformative. We therefore resolve
+conflicts contested-first, and report the resulting distribution rather than only
+the balance: $75.4\%$ of shipped comparisons carry a unanimous human majority and
+the rest are genuine close calls.
 
 The lexical control required a similar correction. Selecting each distractor to
 maximise its term overlap with the topic --- the obvious way to make an item
