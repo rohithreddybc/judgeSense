@@ -13,7 +13,7 @@ and data that exist right now.
 ## 0. Run from the right clone
 
 The v2 work lives on `origin/main`. A local clone that is behind does not merely
-lack fixes: before commit `55f6e41` this repository had no `data/v2/` at all, so
+lack fixes: before commit `2e89bfc` this repository had no `data/v2/` at all, so
 a run started from a stale clone silently executes the **v1** dataset — the one
 whose defects caused the NeurIPS withdrawal. This failure is invisible at the
 command line, because `run_v2.py` does not exist there to complain.
@@ -90,7 +90,8 @@ A defect that survives every check above will show up as an implausible metric i
 wave one, when most of the budget is still unspent.
 
     python scripts/regenerate_results.py
-    python scripts/summarize_usage.py --prices prices.json
+    python scripts/summarize_usage.py            # cost null without --prices
+    python scripts/summarize_usage.py --prices <your-price-table>.json
 
 Costs are reported as null unless a price table is supplied; they are never
 estimated. A `lower_bound: true` flag means some call returned no usage, so the

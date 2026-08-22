@@ -44,8 +44,9 @@ penalises a defensible answer. TREC-COVID carries graded judgments including
 tens of thousands of explicit non-relevant assessments, so here both candidates
 are human-labelled and the distractor is one a human affirmatively rejected.
 
-Every shipped item records its source dataset, configuration, split, and
-per-record identifier, so any item can be traced to the row it came from.
+Every shipped item records its source dataset, split, per-record identifier, and
+the source configuration where the source defines one, so any item can be traced
+to the row it came from.
 Loaders raise rather than substitute when a source is unavailable; there is no
 fallback path that could silently generate an item.
 
@@ -53,8 +54,10 @@ fallback path that could silently generate an item.
 
 Each item is issued under two instruction templates that differ in wording and
 not in what they ask. Templates are held to a fixed label space: a check run in
-continuous integration asserts that no template alters the set of admissible
-answers or inverts their polarity.
+continuous integration asserts that no factuality or coherence template alters
+the set of admissible answers or inverts their polarity. The pairwise templates
+share a two-option answer space by construction and are not covered by that
+check.
 
 This constraint is a correction of our own earlier design. An earlier version of
 this benchmark included a factuality template that inverted the answer polarity
@@ -108,9 +111,10 @@ files, not over the loaders, so these are properties of the artifact:
 
 Support counts fall below the row counts because a heuristic that ties has no
 signal to act on; tied rows are excluded rather than split, which is why the
-overlap control rests on roughly half the relevance rows. All three figures are
-computed from the released files by \texttt{scripts/shortcut\_controls.py} and
-its committed output, so each is reproducible without rerunning any judge.
+overlap control rests on roughly half the relevance rows. All three controls are
+computed from the released files by \texttt{scripts/shortcut\_controls.py}, whose
+output is committed, so every figure above is reproducible without rerunning any
+judge.
 
 None of these exceeds chance in either direction, and the length control is
 enforced rather than observed. Human annotators in the preference corpus

@@ -3,7 +3,30 @@
 Written before the full sweep was run and committed ahead of it, so the primary
 endpoint cannot be chosen after seeing which comparison happens to be
 significant. A one-shot run is credible only if the analysis was fixed in
-advance; this file is that fixture, and the paper cites its commit hash.
+advance; this file is that fixture, and the paper cites its commit hash
+(`b1b507a`).
+
+## What this file does and does not claim
+
+A pre-registration is worth exactly what is true of it, so the provenance is
+stated rather than implied.
+
+- This file was committed at `b1b507a`. The first v2 judge outputs were
+  committed eleven hours earlier, at `107a9e1`: a five-row-per-cell smoke wave
+  across three judges, run to exercise the harness. It found two defects in the
+  runner and produced no reportable estimate; none of its output enters the
+  results. But it was a live run, so this plan preceded the SWEEP, not the first
+  API call, and any statement that it preceded all judging would be false.
+- The sign-convention correction recorded below was made after the first full
+  judge completed. It changed the direction of subtraction in this file's prose,
+  which had been written backwards relative to `metrics_v2.jss_repeat_delta` --
+  implemented and tested before any run. The quantity, estimator, clustering
+  unit and decision rule are unchanged, and the committed output has always
+  reported `jss`, `jss_rep` and `delta` side by side.
+- Items marked NOT YET IMPLEMENTED below are commitments about the write-up, not
+  behaviour currently enforced by code. Where this file says "enforced", that is
+  a claim about code and is verifiable; where it does not, it is a rule the
+  authors are binding themselves to.
 
 ## Primary endpoint
 
@@ -43,21 +66,22 @@ rule applied to all of them yields roughly three spurious findings under a globa
 null, and whichever cells clear will inevitably be the ones the narrative
 foregrounds. So the rule is stated in three parts, before the data exist:
 
-1. **One primary contrast.** The confirmatory claim is the ΔJSS pooled across
+1. **One primary contrast.** *(NOT YET IMPLEMENTED in code; applied at write-up.)* The confirmatory claim is the ΔJSS pooled across
    judges within each task, not any individual judge–task cell. Four intervals,
    one per task, Holm-corrected across the four.
-2. **Everything per-cell is exploratory.** The 56 cell-level intervals are
+2. **Everything per-cell is exploratory.** *(NOT YET IMPLEMENTED in code; applied at write-up.)* The 56 cell-level intervals are
    reported in full with Benjamini–Hochberg adjusted values at a 10% false
    discovery rate, and are described as exploratory in the text. No individual
    judge is named as unstable on the basis of an unadjusted cell.
-3. **A smallest effect of interest.** |ΔJSS| < 0.02 is declared not practically
+3. **A smallest effect of interest.** *(NOT YET IMPLEMENTED in code; applied at write-up.)* |ΔJSS| < 0.02 is declared not practically
    meaningful in advance, whatever its interval does. A judge that loses two
    points of agreement under rewording is not thereby unusable, and an interval
    that excludes zero at that magnitude is a statement about sample size rather
    than about judges.
 
 The minimum detectable effect at the shipped cluster counts is reported with the
-results, so a null is distinguishable from an underpowered test.
+results, so a null is distinguishable from an underpowered test. *(NOT YET
+IMPLEMENTED: no MDE is currently emitted by the pipeline.)*
 
 The direction of an effect is read from the sign, never chosen after the fact.
 
@@ -82,7 +106,9 @@ the task to be reported as discriminating:
 | preference | 0.65 | 0.50 |
 
 A task whose best judge falls below its threshold is reported as
-non-discriminating, and no judge ranking is drawn from it. This is declared here
+non-discriminating, and no judge ranking is drawn from it. *(NOT YET IMPLEMENTED
+in code: these thresholds are not constants anywhere and no verdict is emitted;
+this is a rule binding the write-up.)* This is declared here
 so that it constrains the write-up rather than being chosen once the numbers are
 visible; the thresholds are deliberately modest, since the claim they support is
 only that the task carries signal a judge can find.

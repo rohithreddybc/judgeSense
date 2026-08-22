@@ -1,6 +1,6 @@
 {
   "generated_by": "scripts/generate_counts.py",
-  "generated_at": "2026-08-20T00:16:40.300410+00:00",
+  "generated_at": "2026-08-22T01:50:02.804489+00:00",
   "dataset_v1": {
     "factuality": {
       "rows": 125,
@@ -95,21 +95,21 @@
       "excluded_pairs": []
     },
     "preference": {
-      "rows": 500,
-      "unique_items": 250,
-      "unique_prompt_pairs": 250,
-      "unique_prompt_texts": 1000,
+      "rows": 452,
+      "unique_items": 226,
+      "unique_prompt_pairs": 226,
+      "unique_prompt_texts": 904,
       "label_histogram": {
-        "candidate_1": 276,
-        "candidate_2": 224
+        "candidate_1": 252,
+        "candidate_2": 200
       },
       "excluded_pairs": []
     },
     "_totals": {
-      "rows": 1500,
-      "unique_items": 1000,
-      "unique_prompt_pairs": 1000,
-      "rows_after_exclusions": 1500,
+      "rows": 1452,
+      "unique_items": 976,
+      "unique_prompt_pairs": 976,
+      "rows_after_exclusions": 1452,
       "n_excluded_pairs": 0,
       "n_excluded_pairs_configured": 6
     }
@@ -171,7 +171,7 @@
     }
   },
   "evaluation_design": {
-    "judges_in_registry": 14,
+    "judges_in_registry": 15,
     "judge_names": [
       "claude-haiku",
       "claude-opus-4-7",
@@ -185,14 +185,15 @@
       "llama3-70b",
       "llama3-8b",
       "mistral-7b",
+      "mistral-small",
       "qwen",
       "qwen-3.6-flash"
     ],
     "runs_per_task_reported": 3,
     "api_calls_per_run_all_rows": 1000,
     "api_calls_3_runs_all_rows_1_judge": 3000,
-    "api_calls_3_runs_all_rows_all_judges": 42000,
+    "api_calls_3_runs_all_rows_all_judges": 45000,
     "rows_used_in_metrics_after_exclusions": 500,
-    "note": "The 494-vs-500 discrepancy is rows minus the 0 pairs in src.metrics.EXCLUDED_PAIRS. judges_in_registry counts src.models.SUPPORTED_MODELS entries as committed (14); documents citing a different judge count (9 or 13) must reconcile against this registry, which is the only machine-checkable roster in the repository."
+    "note": "The 494-vs-500 discrepancy is rows minus the 0 pairs in src.metrics.EXCLUDED_PAIRS. judges_in_registry counts src.models.SUPPORTED_MODELS entries as committed (15); documents citing a different judge count (9 or 13) must reconcile against this registry, which is the only machine-checkable roster in the repository."
   }
 }

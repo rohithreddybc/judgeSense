@@ -13,12 +13,12 @@ A framework for quantifying prompt sensitivity in LLM-as-a-Judge evaluation syst
 
 Large language models are increasingly deployed as automated judges to evaluate the outputs of other models, yet the reliability of these systems remains poorly understood. **JudgeSense** quantifies prompt sensitivity in LLM-as-a-Judge systems via the **Judge Sensitivity Score (JSS)**: how often a judge's decision changes when prompt phrasing varies while evaluation intent stays constant.
 
-**Dataset**: [Rohithreddybc/judgesense-benchmark](https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark) — v2.0, 1,000 unique items across 4 tasks.
+**Dataset**: [Rohithreddybc/judgesense-benchmark](https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark) — v2.0, 976 unique items across 4 tasks.
 
 ## What the benchmark provides
 
-- **1,000 unique items** (250 per task), loaded at build time from `truthful_qa`, `mteb/summeval`, `BeIR/scifact`, and `lmsys/mt_bench_human_judgments`. Every record carries a provenance chain resolving to a specific row in a specific split, with retrieval timestamp and loader version.
-- **Ground truth from the source**: TruthfulQA's accuracy labels, SummEval's expert coherence ratings, scifact qrels, and real human preference votes from MT-Bench.
+- **976 unique items** (250 factuality, 250 coherence, 250 relevance, 226 preference), loaded at build time from `truthful_qa`, `mteb/summeval`, `BeIR/trec-covid`, and `lmsys/mt_bench_human_judgments`. Every record carries a provenance chain resolving to a specific row in a specific split, with retrieval timestamp and loader version.
+- **Ground truth from the source**: TruthfulQA's accuracy labels, SummEval's expert coherence ratings, TREC-COVID graded relevance judgements (both candidates human-graded: the positive at grade 2, the distractor at grade 0), and real human preference votes from MT-Bench.
 - **Position-bias swap design**: pairwise tasks present candidates in both A/B and B/A orderings, so a judge answering by position alone scores ~50%, not 100%.
 - **One prompt pair per item** — rows are never duplicated to inflate the count.
 - **Cluster-aware statistics**: confidence intervals require an explicitly declared unit of analysis (`row`, `structural_pair`, `prompt_pair`, `item`) and resample clusters, never rows.
@@ -80,7 +80,7 @@ python src/metrics.py --results data/results/raw_outputs/
 |------|----------------|-------------:|-----:|
 | Factuality | `truthful_qa` | 250 | 250 |
 | Coherence | `mteb/summeval` | 250 | 250 |
-| Relevance | `BeIR/scifact` + qrels | 250 | 500 |
+| Relevance | `BeIR/trec-covid` + qrels | 250 | 500 |
 | Preference | `lmsys/mt_bench_human_judgments` | 250 | 500 |
 
 Pairwise tasks contribute two rows per item — one per candidate ordering.
@@ -196,7 +196,7 @@ judgesense/
 │   └── generate_figures.py        # Publication-ready PDF figures
 ├── outputs/               # CSV results + publication-ready PDF figures
 ├── figures/               # Paper-ready PDF/PNG figures
-├── tests/                 # Unit tests for metrics and dataset (29 tests)
+├── tests/                 # Unit tests for metrics and dataset (350 tests)
 ├── requirements.txt
 ├── .env.example
 └── README.md

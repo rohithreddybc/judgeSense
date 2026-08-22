@@ -138,9 +138,9 @@ per task loaded from the real upstream benchmarks with per-item provenance
 records, an A/B–B/A swap design so position-following cannot score as
 consistency, cluster-aware and chance-corrected statistics, a strict parser, and
 a CI data-audit gate that fails the build on every defect class listed above.
-The v1 data fails that gate on 23 of 28 checks.
+The v1 data fails that gate on 23 of 32 checks. (The v1 config runs 32 checks: 28 dataset checks plus 4 annotation-timing checks. 28 is the v2 total, where the gate passes 0/28.)
 
-No v2 results exist yet, and no human validation has been performed on v2.
+No v2 results are reported in the paper yet; the committed data/results_v2/raw holds a partial sweep (three Claude judges) produced under a decoding configuration since corrected, and none of it enters the results, and no human validation has been performed on v2.
 
 ## Reproducing these findings
 
