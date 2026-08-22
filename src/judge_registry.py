@@ -278,6 +278,12 @@ MAIN_AXIS_ROWS_PER_TASK: Dict[str, int] = {
 }
 MAIN_AXIS_PAIRWISE_TASKS = ("relevance", "preference")
 MAIN_AXIS_PROMPT_ARMS_PER_ROW = 2
+# The repeat baseline re-issues BOTH prompt arms once per item, not one arm.
+# A ceiling measured under a single template cannot absorb noise generated under
+# the other, so that noise would be charged to paraphrasing. This constant is
+# what the printed budget is built from; leaving it at 1 after the runner began
+# issuing two understated the spend by one call per item per judge.
+MAIN_AXIS_REPEAT_ARMS_PER_ITEM = 2
 
 MAIN_AXIS_TOTAL_ROWS = sum(MAIN_AXIS_ROWS_PER_TASK.values())
 # unique items: pairwise rows fold 2 orderings into 1 item; pointwise rows are
@@ -303,7 +309,8 @@ def main_axis_run_plan(judges: Optional[List[str]] = None, budget_policy: str = 
     `MAIN_AXIS_TOTAL_ITEMS` (976) extra calls per judge.
     """
     base_calls = MAIN_AXIS_TOTAL_ROWS * MAIN_AXIS_PROMPT_ARMS_PER_ROW
-    repeat_calls = MAIN_AXIS_TOTAL_ITEMS if include_repeat_baseline else 0
+    repeat_calls = (MAIN_AXIS_TOTAL_ITEMS * MAIN_AXIS_REPEAT_ARMS_PER_ITEM
+                    if include_repeat_baseline else 0)
     plan = run_plan(base_calls, judges, budget_policy, repeat_calls_per_judge=repeat_calls)
     plan["dataset"] = {
         "rows_per_task": dict(MAIN_AXIS_ROWS_PER_TASK),

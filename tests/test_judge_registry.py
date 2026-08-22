@@ -155,17 +155,21 @@ def test_main_axis_run_plan_without_repeat_matches_rows_times_arms():
     assert plan["dataset"]["include_repeat_baseline"] is False
 
 
-def test_main_axis_run_plan_with_repeat_adds_one_call_per_item():
+def test_main_axis_run_plan_adds_two_repeat_calls_per_item():
+    """Both templates are repeated, not one. A ceiling measured under a single
+    template cannot absorb noise the other generates, so that noise would be
+    charged to paraphrasing; and a stale factor here understates the printed
+    budget, which is the number approved before any money is spent."""
     plan = main_axis_run_plan(judges=["gpt-4o"], include_repeat_baseline=True)
     assert plan["calls_per_judge"] == 2904
-    assert plan["repeat_calls_per_judge"] == 976    # one S0 call per item
-    assert plan["calls_per_judge_with_repeat"] == 3880
-    assert plan["total_calls_with_repeat"] == 3880  # single judge here
+    assert plan["repeat_calls_per_judge"] == 1952   # 976 items x 2 arms
+    assert plan["calls_per_judge_with_repeat"] == 4856
+    assert plan["total_calls_with_repeat"] == 4856  # single judge here
 
 
 def test_main_axis_run_plan_scales_across_default_verified_judges():
     plan = main_axis_run_plan(include_repeat_baseline=True)
     n = plan["n_judges"]
     assert plan["total_calls"] == 2904 * n
-    assert plan["total_calls_with_repeat"] == 3880 * n
-    assert plan["total_calls_with_repeat"] - plan["total_calls"] == 976 * n
+    assert plan["total_calls_with_repeat"] == 4856 * n
+    assert plan["total_calls_with_repeat"] - plan["total_calls"] == 1952 * n

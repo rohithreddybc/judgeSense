@@ -115,6 +115,10 @@ def _records(path: Path, budget_policy: Optional[str] = None) -> List[dict]:
             "ground_truth_label": r.get("ground_truth_label"),
             "ground_truth_position": r.get("ground_truth_position"),
             "decision_a_repeat": r.get("decision_a_repeat"),
+            # Arm B's repeat is required for the pooled ceiling. Omitting it
+            # here would have left the ceiling silently template-A-only even
+            # after the runner began collecting both.
+            "decision_b_repeat": r.get("decision_b_repeat"),
             # Required by the repeat-delta support filter. Omitting it made
             # every row look canonical, which silently restored the very
             # canonical-vs-swapped contamination the filter exists to remove.
@@ -125,7 +129,8 @@ def _records(path: Path, budget_policy: Optional[str] = None) -> List[dict]:
             # two are indistinguishable once both are UNCLEAR. Absent on runs
             # made before usage metering existed, which _refusal_stats reports
             # as null rather than as zero refusals.
-            **{k: r[k] for k in ("usage_a", "usage_b", "usage_a_repeat") if k in r},
+            **{k: r[k] for k in
+               ("usage_a", "usage_b", "usage_a_repeat", "usage_b_repeat") if k in r},
         })
     return recs
 
@@ -396,8 +401,18 @@ def metrics_for_cell(recs: List[dict], task: str) -> Dict:
         "jss_support": "verdict_pairs" if verdict else "all_rows",
     }
     if likert:
+        # "drop", not "disagree". Under the disagree policy an unparseable
+        # Likert answer is imputed to whichever extreme is FARTHEST from the
+        # other arm -- an UNCLEAR/UNCLEAR pair becomes (1, 5). That is maximal
+        # coercion, in a section that states parsing never coerces. It is also
+        # computed on `scored`, so kappa and the JSS printed beside it share one
+        # support; previously they did not, and kappa was not a correction of
+        # the number it sat next to.
         out["quadratic_weighted_kappa"] = _round4(
-            _defined(quadratic_weighted_kappa, recs, unclear_policy="disagree"))
+            _defined(quadratic_weighted_kappa, scored, unclear_policy="drop"))
+        out["quadratic_weighted_kappa_policy"] = "drop"
+        out["quadratic_weighted_kappa_punitive"] = _round4(
+            _defined(quadratic_weighted_kappa, scored, unclear_policy="disagree"))
     if task not in POINTWISE:
         out["pairwise"] = _accuracy(recs, task)
     if any(r.get("decision_a_repeat") is not None for r in recs):
@@ -478,9 +493,20 @@ def _repeat_delta(recs: List[dict]) -> Dict:
     the same support used for jss_strict.
     """
     canonical = [r for r in recs if r.get("ab_order") in (None, "original")]
-    rep = [{"decision_a": r["decision_a"], "decision_b": r["decision_a_repeat"],
-            "item_id": r["item_id"]}
-           for r in canonical if r.get("decision_a_repeat") is not None]
+    # The ceiling is estimated from BOTH arms' repeats, not arm A's alone.
+    # If template B is intrinsically higher-entropy -- longer, likelier to draw a
+    # preamble the strict parser rejects -- then a ceiling measured only under A
+    # cannot absorb noise generated under B, and that noise is charged to
+    # paraphrasing. Pooling both repeats makes the ceiling a property of the
+    # template PAIR, which is what the paraphrase term is computed over.
+    rep = []
+    for r in canonical:
+        for arm in ("a", "b"):
+            other = r.get(f"decision_{arm}_repeat")
+            if other is not None:
+                rep.append({"decision_a": r[f"decision_{arm}"],
+                            "decision_b": other,
+                            "item_id": r["item_id"]})
     if not rep:
         return {"delta": None, "reason": "no repeat arm on the canonical ordering"}
 
@@ -500,6 +526,19 @@ def _repeat_delta(recs: List[dict]) -> Dict:
 
     out = jss_repeat_delta(canonical, rep, "item", n_bootstrap=2000)
     out["support"] = "canonical ordering, verdict pairs"
+    # Arm-specific ceilings, reported as a diagnostic: a large gap between them
+    # is evidence the two templates are not exchangeable, which would undermine
+    # the paraphrase design itself rather than merely widen an interval.
+    per_arm = {}
+    for arm in ("a", "b"):
+        pairs = [r for r in canonical if r.get(f"decision_{arm}_repeat") is not None]
+        if pairs:
+            agree = sum(1 for r in pairs
+                        if r[f"decision_{arm}"] == r[f"decision_{arm}_repeat"])
+            per_arm[arm] = round(agree / len(pairs), 4)
+    out["repeat_agreement_by_arm"] = per_arm or None
+    if len(per_arm) == 2:
+        out["arm_ceiling_gap"] = round(abs(per_arm["a"] - per_arm["b"]), 4)
     out["item_loss_fraction"] = round(loss, 4)
     # At a ceiling of exactly 1.000 the percentile bootstrap reports zero
     # uncertainty for a quantity estimated from one draw per item. State the

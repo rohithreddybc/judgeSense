@@ -48,6 +48,8 @@
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
       "quadratic_weighted_kappa": 0.8546,
+      "quadratic_weighted_kappa_policy": "drop",
+      "quadratic_weighted_kappa_punitive": 0.8546,
       "jss_repeat_delta": {
         "jss": 0.8,
         "jss_rep": 0.8612244897959184,
@@ -62,6 +64,9 @@
         "confidence": 0.95,
         "unclear_policy": "disagree",
         "support": "canonical ordering, verdict pairs",
+        "repeat_agreement_by_arm": {
+          "a": 0.8612
+        },
         "item_loss_fraction": 0.0
       }
     },
@@ -124,6 +129,9 @@
         "confidence": 0.95,
         "unclear_policy": "disagree",
         "support": "canonical ordering, verdict pairs",
+        "repeat_agreement_by_arm": {
+          "a": 0.9755
+        },
         "item_loss_fraction": 0.0
       }
     },
@@ -192,6 +200,9 @@
         "confidence": 0.95,
         "unclear_policy": "disagree",
         "support": "canonical ordering, verdict pairs",
+        "repeat_agreement_by_arm": {
+          "a": 0.9013
+        },
         "item_loss_fraction": 0.0
       }
     },
@@ -260,6 +271,9 @@
         "confidence": 0.95,
         "unclear_policy": "disagree",
         "support": "canonical ordering, verdict pairs",
+        "repeat_agreement_by_arm": {
+          "a": 0.9757
+        },
         "item_loss_fraction": 0.0
       }
     }
@@ -314,6 +328,8 @@
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
       "quadratic_weighted_kappa": 0.868,
+      "quadratic_weighted_kappa_policy": "drop",
+      "quadratic_weighted_kappa_punitive": 0.868,
       "jss_repeat_delta": {
         "jss": 0.7510204081632653,
         "jss_rep": 0.9469387755102041,
@@ -328,6 +344,9 @@
         "confidence": 0.95,
         "unclear_policy": "disagree",
         "support": "canonical ordering, verdict pairs",
+        "repeat_agreement_by_arm": {
+          "a": 0.9469
+        },
         "item_loss_fraction": 0.0
       }
     },
@@ -390,6 +409,9 @@
         "confidence": 0.95,
         "unclear_policy": "disagree",
         "support": "canonical ordering, verdict pairs",
+        "repeat_agreement_by_arm": {
+          "a": 0.9959
+        },
         "item_loss_fraction": 0.0
       }
     },
@@ -501,6 +523,8 @@
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
       "quadratic_weighted_kappa": 0.8621,
+      "quadratic_weighted_kappa_policy": "drop",
+      "quadratic_weighted_kappa_punitive": 0.8621,
       "jss_repeat_delta": {
         "jss": 0.8122448979591836,
         "jss_rep": 0.963265306122449,
@@ -515,6 +539,9 @@
         "confidence": 0.95,
         "unclear_policy": "disagree",
         "support": "canonical ordering, verdict pairs",
+        "repeat_agreement_by_arm": {
+          "a": 0.9633
+        },
         "item_loss_fraction": 0.0
       }
     },
@@ -578,6 +605,9 @@
         "confidence": 0.95,
         "unclear_policy": "disagree",
         "support": "canonical ordering, verdict pairs",
+        "repeat_agreement_by_arm": {
+          "a": 0.9918
+        },
         "item_loss_fraction": 0.0
       }
     },

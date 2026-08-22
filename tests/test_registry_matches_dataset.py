@@ -19,6 +19,7 @@ sys.path.insert(0, str(ROOT))
 
 from src.judge_registry import (  # noqa: E402
     MAIN_AXIS_PAIRWISE_TASKS,
+    MAIN_AXIS_REPEAT_ARMS_PER_ITEM,
     MAIN_AXIS_ROWS_PER_TASK,
     MAIN_AXIS_TOTAL_ITEMS,
     MAIN_AXIS_TOTAL_ROWS,
@@ -57,7 +58,11 @@ def test_planned_calls_equal_what_the_runner_will_actually_issue():
     item (the repeat fires only on the canonical ordering, never per row)."""
     plan = main_axis_run_plan(judges=["gpt-4o"], include_repeat_baseline=True)
     arm_calls = sum(len(_rows(t)) for t in MAIN_AXIS_ROWS_PER_TASK) * 2
-    repeat_calls = sum(
+    # TWO repeat calls per item: the ceiling is measured under both templates,
+    # because one measured under a single template cannot absorb noise the other
+    # generates. A stale factor here understates the printed budget, which is
+    # the number the operator approves before spending.
+    repeat_calls = MAIN_AXIS_REPEAT_ARMS_PER_ITEM * sum(
         len({r["item_id"] for r in _rows(t)}) for t in MAIN_AXIS_ROWS_PER_TASK
     )
     assert plan["calls_per_judge"] == arm_calls
