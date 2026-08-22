@@ -27,6 +27,8 @@ from __future__ import annotations
 import argparse
 import itertools
 import json
+import random
+from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List
@@ -85,6 +87,53 @@ def _template_combinations(n_templates: int = 5) -> List[tuple]:
     return list(itertools.combinations(range(n_templates), 2))
 
 
+def _assign_template_combos(items: List[SourceItem], combos: List[tuple],
+                            seed: int) -> List[tuple]:
+    """One template pair per item, assigned by a seeded permutation that is
+    STRATIFIED on the ground-truth label.
+
+    The previous rule was `combos[idx % len(combos)]`. A deterministic
+    10-cycle over the template pairs is only safe if the item order carries no
+    label periodicity, and the factuality loader emitted a strict
+    accurate/inaccurate 2-cycle. The two cycles ran in lockstep, so on the
+    shipped v2 build all 10 template pairs mapped to exactly one label
+    (250/250) and the pooled per-template balance was T1 50/50, T2 75/25,
+    T3 50/50, T4 25/75, T5 50/50 — a constant-YES judge scored 0.75 on T2 and
+    0.25 on T4 without reading a single item, which confounds every
+    per-template claim.
+
+    Shuffling the loader's emission order alone would leave the balance correct
+    only in expectation (±1 sd is roughly 5 points on 100 pooled items per
+    template). Dealing each label group round-robin across a seeded rotation of
+    the combos instead makes it exact up to integer division: with 125 items of
+    each label and 10 combos, every combo receives 12 or 13 of each, so each
+    template's pooled balance lands within one item of 50/50.
+
+    For tasks whose content label is constant by construction (relevance, and
+    preference where it is candidate_1/candidate_2) there is one stratum or two
+    balanced ones, and this degenerates to a seeded round-robin.
+    """
+    rng = random.Random(seed)
+    by_label: Dict[str, List[int]] = defaultdict(list)
+    for idx, item in enumerate(items):
+        by_label[item.ground_truth_label].append(idx)
+
+    assignment: List[tuple] = [None] * len(items)  # type: ignore[list-item]
+    # Each stratum walks the same rotation of combos but starts where the
+    # previous stratum stopped, so the residue of an uneven division is spread
+    # over different combos instead of piling onto the first few.
+    rotation = list(combos)
+    rng.shuffle(rotation)
+    cursor = 0
+    for label in sorted(by_label):
+        group = by_label[label]
+        rng.shuffle(group)
+        for position, item_idx in enumerate(group):
+            assignment[item_idx] = rotation[(cursor + position) % len(rotation)]
+        cursor = (cursor + len(group)) % len(rotation)
+    return assignment
+
+
 def _positional_label(content_label: str, candidate_map: Dict[str, str]) -> str:
     """Displayed position (A/B) of the ground-truth candidate."""
     for position, key in candidate_map.items():
@@ -93,14 +142,19 @@ def _positional_label(content_label: str, candidate_map: Dict[str, str]) -> str:
     raise ValueError(f"ground truth '{content_label}' not in candidate_map {candidate_map}")
 
 
-def build_task_records(task: str, items: List[SourceItem]) -> List[dict]:
+def build_task_records(task: str, items: List[SourceItem],
+                       seed: int = 42) -> List[dict]:
     """Build dataset records for one task from real source items."""
     templates = TEMPLATES[task]
     combos = _template_combinations(len(templates))
+    # Label-stratified, seeded assignment. See _assign_template_combos: the
+    # previous `idx % len(combos)` rotation was a perfect answer key on
+    # factuality because the loader emitted labels in a 2-cycle.
+    assignment = _assign_template_combos(items, combos, seed)
     records: List[dict] = []
 
     for idx, item in enumerate(items):
-        ti, tj = combos[idx % len(combos)]
+        ti, tj = assignment[idx]
         prompt_pair_id = f"{item.item_id}#T{ti + 1}-T{tj + 1}"
         base = {
             "task_type": task,
@@ -177,7 +231,7 @@ def build_all(output_dir: Path, items_per_task: int = DEFAULT_ITEMS_PER_TASK,
         "tasks": {},
     }
     for task in tasks:
-        records = build_task_records(task, loaded[task])
+        records = build_task_records(task, loaded[task], seed=seed)
         path = output_dir / f"{task}.jsonl"
         with open(path, "w", encoding="utf-8") as fh:
             for rec in records:

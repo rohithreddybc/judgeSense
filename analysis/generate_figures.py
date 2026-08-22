@@ -172,9 +172,9 @@ def fig2_heatmap():
         d = load_task_jss(task)
         task_jss[task] = {m: v[0] for m, v in d.items()}
 
-    # Factuality: use JSS_original (pre-correction)
-    fact_df = pd.read_csv(OUTPUT_DIR / "factuality_jss_fixed.csv")
-    task_jss["factuality"] = dict(zip(fact_df["model"], fact_df["JSS_original"]))
+    # Factuality: use post-T4-exclusion (published-dataset) values to match Table 1
+    d = load_task_jss("factuality")
+    task_jss["factuality"] = {m: v[0] for m, v in d.items()}
 
     # Build matrix: rows = models (same order as MODELS), cols = tasks
     matrix = np.full((len(MODELS), len(tasks)), np.nan)
@@ -240,7 +240,7 @@ def fig2_heatmap():
     # Footnote
     fig.text(
         0.01, -0.02,
-        "Factuality JSS values are pre-T4-correction (raw). "
+        "Factuality JSS shown after T4 polarity-inverted exclusion (matches Table 1). "
         "\u2020 DeepSeek coherence has partial data.",
         fontsize=8, ha="left", va="top", style="italic",
     )

@@ -251,7 +251,7 @@ def run_cell(judge: str, task: str, budget_policy: str, repeat_baseline: bool,
         }
         # The repeat baseline is ONE extra call per ITEM, not per row. Pairwise
         # tasks emit two rows per item (original + swapped orderings), so firing
-        # it on every row would issue 1,452 repeat calls per judge against the
+        # it on every row would issue 1,212 repeat calls per judge against the
         # 1,000 the run plan budgets — a 12.5% overspend on the total sweep.
         # The noise ceiling only needs one prompt repeated, so it is taken on the
         # canonical ordering.

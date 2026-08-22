@@ -257,15 +257,21 @@ def run_plan(n_calls_per_judge: int, judges: Optional[List[str]] = None,
 
 
 # ── Main instruction-axis dataset shape ──────────────────────────────────────
-# 1,452 rows = 250 factuality + 250 coherence + 500 relevance + 452 preference.
+# 1,212 rows = 250 factuality + 250 coherence + 500 relevance + 212 preference.
 # Pairwise tasks (relevance, preference) carry both candidate orderings, so
 # their row count is 2x their item count; pointwise tasks (factuality,
 # coherence) are 1 row per item. Two prompt arms (P1/P2 paraphrases) are
 # issued per row for the existing JSS computation.
 #
-# Preference ships 226 items rather than 250 because the split is held at an
-# exact 50/50 winner-longer balance and the human-labelled pool's smaller length
-# bucket holds only 113 pairs. See load_preference_items in src/data_sources.py.
+# Preference ships 106 items rather than 250. Three construction rules cut it,
+# each reported by the loader with its own count: the label rule (the winner
+# needs >= 2 DECISIVE votes and strictly more than the tie count -- enforcing it
+# on the total vote count instead let 73/226 items violate the rule printed
+# inside them), the contradictory-gold drop (MT-Bench reuses a response across
+# pairings, so 52 candidate texts won in one item and lost in another), and the
+# exact 50/50 winner-longer balance, whose smaller length bucket holds only 53
+# pairs once the first two have run. See load_preference_items in
+# src/data_sources.py. Nothing is padded; the split simply ships smaller.
 #
 # These counts drive the printed call budget, so they must never drift from the
 # files actually on disk; tests/test_registry_matches_dataset.py asserts they
@@ -274,7 +280,7 @@ MAIN_AXIS_ROWS_PER_TASK: Dict[str, int] = {
     "factuality": 250,
     "coherence": 250,
     "relevance": 500,
-    "preference": 452,
+    "preference": 260,
 }
 MAIN_AXIS_PAIRWISE_TASKS = ("relevance", "preference")
 MAIN_AXIS_PROMPT_ARMS_PER_ROW = 2
@@ -301,12 +307,13 @@ def main_axis_run_plan(judges: Optional[List[str]] = None, budget_policy: str = 
     which has its own budget in docs/V2_1_STRUCTURAL_AXIS.md §5).
 
     Base cost is `MAIN_AXIS_TOTAL_ROWS * MAIN_AXIS_PROMPT_ARMS_PER_ROW` calls
-    per judge (1,452 rows x 2 arms = 2,904). The repeat baseline adds one S0
+    per judge (1,212 rows x 2 arms = 2,424). The repeat baseline adds one S0
     call per ITEM, not per row: pairwise rows for the same item share a
     single canonical S0 context, so the repeat call is item-scoped exactly
     like the structural axis's shared S0 arm (docs/V2_1_STRUCTURAL_AXIS.md
     §3-4). With `include_repeat_baseline=True` (default) that is
-    `MAIN_AXIS_TOTAL_ITEMS` (976) extra calls per judge.
+    `MAIN_AXIS_TOTAL_ITEMS` (856) x `MAIN_AXIS_REPEAT_ARMS_PER_ITEM` (2)
+    = 1,712 extra calls per judge.
     """
     base_calls = MAIN_AXIS_TOTAL_ROWS * MAIN_AXIS_PROMPT_ARMS_PER_ROW
     repeat_calls = (MAIN_AXIS_TOTAL_ITEMS * MAIN_AXIS_REPEAT_ARMS_PER_ITEM

@@ -1,0 +1,61 @@
+
+=============================================================================
+JudgeSense Metrics Summary
+=============================================================================
+Model                Task            JSS   Flip   Kappa         CI 95%      N
+-----------------------------------------------------------------------------
+claude-haiku         coherence     0.731  0.269   0.583  [0.688,0.776]    375
+claude-haiku         factuality    0.967  0.033   0.934  [0.948,0.984]    366
+claude-haiku         preference    1.000  0.000   1.000  [1.000,1.000]    375
+claude-haiku         relevance     1.000  0.000   1.000  [1.000,1.000]    375
+claude-opus-4-7      coherence     0.701  0.299   0.580  [0.659,0.747]    375
+claude-opus-4-7      factuality    0.987  0.013   0.973  [0.973,0.997]    375
+claude-opus-4-7      preference    1.000  0.000   1.000  [1.000,1.000]    375
+claude-opus-4-7      relevance     1.000  0.000   1.000  [1.000,1.000]    375
+claude-sonnet        coherence     0.992  0.008   0.986  [0.981,1.000]    375
+claude-sonnet        factuality    0.965  0.035   0.930  [0.947,0.981]    374
+claude-sonnet        preference    1.000  0.000   1.000  [1.000,1.000]    375
+claude-sonnet        relevance     1.000  0.000   1.000  [1.000,1.000]    375
+deepseek             coherence     0.528  0.472   0.332  [0.477,0.573]    375
+deepseek             factuality    0.955  0.045   0.908  [0.935,0.973]    509
+deepseek             preference    1.000  0.000   1.000  [1.000,1.000]    376
+deepseek             relevance     1.000  0.000   1.000  [1.000,1.000]    381
+deepseek-v4-flash    coherence     0.495  0.505   0.349  [0.447,0.545]    374
+deepseek-v4-flash    factuality    0.947  0.053   0.890  [0.923,0.968]    375
+deepseek-v4-flash    preference    1.000  0.000   1.000  [1.000,1.000]    367
+deepseek-v4-flash    relevance     1.000  0.000   1.000  [1.000,1.000]    318
+gemini-flash         coherence     0.387  0.613  -0.057  [0.339,0.435]    375
+gemini-flash         factuality    0.976  0.024   0.951  [0.959,0.989]    369
+gemini-flash         preference    1.000  0.000   1.000  [1.000,1.000]    360
+gemini-flash         relevance     1.000  0.000   1.000  [1.000,1.000]    375
+gpt-4o               coherence     0.915  0.085   0.828  [0.888,0.941]    375
+gpt-4o               factuality    0.976  0.024   0.951  [0.960,0.992]    375
+gpt-4o               preference    1.000  0.000   1.000  [1.000,1.000]    375
+gpt-4o               relevance     1.000  0.000   1.000  [1.000,1.000]    375
+gpt-4o-mini          coherence     0.784  0.216   0.627  [0.744,0.824]    375
+gpt-4o-mini          factuality    0.957  0.043   0.913  [0.936,0.976]    375
+gpt-4o-mini          preference    1.000  0.000   1.000  [1.000,1.000]    375
+gpt-4o-mini          relevance     1.000  0.000   1.000  [1.000,1.000]    375
+gpt-5.5              coherence     0.827  0.173   0.694  [0.789,0.864]    375
+gpt-5.5              factuality    0.981  0.019   0.960  [0.968,0.992]    373
+gpt-5.5              preference    1.000  0.000   1.000  [1.000,1.000]    375
+gpt-5.5              relevance     1.000  0.000   1.000  [1.000,1.000]    375
+llama3-70b           coherence     0.554  0.446   0.338  [0.488,0.615]    260
+llama3-70b           factuality    0.986  0.014   0.971  [0.972,0.997]    286
+llama3-70b           preference    1.000  0.000   1.000  [1.000,1.000]    375
+llama3-70b           relevance     1.000  0.000   1.000  [1.000,1.000]    268
+mistral-7b           coherence     0.480  0.520  -0.082  [0.429,0.536]    375
+mistral-7b           factuality    0.893  0.107   0.776  [0.861,0.925]    375
+mistral-7b           preference    0.811  0.189   0.542  [0.771,0.851]    375
+mistral-7b           relevance     0.989  0.011   0.979  [0.979,0.997]    375
+qwen                 coherence     0.917  0.083   0.842  [0.888,0.944]    375
+qwen                 factuality    0.976  0.024   0.952  [0.957,0.989]    375
+qwen                 preference    1.000  0.000   1.000  [1.000,1.000]    375
+qwen                 relevance     1.000  0.000   1.000  [1.000,1.000]    375
+qwen-3.6-flash       coherence     0.512  0.488   0.372  [0.461,0.560]    375
+qwen-3.6-flash       factuality    0.971  0.029   0.939  [0.952,0.987]    374
+qwen-3.6-flash       preference    1.000  0.000   1.000  [1.000,1.000]    375
+qwen-3.6-flash       relevance     1.000  0.000   1.000  [1.000,1.000]    375
+=============================================================================
+Saved to: data\results\metrics_summary.json
+

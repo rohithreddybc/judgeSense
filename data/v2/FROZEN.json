@@ -2,24 +2,24 @@
   "note": "content hashes exclude source.retrieved_at, which is volatile by design",
   "splits": {
     "factuality": {
-      "sha256": "e87bd53934d27cbeb7bb7caddb8cbb56c2011515ad9bd4fc0f714883e7d77906",
+      "sha256": "8875a1f210c7b07fc9eebf62c4314cf780f24d50407a3b33eeb425846b263095",
       "rows": 250,
       "unique_items": 250
     },
     "coherence": {
-      "sha256": "ef2419553bc70afbd6b57f31915427a454a5ef3f2332976d4df4ebdd0b1454e0",
+      "sha256": "37e5caceca0cff3c4a4f45b7c5e12e5ded2caddda4d78e11c30265994a80db83",
       "rows": 250,
       "unique_items": 250
     },
     "relevance": {
-      "sha256": "18c0c5cbbdfcf3051635a4ef9f759897160d30b58e3fea7a7d2fe2e6b1bfb7e7",
+      "sha256": "379a228fe28fe42231b0f3392f62b29d71987e9a55ffcbd29ef2b9ac034737b5",
       "rows": 500,
       "unique_items": 250
     },
     "preference": {
-      "sha256": "9a174f5768e33240d25737006a7a1a1da6a7d6d3b1f5cdfff5d9f0b1a68a9ec4",
-      "rows": 452,
-      "unique_items": 226
+      "sha256": "ceff37f1bf1091efd26b68cc415f66a9c6a82e162a48d9674dad4494a3411a2c",
+      "rows": 260,
+      "unique_items": 130
     }
   }
 }

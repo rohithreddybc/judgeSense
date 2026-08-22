@@ -239,9 +239,10 @@ def load_factuality_items(
         if not question or not best or _ill_posed(question, best):
             continue
 
-        # item_id is opaque (a running index), so the ground-truth label is not
-        # encoded in the identifier; the answer field is retained in the
-        # provenance record for traceability, not in the id a consumer sorts on.
+        # The running index is assigned here only to make ids unique while the
+        # pool is collected; it is REASSIGNED after the shuffle below, because
+        # in emission order it alternated accurate/inaccurate and therefore
+        # encoded the label in the id (see the shuffle comment).
         def _mk(answer: str, label: str, which: str) -> SourceItem:
             nonlocal seq
             seq += 1
@@ -270,6 +271,32 @@ def load_factuality_items(
             f"TruthfulQA yielded only {len(items)} usable items "
             f"(requested {n_items}); refusing to pad."
         )
+
+    # ── Break the emission-order oracle ────────────────────────────────────
+    #
+    # The loop above appends best_answer then incorrect_answers[0] for every
+    # source question, so the shipped pool alternated accurate/inaccurate in a
+    # strict two-cycle. Three separate label oracles fell out of that, all
+    # measured at 250/250 on the v2 build:
+    #
+    #   * file line parity        — "line index even -> accurate" was exact;
+    #   * item_id parity          — odd fact_tqa_NNNN was always accurate;
+    #   * the template assignment — the builder rotates template pairs with
+    #     `idx % 10`, and a 10-cycle running in lockstep with a 2-cycle maps
+    #     every template pair to exactly one label. Pooled over both arms that
+    #     left T2 at 75/25 accurate and T4 at 25/75, so a constant-YES judge
+    #     scored 0.75 on T2 and 0.25 on T4 from item assignment alone. T4 is
+    #     the template the polarity analysis rests on.
+    #
+    # Shuffling under the seed removes the alternation itself, which kills the
+    # line- and id-parity oracles outright and decorrelates the builder's
+    # rotation from the label. The builder additionally stratifies the template
+    # assignment on the label (dataset_builder_v2.build_task_records) so the
+    # per-template balance is exact rather than merely unbiased in expectation.
+    # Both steps are seeded, so the build stays reproducible.
+    rng.shuffle(items)
+    for new_seq, item in enumerate(items, start=1):
+        item.item_id = f"fact_tqa_{new_seq:04d}"
     return items
 
 
@@ -625,13 +652,20 @@ def load_preference_items(
     used and the tally recorded; ties and no-majority pairs are excluded.
 
     ``min_votes`` (default 2) requires each shipped label to rest on at least
-    that many human votes. At the default, no preference item's ground truth
-    is a single annotator's opinion: every label is a majority of two or more
-    independent human votes. The source contains 324 turn-1 comparisons with a
-    strict multi-vote majority, so the 250-item benchmark is drawn entirely
-    from multiply-annotated comparisons. Setting ``min_votes=1`` restores the
-    prior behaviour (single-vote labels admitted) and is retained only for
+    that many DECISIVE human votes — votes for model_a or model_b. Tie votes
+    ("neither is better") are counted separately and the winner's decisive
+    count must strictly exceed them, so the shipped label is never the minority
+    reading of the annotators. Enforcing the threshold against the total vote
+    count instead, as the loader previously did, let 73 of 226 shipped items
+    (32.3%) violate the label rule printed inside them. Setting ``min_votes=1``
+    restores the prior single-annotator admission and is retained only for
     reproducing the earlier release.
+
+    Items whose gold contradicts another retained item's gold on shared
+    candidate text are then dropped (MT-Bench reuses the same response across
+    pairings; see the inline note at the filter). The two filters plus the exact
+    length balance take the split well below ``n_items``; that shortfall is
+    reported per rule, never padded.
 
     difficulty selects WHICH majority-labeled comparisons ship — never the
     label, which is always the recorded human majority:
@@ -724,19 +758,40 @@ def load_preference_items(
         margin = winner votes − runner-up votes over the directional votes;
         total counts every vote including ties, so a 2-1-with-2-ties pair
         ranks as more contested than a bare 2-1. Returns None where no strict
-        majority exists, or where the total vote count is below ``min_votes``
-        (excluded regardless of difficulty): a label resting on fewer than
-        ``min_votes`` human votes is not a multi-annotator judgement.
+        majority exists, or where the pair fails the label rule below.
+
+        The label rule shipped inside every record reads "majority of >=
+        ``min_votes`` human votes; ties and single-vote items excluded". It was
+        enforced against ``total``, which COUNTS TIE VOTES — so the rule was
+        never applied to the votes that actually decide the winner. Measured on
+        the shipped v2 build, 73 of 226 items (32.3%) had a winner resting on
+        fewer than 2 decisive votes, or on a decisive count no greater than the
+        number of annotators who answered "neither is better". On those items
+        the MODAL human judgement is a tie, so a judge that reproduces the modal
+        human is scored wrong — the label contradicts the rule printed beside
+        it. Both conditions are now enforced on the decisive votes:
+
+          * the winner needs at least ``min_votes`` decisive (model_a/model_b)
+            votes of its own, not ``min_votes`` votes of any kind;
+          * that decisive count must be STRICTLY GREATER than the tie count, so
+            "neither is better" never out-polls the shipped winner.
+
+        Keeping the requirement expressed in ``min_votes`` rather than a literal
+        2 preserves the documented ``min_votes=1`` escape hatch for reproducing
+        the earlier release.
         """
         tally = votes[key]
         total = sum(tally.values())
-        if total < min_votes:
-            return None
         directional = {k: v for k, v in tally.items() if k in ("model_a", "model_b")}
         if not directional:
             return None
+        tie_votes = total - sum(directional.values())
         best = max(directional.values())
         if len([k for k, v in directional.items() if v == best]) != 1:
+            return None
+        if best < min_votes:
+            return None
+        if best <= tie_votes:
             return None
         margin = best - (sum(directional.values()) - best)
         return margin, total, margin / total
@@ -761,6 +816,10 @@ def load_preference_items(
         return (m[2], m[0]) if difficulty == "hard" else (-m[2], -m[0])
 
     eligible = [k for k in keys if margins[k] is not None]
+    # Counted here, not in the item loop below: that loop iterates the
+    # interleaved order rebuilt from `eligible`, so its `margins[key] is None`
+    # branch is unreachable and its counter always read 0.
+    n_excluded_rule = len(keys) - len(eligible)
     longer = sorted([k for k in eligible if _winner_longer(k)], key=_contest_key)
     shorter = sorted([k for k in eligible if not _winner_longer(k)], key=_contest_key)
     # Interleave the two length buckets so the winner is longer in ~half the
@@ -782,7 +841,7 @@ def load_preference_items(
 
     retrieved_at = _now_iso()
     items: List[SourceItem] = []
-    n_excluded_tie = 0
+    n_excluded_tie = n_excluded_rule
     n_excluded_duplicate = 0
     n_excluded_length_quota = 0
     seen_content: set = set()
@@ -803,7 +862,9 @@ def load_preference_items(
         # balanced trim below can choose from all of it.
         tally = votes[key]
         if margins[key] is None:
-            n_excluded_tie += 1
+            # Defensive only: `keys` was rebuilt from `eligible`, so nothing
+            # reaches here. The rule-based exclusions are counted upstream as
+            # n_excluded_rule.
             continue
         margin, total_votes, margin_ratio = margins[key]
         contested = {k: v for k, v in tally.items() if k in ("model_a", "model_b")}
@@ -843,12 +904,22 @@ def load_preference_items(
                     source_fields={
                         "first_seen_row": str(row_idx),
                         "vote_tally": str(tally),
-                        "label_rule": f"majority of >= {min_votes} human votes; ties and single-vote items excluded",
+                        "label_rule": (
+                            f"winner has >= {min_votes} decisive (model_a/model_b) "
+                            f"human votes AND strictly more decisive votes than "
+                            f"tie votes; no-majority, tie-dominated and "
+                            f"sub-{min_votes}-vote comparisons excluded"
+                        ),
                         "difficulty": difficulty,
                         "contested": "yes" if margin_ratio < 1.0 else "no (unanimous majority)",
                         "vote_margin": str(margin),
                         "vote_margin_ratio": f"{margin_ratio:.4f}",
                         "total_votes": str(total_votes),
+                        # The two counts the label rule is actually enforced on,
+                        # written out so the rule can be re-checked against the
+                        # shipped file without re-parsing `vote_tally`.
+                        "decisive_winner_votes": str(best),
+                        "tie_votes": str(total_votes - sum(contested.values())),
                         "winner_is_longer": "yes" if len(ra if label == "candidate_1" else rb) > len(rb if label == "candidate_1" else ra) else "no",
                         "winner_chars": str(len(ra if label == "candidate_1" else rb)),
                         "loser_chars": str(len(rb if label == "candidate_1" else ra)),
@@ -900,6 +971,66 @@ def load_preference_items(
     # DISCARDS 159 eligible majority-labelled comparisons (385 - 226). The
     # often-quoted "24" is only the gap between the request and what ships, and
     # understates the cost of the balance by 135 comparisons.
+    # ── Shared candidate text under contradictory gold ─────────────────────
+    #
+    # MT-Bench reuses the same model response across many pairings: the 226
+    # shipped items came from only 78 questions, and 52 candidate texts won in
+    # one item while losing in another, affecting 108 of 226 items (47.8%).
+    # Within question 104, for instance, "David has three brothers, one for
+    # each of his sisters." is gold-correct in one item while "David has only
+    # one brother." is gold-correct in another. A judge that reasons correctly
+    # and answers consistently is scored wrong on at least one of those, so the
+    # pair measures self-consistency against the gold rather than judgement.
+    #
+    # The existing dedup key is the unordered RESPONSE PAIR, which only catches
+    # an exact repeat of both candidates; it cannot see a text reused against a
+    # different opponent. The audit gate could not see it either, because
+    # `ground_truth_consistency` keys on `response_being_judged` — the
+    # concatenated "A: ... | B: ..." string, unique per row by construction.
+    # scripts/data_audit.check_candidate_gold_consistency now checks the
+    # per-candidate form directly.
+    #
+    # The retained set is the largest greedy one in which every candidate text
+    # has a single consistent role. Items are considered strongest-margin-first
+    # Ordered MOST-CONTESTED first, then item_id for a stable tie-break.
+    #
+    # This is a greedy maximum-consistent-set selection, so the order decides
+    # both which items survive and what the surviving margin distribution looks
+    # like. Keeping the firmest majorities first is the intuitive choice and is
+    # the wrong one on both counts, measured on the real pool:
+    #
+    #     strongest-first   106 items   mean margin 0.955   unanimous 90.6%
+    #     contested-first   130 items   mean margin 0.860   unanimous 75.4%
+    #
+    # Strongest-first strips the split of every close call, which is a ceiling
+    # effect: on a set where the humans were unanimous, a competent judge and a
+    # mediocre one both score near the top and the task stops separating them.
+    # It also discards a quarter of the items, leaving the split barely above
+    # the audit floors. Contested-first keeps more items AND a distribution
+    # closer to the pool's own, without reintroducing the opposite bias -- the
+    # length buckets remain margin-matched to within 0.0003, so difficulty is
+    # not being traded between them.
+    def _win_lose(it: SourceItem) -> Tuple[str, str]:
+        c1, c2 = it.extra["candidate_1"], it.extra["candidate_2"]
+        return (c1, c2) if it.ground_truth_label == "candidate_1" else (c2, c1)
+
+    role_of: Dict[str, str] = {}
+    keep_consistent: set = set()
+    n_excluded_contradiction = 0
+    for it in sorted(items, key=lambda x: (margin_of[x.item_id][1],
+                                           margin_of[x.item_id][0],
+                                           x.item_id)):
+        winner_text, loser_text = _win_lose(it)
+        if role_of.get(winner_text) == "loser" or role_of.get(loser_text) == "winner":
+            n_excluded_contradiction += 1
+            continue
+        role_of[winner_text] = "winner"
+        role_of[loser_text] = "loser"
+        keep_consistent.add(it.item_id)
+    # Preserve the difficulty-ordered, length-interleaved order of the survivors
+    # so the balance step below still sees the intended ordering.
+    items = [it for it in items if it.item_id in keep_consistent]
+
     longer_items = [it for it in items if bucket_of[it.item_id]]
     shorter_items = [it for it in items if not bucket_of[it.item_id]]
     n_eligible = len(items)
@@ -961,11 +1092,20 @@ def load_preference_items(
         keep = {it.item_id for it in reference}
         keep |= {it.item_id for it in _match_margin_distribution(pool, reference)}
         items = [it for it in items if it.item_id in keep]
-        # A shortfall the balance itself caused is a deliberate trade, reported
-        # rather than raised. A shortfall the POOL caused is still fatal: too
-        # few eligible pairs to fill the request means the source could not
-        # supply the benchmark, and padding it is the v1 defect.
-        balance_limited = 2 * per_bucket < n_items <= n_eligible
+        # A shortfall the CONSTRUCTION caused is a deliberate trade, reported
+        # with a per-rule count rather than raised. Three rules now cut the
+        # pool: the decisive-vote label rule, the contradictory-gold drop, and
+        # the exact length balance. None of them substitutes an item — the
+        # split simply ships smaller, which is the correct response to material
+        # that cannot carry a sound label.
+        #
+        # The previous condition also required `n_items <= n_eligible`, i.e. it
+        # only forgave the shortfall when the pool COULD have filled the
+        # request. That was right while the balance was the sole cause, but the
+        # two integrity filters now legitimately take the pool below n_items,
+        # and raising there would make a correct build impossible. Padding is
+        # still refused, and an empty result is still fatal (below).
+        balance_limited = 2 * per_bucket < n_items
     else:
         # Only for tests exercising margin/tie logic on fixtures too small to
         # balance. A build with this off ships the pool's native ~70% verbosity
@@ -975,12 +1115,23 @@ def load_preference_items(
         items = items[:n_items]
         balance_limited = False
 
+    if not items:
+        raise DataSourceSchemaError(
+            "MT-Bench human judgments yielded no shippable preference item: "
+            f"{n_excluded_tie} comparisons excluded as tie/no-majority or "
+            f"below the decisive-vote label rule, {n_excluded_duplicate} as "
+            f"duplicate content, {n_excluded_contradiction} as contradictory "
+            "gold on shared candidate text. Refusing to pad."
+        )
     if len(items) < n_items and not balance_limited:
         raise DataSourceSchemaError(
             f"MT-Bench human judgments yielded only {n_eligible} usable "
             f"majority-labeled pairs (requested {n_items}, "
-            f"{n_excluded_tie} excluded as tie/no-majority, "
-            f"{n_excluded_duplicate} as duplicate content); refusing to pad."
+            f"{n_excluded_tie} excluded as tie/no-majority or below the "
+            f"decisive-vote label rule, "
+            f"{n_excluded_duplicate} as duplicate content, "
+            f"{n_excluded_contradiction} as contradictory gold on shared "
+            f"candidate text); refusing to pad."
         )
     if balance_limited:
         kept_longer = [it for it in items if bucket_of[it.item_id]]
@@ -993,6 +1144,15 @@ def load_preference_items(
             f"{n_excluded_length_quota} of {n_eligible} eligible majority-labeled "
             f"pairs dropped to hold the balance exactly at 50%. "
             f"Requested {n_items}."
+        )
+        print(
+            f"  [preference] shortfall attribution: {n_excluded_tie} comparisons "
+            f"failed the decisive-vote label rule (>= {min_votes} decisive votes "
+            f"and more decisive than tie votes) or had no strict majority, "
+            f"{n_excluded_duplicate} were duplicate content, "
+            f"{n_excluded_contradiction} were dropped for contradictory gold on "
+            f"shared candidate text, {n_excluded_length_quota} for the length "
+            f"balance. Nothing was substituted."
         )
         print(
             f"  [preference] margin-matched buckets: mean vote-margin ratio "

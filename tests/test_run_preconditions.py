@@ -55,7 +55,7 @@ def test_planned_calls_tracks_tasks_and_limit():
     assert limited["total"] == 5 * 2
 
     full = run_v2._planned_calls(["gpt-4o"], list(run_v2.TASKS), None, True)
-    assert full["total"] == 4856, "1452 rows x 2 arms + 976 items x 2 repeats"
+    assert full["total"] == 4280, "1260 rows x 2 arms + 880 items x 2 repeats"
 
 
 def test_planned_calls_scales_with_judges():

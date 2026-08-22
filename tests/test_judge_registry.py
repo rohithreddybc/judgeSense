@@ -139,19 +139,21 @@ def test_run_plan_states_repeat_arm_cost_explicitly():
 
 
 def test_main_axis_dataset_shape_matches_documented_composition():
-    # 250 factuality + 250 coherence + 500 relevance + 452 preference = 1452
-    # rows; pairwise tasks fold 2 orderings into 1 item -> 976 unique items.
-    # Preference is 226 items, not 250: the split is held at an exact 50/50
-    # winner-longer balance and the pool's smaller bucket has only 113 pairs.
-    assert MAIN_AXIS_TOTAL_ROWS == 1452
-    assert MAIN_AXIS_TOTAL_ITEMS == 976
+    # 250 factuality + 250 coherence + 500 relevance + 212 preference = 1260
+    # rows; pairwise tasks fold 2 orderings into 1 item -> 880 unique items.
+    # Preference is 106 items, not 250: the decisive-vote label rule, the
+    # contradictory-gold drop and the exact 50/50 winner-longer balance each
+    # cut the human-labelled pool, and the loader reports every drop rather than
+    # padding. See load_preference_items in src/data_sources.py.
+    assert MAIN_AXIS_TOTAL_ROWS == 1260
+    assert MAIN_AXIS_TOTAL_ITEMS == 880
 
 
 def test_main_axis_run_plan_without_repeat_matches_rows_times_arms():
     plan = main_axis_run_plan(judges=["gpt-4o"], include_repeat_baseline=False)
-    assert plan["calls_per_judge"] == 2904        # 1452 rows x 2 prompt arms
+    assert plan["calls_per_judge"] == 2520        # 1260 rows x 2 prompt arms
     assert plan["repeat_calls_per_judge"] == 0
-    assert plan["calls_per_judge_with_repeat"] == 2904
+    assert plan["calls_per_judge_with_repeat"] == 2520
     assert plan["dataset"]["include_repeat_baseline"] is False
 
 
@@ -161,15 +163,15 @@ def test_main_axis_run_plan_adds_two_repeat_calls_per_item():
     charged to paraphrasing; and a stale factor here understates the printed
     budget, which is the number approved before any money is spent."""
     plan = main_axis_run_plan(judges=["gpt-4o"], include_repeat_baseline=True)
-    assert plan["calls_per_judge"] == 2904
-    assert plan["repeat_calls_per_judge"] == 1952   # 976 items x 2 arms
-    assert plan["calls_per_judge_with_repeat"] == 4856
-    assert plan["total_calls_with_repeat"] == 4856  # single judge here
+    assert plan["calls_per_judge"] == 2520
+    assert plan["repeat_calls_per_judge"] == 1760   # 880 items x 2 arms
+    assert plan["calls_per_judge_with_repeat"] == 4280
+    assert plan["total_calls_with_repeat"] == 4280  # single judge here
 
 
 def test_main_axis_run_plan_scales_across_default_verified_judges():
     plan = main_axis_run_plan(include_repeat_baseline=True)
     n = plan["n_judges"]
-    assert plan["total_calls"] == 2904 * n
-    assert plan["total_calls_with_repeat"] == 4856 * n
-    assert plan["total_calls_with_repeat"] - plan["total_calls"] == 1952 * n
+    assert plan["total_calls"] == 2520 * n
+    assert plan["total_calls_with_repeat"] == 4280 * n
+    assert plan["total_calls_with_repeat"] - plan["total_calls"] == 1760 * n
