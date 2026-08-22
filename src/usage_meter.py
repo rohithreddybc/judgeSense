@@ -162,7 +162,13 @@ TEMPERATURE = 0.0
 # Models that reject an explicit temperature. The parameter is omitted and the
 # omission is RECORDED, so the provider default is visible in the data rather
 # than silently mixed in with the matched judges.
-_NO_TEMPERATURE_PREFIXES = ("gpt-5",)
+# Verified against the live API, not assumed: claude-opus-4-7 returns
+# 400 invalid_request_error "`temperature` is deprecated for this model."
+# Such a judge necessarily runs at its provider default while the matched
+# judges run at 0.0. That is a real, unavoidable divergence, so it is recorded
+# per call (temperature_omitted_provider_default) and reported, rather than
+# hidden by silently dropping the parameter everywhere.
+_NO_TEMPERATURE_PREFIXES = ("gpt-5", "claude-opus-4-7")
 
 
 def accepts_temperature(model_id: str) -> bool:
@@ -214,11 +220,20 @@ def _request(provider: str, client, model_id: str, prompt: str, max_tokens: int)
     if provider == "anthropic":
         # Anthropic's SDK default is 600s. A single hung call would stall a
         # sequential 4,856-call cell for ten minutes, twice, per row.
-        r = client.messages.create(
-            model=model_id, max_tokens=max_tokens, system=_SYSTEM_PROMPT,
-            temperature=TEMPERATURE, timeout=_TIMEOUT,
-            messages=[{"role": "user", "content": prompt}],
-        )
+        kwargs = {
+            "model": model_id,
+            "max_tokens": max_tokens,
+            "system": _SYSTEM_PROMPT,
+            "timeout": _TIMEOUT,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        # The exemption is checked here too, not only on the OpenAI branch:
+        # claude-opus-4-7 rejects the parameter outright with
+        # 400 "`temperature` is deprecated for this model", so passing it
+        # unconditionally failed every call to that judge.
+        if accepts_temperature(model_id):
+            kwargs["temperature"] = TEMPERATURE
+        r = client.messages.create(**kwargs)
         return _first_text(getattr(r, "content", None)), r
     if provider == "huggingface":
         r = client.chat.completions.create(

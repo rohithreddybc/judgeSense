@@ -110,3 +110,33 @@ def test_no_branch_hardcodes_a_divergent_temperature():
     src = inspect.getsource(um._request)
     for bad in ("temperature=0.01", "temperature=1.0", "temperature=0.7"):
         assert bad not in src, f"{bad} hardcoded in a provider branch"
+
+
+# ── regression: the temperature exemption must hold on EVERY branch ──────────
+# claude-opus-4-7 rejects the parameter with 400 "`temperature` is deprecated
+# for this model". The exemption was checked only on the OpenAI branch, so every
+# call to that judge failed -- caught by pre-flight, but only after the model was
+# already in the run plan.
+
+@pytest.mark.parametrize("model_id", ["gpt-5.5", "claude-opus-4-7", "CLAUDE-OPUS-4-7"])
+@pytest.mark.parametrize("provider", ["openai", "anthropic"])
+def test_exempt_models_are_never_sent_a_temperature(provider, model_id):
+    rec = _Rec()
+    um._request(provider, _client_for(provider, rec), model_id, "p", 20)
+    assert "temperature" not in rec.kwargs, (
+        f"{provider}/{model_id} must not receive temperature; it rejects the parameter")
+
+
+@pytest.mark.parametrize("provider", ["openai", "anthropic"])
+def test_non_exempt_models_still_get_the_matched_temperature(provider):
+    rec = _Rec()
+    um._request(provider, _client_for(provider, rec), "claude-haiku-4-5-20251001", "p", 20)
+    assert rec.kwargs.get("temperature") == um.TEMPERATURE
+
+
+def test_every_exempt_model_is_recorded_as_running_at_provider_default():
+    for model_id in ("gpt-5.5", "claude-opus-4-7"):
+        cfg = um.decoding_config(model_id, 1024)
+        assert cfg["temperature"] is None
+        assert cfg["temperature_omitted_provider_default"] is True, (
+            f"{model_id} runs unmatched; that must be visible in the record")
