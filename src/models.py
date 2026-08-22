@@ -43,6 +43,14 @@ SUPPORTED_MODELS = {
     "llama3-8b":     {"provider": "huggingface", "model_id": "meta-llama/Llama-3.1-8B-Instruct",  "key": "HF_TOKEN",          "max_tokens": 20},
     "llama3-70b":    {"provider": "groq",        "model_id": "llama-3.1-70b-versatile",           "key": "GROQ_API_KEY",      "max_tokens": 20},  # HF endpoint broken; Novita lacks 3.1 70B; using Groq
     "mistral-7b":    {"provider": "mistral",     "model_id": "mistral-small-latest",              "key": "MISTRAL_API_KEY",   "max_tokens": 20},
+    # v2 renamed this judge to "mistral-small": the id resolves to
+    # mistral-small-latest, which is not a 7B checkpoint, so the old key
+    # asserted a parameter count the model does not have. Both names are kept
+    # here so v1's published runs stay reproducible under the name they were
+    # published with, while the v2 registry's name resolves too. Do not delete
+    # either: src/evaluate.py subscripts this dict directly, and a name present
+    # only in judge_registry KeyErrors mid-run, after earlier judges are paid for.
+    "mistral-small": {"provider": "mistral",     "model_id": "mistral-small-latest",              "key": "MISTRAL_API_KEY",   "max_tokens": 20},
     "qwen":          {"provider": "novita",      "model_id": "qwen/qwen-2.5-72b-instruct",        "key": "NOVITA_API_KEY",    "max_tokens": 20},
 
     # ── Re-run at 1024 to retire the truncation caveat ──

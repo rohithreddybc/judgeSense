@@ -3,18 +3,26 @@ JudgeSense v2 judge runner — crash-safe, resumable, pre-flighted.
 
 This is the "run once" driver. It reads the v2 dataset (data/v2/*.jsonl),
 queries each selected judge on both paraphrase arms of every row (and, with
---repeat-baseline, a second call on arm A to establish the decoding-noise
+--repeat-baseline, one further call on EACH arm to establish the decoding-noise
 ceiling), and writes raw outputs incrementally so an interrupted run resumes
 where it stopped instead of re-spending.
 
 Design guarantees, in order of why they matter for a paid run:
 
 1. RESUMABLE. Output is appended one record per completed row, keyed by
-   (pair_id). On restart, rows already present with no error are skipped. A
-   crash therefore wastes at most the row in flight (2-3 calls), never the run.
+   (pair_id, budget_policy). On restart, rows already present with no error
+   under the SAME policy are skipped; a row run under a different budget is a
+   different measurement and is re-run. Appends are fsynced and repair a torn
+   final line, so a crash wastes at most the row in flight, never a row that was
+   already paid for.
+5. FAILS FAST, NOT EXPENSIVELY. Calls are paced per provider, a cell aborts after
+   MAX_CONSECUTIVE_ERRORS consecutive failed rows rather than paying through a
+   broken configuration, and one failing cell is skipped rather than killing
+   every judge after it.
 2. PRE-FLIGHT. `--preflight` (implied before any full run unless --skip-preflight)
    checks every selected judge's API key is present and makes ONE real call per
-   judge. A bad model id, missing key, or auth failure is surfaced before the
+   judge, at the budget policy the run will use. A bad model id, missing key,
+   auth failure, empty response, or unparseable answer is surfaced before the
    expensive loop, not 2,904 calls in.
 3. PLAN BEFORE SPEND. The call count and per-judge token budget are printed and
    must be confirmed with --yes before a full run starts.
@@ -40,12 +48,14 @@ _REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO))
 
 try:
-    from .evaluate import _build_client, _append_jsonl, _load_jsonl, _load_env
+    from .evaluate import (_build_client, _append_jsonl, _load_jsonl, _load_env,
+                           _RATE_LIMIT)
     from .usage_meter import metered_call as _call, clear_last_meta, take_last_meta
     from .judge_registry import JUDGES, max_tokens_for, select_judges, main_axis_run_plan
     from .structural_variants import parse_variant_output, UNCLEAR
 except ImportError:  # `python src/run_v2.py`
-    from evaluate import _build_client, _append_jsonl, _load_jsonl, _load_env  # type: ignore
+    from evaluate import (_build_client, _append_jsonl, _load_jsonl, _load_env,  # type: ignore
+                          _RATE_LIMIT)
     from usage_meter import metered_call as _call, clear_last_meta, take_last_meta  # type: ignore
     from judge_registry import JUDGES, max_tokens_for, select_judges, main_axis_run_plan  # type: ignore
     from structural_variants import parse_variant_output, UNCLEAR  # type: ignore
@@ -68,14 +78,27 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+class RunAborted(RuntimeError):
+    """A cell was stopped deliberately rather than paying through a failure."""
+
+
+# Consecutive errored rows before a cell gives up. Chosen so a transient blip
+# (a single rate-limit window, one bad gateway response) does not stop a run,
+# while a systematically broken cell -- wrong model id, exhausted quota, revoked
+# key -- costs ten rows instead of twelve hundred.
+MAX_CONSECUTIVE_ERRORS = 10
+
 _DATA_DIR = _REPO / "data" / "v2"
 _OUT_DIR = _REPO / "data" / "results_v2" / "raw"
 TASKS = ("factuality", "coherence", "relevance", "preference")
 
-# The runner queries the model name exactly as registered in judge_registry.
-# evaluate._build_client resolves it against SUPPORTED_MODELS; the two registries
-# share model names, and this asserts that invariant loudly at startup rather
-# than mid-run.
+# The runner selects judges from judge_registry.JUDGES but resolves clients
+# through evaluate.SUPPORTED_MODELS -- two dicts that must agree on names,
+# providers, model ids and key names. They silently diverged once (a judge was
+# renamed in one and not the other), and because every runner test monkeypatches
+# this seam, the whole suite stayed green while the sweep was guaranteed to
+# KeyError on judge 8 with seven judges already paid for.
+# tests/test_run_preconditions.py asserts the agreement.
 def _resolve_client(judge: str):
     return _build_client(judge)  # raises RuntimeError on missing key / unknown name
 
@@ -133,9 +156,17 @@ def _decide(provider, client, model_id, prompt: str, task: str,
     return raw, decision, None, meta
 
 
-def preflight(judges: List[str]) -> bool:
+def preflight(judges: List[str], budget_policy: str = "native") -> bool:
     """One real call per judge on a trivial prompt. Returns True iff all pass.
-    This is the cheap insurance that the expensive run will not die on call 1."""
+
+    Cheap insurance that the expensive run will not die on call 1 -- but only if
+    it probes the configuration the run will actually use. Probing at the native
+    budget while the sweep runs matched meant a judge whose whole 20-token
+    allowance went to reasoning tokens returned empty content, parsed to
+    UNCLEAR, and PASSED; it would then have spent its full share of the sweep
+    producing nothing. A probe that cannot answer "is the sky blue" is a
+    failure, not a pass.
+    """
     print("\n── Pre-flight: one live call per judge ──")
     probe = "Is this statement factually correct? Answer YES or NO only.\n\nThe sky is blue."
     ok = True
@@ -147,9 +178,16 @@ def preflight(judges: List[str]) -> bool:
             ok = False
             continue
         raw, decision, err, _use = _decide(provider, client, model_id, probe, "factuality",
-                                           max_tokens_for(judge, "native"))
+                                           max_tokens_for(judge, budget_policy))
         if err:
             print(f"  [FAIL] {judge:<20} call errored: {err[:80]}")
+            ok = False
+        elif not (raw or "").strip():
+            print(f"  [FAIL] {judge:<20} returned empty content "
+                  f"(finish_reason={(_use or {}).get('finish_reason')!r})")
+            ok = False
+        elif decision == UNCLEAR:
+            print(f"  [FAIL] {judge:<20} unparseable on a trivial probe: {raw[:60]!r}")
             ok = False
         else:
             print(f"  [ ok ] {judge:<20} -> {decision!r} (raw {raw[:40]!r})")
@@ -167,6 +205,20 @@ def run_cell(judge: str, task: str, budget_policy: str, repeat_baseline: bool,
     done = _completed_pair_ids(out, budget_policy)
     client, model_id, provider = _resolve_client(judge)
     max_tokens = max_tokens_for(judge, budget_policy)
+
+    # Per-provider spacing. The v1 runner rate-limited; this path did not, and
+    # issued 2-4 calls per row back to back. On the free Groq, Novita and
+    # DashScope tiers that is a guaranteed 429: metered_call retries once after
+    # 5s, and if the window is still closed BOTH attempts fail, the row is
+    # written as an error, and the loop proceeds at full speed to do it again.
+    # Errored rows are correctly retried on resume, so the whole cell is then
+    # re-paid on the next pass, indefinitely.
+    pace = _RATE_LIMIT.get(provider, 0.0)
+
+    # A cell where every row fails is not a result, it is a broken
+    # configuration, and paying through 1,214 rows to discover that is the
+    # expensive way to learn it.
+    consecutive_errors = 0
 
     n_done = n_new = n_err = 0
     for row in rows:
@@ -224,6 +276,18 @@ def run_cell(judge: str, task: str, budget_policy: str, repeat_baseline: bool,
         n_new += 1
         if rec["error"]:
             n_err += 1
+            consecutive_errors += 1
+            if consecutive_errors >= MAX_CONSECUTIVE_ERRORS:
+                raise RunAborted(
+                    f"{judge}/{task}: {consecutive_errors} consecutive rows errored "
+                    f"(last: {str(rec['error'])[:120]}). Aborting this cell rather "
+                    f"than paying through it; the rows already written are kept and "
+                    f"will be retried on resume."
+                )
+        else:
+            consecutive_errors = 0
+        if pace:
+            time.sleep(pace)
     return {"resumed": n_done, "new": n_new, "errors": n_err, "total": len(rows)}
 
 
@@ -255,22 +319,59 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+def _planned_calls(judges: List[str], tasks: List[str], limit: Optional[int],
+                   repeat_baseline: bool) -> Dict[str, int]:
+    """Calls this invocation will issue, counted from the rows it will read.
+
+    Derived rather than declared. A constant describing the full sweep is not a
+    statement about a run restricted by --tasks or --limit, and the number at
+    the approval gate has to describe the run being approved.
+    """
+    arm = rep = 0
+    for task in tasks:
+        rows = _load_jsonl(_DATA_DIR / f"{task}.jsonl")
+        if limit:
+            rows = rows[:limit]
+        arm += len(rows) * 2
+        if repeat_baseline:
+            # Mirrors run_cell's gate exactly: both arms repeated, on the
+            # canonical ordering only.
+            rep += sum(2 for r in rows if r.get("ab_order") in (None, "original"))
+    n = len(judges)
+    return {"arm_calls": arm * n, "repeat_calls": rep * n,
+            "total": (arm + rep) * n, "per_judge": arm + rep}
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     _load_env()
     args = build_parser().parse_args(argv)
     judges = select_judges(args.judges)  # rejects unknown/unverified judges loudly
 
-    plan = main_axis_run_plan(judges=judges, include_repeat_baseline=args.repeat_baseline)
+    plan = main_axis_run_plan(judges=judges, budget_policy=args.budget_policy,
+                              include_repeat_baseline=args.repeat_baseline)
+    # The printed figure is what a human approves before money moves, so it is
+    # counted from the rows THIS invocation will read. Built from module
+    # constants it assumed all four tasks and no --limit, overstating a
+    # single-task run by 5.8x and ignoring --limit entirely; and it was built
+    # with the default budget policy rather than the one being run, so it
+    # reported a 20-token budget for a 1024-token sweep.
+    actual = _planned_calls(judges, args.tasks, args.limit, args.repeat_baseline)
     print(f"Judges ({len(judges)}): {', '.join(judges)}")
     print(f"Tasks: {', '.join(args.tasks)} | budget policy: {args.budget_policy}")
-    print(f"Planned calls (all tasks): {plan['total_calls']}"
-          + (f" + {plan['total_calls_with_repeat'] - plan['total_calls']} repeat"
-             if args.repeat_baseline else ""))
+    print(f"Planned calls for THIS invocation: {actual['total']} "
+          f"({actual['arm_calls']} arm + {actual['repeat_calls']} repeat; "
+          f"{actual['per_judge']} per judge)")
+    print(f"Max tokens per call: {sorted(set(plan['max_tokens'].values()))}")
+    unpinned = [j for j in judges if not JUDGES[j].get("pinned", False)]
+    if unpinned:
+        print(f"NOT version-pinned ({len(unpinned)}/{len(judges)}): "
+              f"{', '.join(unpinned)}\n  These resolve to whatever the provider "
+              f"serves today; the served model id is recorded per call.")
     if args.limit:
         print(f"LIMIT={args.limit} rows/cell (smoke test)")
 
     if not args.skip_preflight:
-        if not preflight(judges):
+        if not preflight(judges, args.budget_policy):
             return 2
         if args.preflight_only:
             return 0
@@ -291,16 +392,27 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 0
 
     _OUT_DIR.mkdir(parents=True, exist_ok=True)
+    failed: List[str] = []
     for judge in judges:
         for task in args.tasks:
             t0 = time.time()
-            stats = run_cell(judge, task, args.budget_policy, args.repeat_baseline, args.limit)
+            try:
+                stats = run_cell(judge, task, args.budget_policy, args.repeat_baseline, args.limit)
+            except Exception as exc:  # noqa: BLE001
+                # A cell that raises must cost that cell, not the rest of the
+                # sweep. Unguarded, one unresolvable model id turned into six
+                # judges never run, after seven had already been paid for.
+                failed.append(f"{judge}/{task}")
+                print(f"[FAIL] {judge}/{task}: {type(exc).__name__}: {exc}")
+                continue
             print(f"[{judge}/{task}] new={stats['new']} resumed={stats['resumed']} "
                   f"errors={stats['errors']} / {stats['total']} rows "
                   f"({time.time()-t0:.0f}s)")
+    if failed:
+        print(f"\n{len(failed)} cell(s) FAILED and were skipped: {', '.join(failed)}")
     print("\nDone. Raw outputs in", _OUT_DIR)
     print("Next: regenerate metrics/tables from these with scripts/regenerate_results.py")
-    return 0
+    return 1 if failed else 0
 
 
 if __name__ == "__main__":

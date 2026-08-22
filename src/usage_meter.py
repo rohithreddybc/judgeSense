@@ -169,13 +169,19 @@ def accepts_temperature(model_id: str) -> bool:
     return not model_id.lower().startswith(_NO_TEMPERATURE_PREFIXES)
 
 
-def decoding_config(model_id: str, max_tokens: int) -> Dict[str, Any]:
+def decoding_config(model_id: str, max_tokens: int, provider: str = "") -> Dict[str, Any]:
     """What was actually requested, for the record. Never re-derived later."""
     return {
         "temperature": TEMPERATURE if accepts_temperature(model_id) else None,
         "temperature_omitted_provider_default": not accepts_temperature(model_id),
         "max_tokens": max_tokens,
         "system_prompt_sent": True,
+        # Reasoning is disabled on Google and left at the provider default
+        # everywhere else. That is a real decoding divergence between judge
+        # classes -- the exact thing the matched temperature exists to remove --
+        # so it is recorded rather than buried in one provider branch.
+        "thinking_budget": 0 if provider == "google" else None,
+        "reasoning_disabled_explicitly": provider == "google",
         "system_prompt_sha": hashlib.sha256(_SYSTEM_PROMPT.encode()).hexdigest()[:12],
     }
 
@@ -206,16 +212,18 @@ def _request(provider: str, client, model_id: str, prompt: str, max_tokens: int)
             return "", r
         return (r.choices[0].message.content or "").strip(), r
     if provider == "anthropic":
+        # Anthropic's SDK default is 600s. A single hung call would stall a
+        # sequential 4,856-call cell for ten minutes, twice, per row.
         r = client.messages.create(
             model=model_id, max_tokens=max_tokens, system=_SYSTEM_PROMPT,
-            temperature=TEMPERATURE,
+            temperature=TEMPERATURE, timeout=_TIMEOUT,
             messages=[{"role": "user", "content": prompt}],
         )
         return _first_text(getattr(r, "content", None)), r
     if provider == "huggingface":
         r = client.chat.completions.create(
             model=model_id, messages=messages,
-            max_tokens=max_tokens, temperature=TEMPERATURE,
+            max_tokens=max_tokens, temperature=TEMPERATURE, timeout=_TIMEOUT,
         )
         if not getattr(r, "choices", None):
             return "", r
@@ -234,7 +242,7 @@ def _request(provider: str, client, model_id: str, prompt: str, max_tokens: int)
     if provider == "mistral":
         r = client.chat.complete(
             model=model_id, messages=messages,
-            temperature=TEMPERATURE, max_tokens=max_tokens,
+            temperature=TEMPERATURE, max_tokens=max_tokens, timeout_ms=_TIMEOUT * 1000,
         )
         if not getattr(r, "choices", None):
             return "", r
@@ -263,7 +271,7 @@ def metered_call(provider: str, client, model_id: str, prompt: str, max_tokens: 
             LAST_CALL_META = {
                 "input_tokens": tin,
                 "output_tokens": tout,
-                "decoding": decoding_config(model_id, max_tokens),
+                "decoding": decoding_config(model_id, max_tokens, provider),
                 "model_id": model_id,
                 "model_served": extract_served_model(provider, response),
                 "provider": provider,
@@ -285,8 +293,11 @@ def metered_call(provider: str, client, model_id: str, prompt: str, max_tokens: 
         "input_tokens": None,
         "output_tokens": None,
         "total_tokens": None,
-        "decoding": decoding_config(model_id, max_tokens),
+        "decoding": decoding_config(model_id, max_tokens, provider),
         "model_id": model_id,
+        # Absent here, a reader doing usage["model_served"] raises on exactly
+        # the rows most worth inspecting.
+        "model_served": None,
         "provider": provider,
         "finish_reason": None,
         "empty_content": None,

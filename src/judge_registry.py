@@ -53,25 +53,25 @@ JUDGES: Dict[str, dict] = {
     # ── instruction-tuned ───────────────────────────────────────────────────
     "gpt-4o-mini": dict(provider="openai", model_id="gpt-4o-mini-2024-07-18",
                         key="OPENAI_API_KEY", kind=INSTRUCT, family="gpt-4o",
-                        size_b=None, native_max_tokens=20, verified=True),
+                        size_b=None, native_max_tokens=20, verified=True, pinned=True),
     "gpt-4o": dict(provider="openai", model_id="gpt-4o-2024-08-06",
                    key="OPENAI_API_KEY", kind=INSTRUCT, family="gpt-4o",
-                   size_b=None, native_max_tokens=20, verified=True),
+                   size_b=None, native_max_tokens=20, verified=True, pinned=True),
     "claude-haiku": dict(provider="anthropic", model_id="claude-haiku-4-5-20251001",
                          key="ANTHROPIC_API_KEY", kind=INSTRUCT, family="claude-4-5",
-                         size_b=None, native_max_tokens=20, verified=True),
+                         size_b=None, native_max_tokens=20, verified=True, pinned=True),
     "claude-sonnet": dict(provider="anthropic", model_id="claude-sonnet-4-5",
                           key="ANTHROPIC_API_KEY", kind=INSTRUCT, family="claude-4-5",
-                          size_b=None, native_max_tokens=20, verified=True),
+                          size_b=None, native_max_tokens=20, verified=True, pinned=False),
     "gemini-flash": dict(provider="google", model_id="gemini-2.5-flash",
                          key="GOOGLE_API_KEY", kind=INSTRUCT, family="gemini-2.5",
-                         size_b=None, native_max_tokens=20, verified=True),
+                         size_b=None, native_max_tokens=20, verified=True, pinned=False),
     "llama3-8b": dict(provider="huggingface", model_id="meta-llama/Llama-3.1-8B-Instruct",
                       key="HF_TOKEN", kind=INSTRUCT, family="llama-3.1",
-                      size_b=8, native_max_tokens=20, verified=True),
+                      size_b=8, native_max_tokens=20, verified=True, pinned=False),
     "llama3-70b": dict(provider="groq", model_id="llama-3.1-70b-versatile",
                        key="GROQ_API_KEY", kind=INSTRUCT, family="llama-3.1",
-                       size_b=70, native_max_tokens=20, verified=True),
+                       size_b=70, native_max_tokens=20, verified=True, pinned=False),
     # NOT a 7B model. "mistral-small-latest" is a floating alias that does not
     # resolve to a 7B checkpoint, and size_b feeds family_ladders, so a scale
     # claim would have been built on a parameter count the name asserted and the
@@ -83,24 +83,24 @@ JUDGES: Dict[str, dict] = {
                           pinned=False),
     "qwen": dict(provider="novita", model_id="qwen/qwen-2.5-72b-instruct",
                  key="NOVITA_API_KEY", kind=INSTRUCT, family="qwen-2.5",
-                 size_b=72, native_max_tokens=20, verified=True),
+                 size_b=72, native_max_tokens=20, verified=True, pinned=False),
 
     # ── reasoning-tuned ─────────────────────────────────────────────────────
     "deepseek": dict(provider="novita", model_id="deepseek/deepseek-r1",
                      key="NOVITA_API_KEY", kind=REASONING, family="deepseek-r1",
-                     size_b=None, native_max_tokens=1024, verified=True),
+                     size_b=None, native_max_tokens=1024, verified=True, pinned=False),
     "deepseek-v4-flash": dict(provider="novita", model_id="deepseek/deepseek-v4-flash",
                               key="NOVITA_API_KEY", kind=REASONING, family="deepseek-v4",
-                              size_b=None, native_max_tokens=1024, verified=True),
+                              size_b=None, native_max_tokens=1024, verified=True, pinned=False),
     "gpt-5.5": dict(provider="openai", model_id="gpt-5.5",
                     key="OPENAI_API_KEY", kind=REASONING, family="gpt-5",
-                    size_b=None, native_max_tokens=1024, verified=True),
+                    size_b=None, native_max_tokens=1024, verified=True, pinned=False),
     "claude-opus-4-7": dict(provider="anthropic", model_id="claude-opus-4-7",
                             key="ANTHROPIC_API_KEY", kind=REASONING, family="claude-4-7",
-                            size_b=None, native_max_tokens=1024, verified=True),
+                            size_b=None, native_max_tokens=1024, verified=True, pinned=False),
     "qwen-3.6-flash": dict(provider="dashscope", model_id="qwen3.6-35b-a3b",
                            key="DASHSCOPE_API_KEY", kind=REASONING, family="qwen-3.6",
-                           size_b=35, native_max_tokens=1024, verified=True),
+                           size_b=35, native_max_tokens=1024, verified=True, pinned=False),
 
     # ── purpose-built judges (xmQT Limitations) ─────────────────────────────
     # Model identifiers taken from published model cards and NOT yet exercised
@@ -108,13 +108,13 @@ JUDGES: Dict[str, dict] = {
     # selection until confirmed. Verify before spending a run on them.
     "prometheus-2-7b": dict(provider="huggingface", model_id="prometheus-eval/prometheus-7b-v2.0",
                             key="HF_TOKEN", kind=PURPOSE_BUILT, family="prometheus-2",
-                            size_b=7, native_max_tokens=1024, verified=False),
+                            size_b=7, native_max_tokens=1024, verified=False, pinned=False),
     "prometheus-2-8x7b": dict(provider="huggingface", model_id="prometheus-eval/prometheus-8x7b-v2.0",
                               key="HF_TOKEN", kind=PURPOSE_BUILT, family="prometheus-2",
-                              size_b=47, native_max_tokens=1024, verified=False),
+                              size_b=47, native_max_tokens=1024, verified=False, pinned=False),
     "nemotron-70b": dict(provider="huggingface", model_id="nvidia/Llama-3.1-Nemotron-70B-Instruct-HF",
                          key="HF_TOKEN", kind=PURPOSE_BUILT, family="nemotron",
-                         size_b=70, native_max_tokens=1024, verified=False),
+                         size_b=70, native_max_tokens=1024, verified=False, pinned=False),
 }
 
 

@@ -118,9 +118,28 @@ def _load_jsonl(path: Path) -> List[dict]:
 
 
 def _append_jsonl(record: dict, path: Path) -> None:
+    """Append one record, durably, and never fuse onto a truncated line.
+
+    A process killed mid-write (SIGKILL, disk full, power loss) leaves a record
+    with no trailing newline. Appending blindly fuses the next record onto it,
+    producing one unparseable line: the reader skips it with a warning, so the
+    interrupted row AND the following row are both lost and re-paid, and one
+    already-billed record is destroyed. The documented guarantee is that a crash
+    costs the row in flight; without these two lines it cost two rows plus a
+    silent hole in the data.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "a", encoding="utf-8") as fh:
+        # Repair a torn tail before writing, rather than concatenating into it.
+        if fh.tell():
+            with open(path, "rb") as probe:
+                probe.seek(-1, os.SEEK_END)
+                if probe.read(1) != b"\n":
+                    fh.write("\n")
         fh.write(json.dumps(record) + "\n")
+        # Paid calls must survive a hard kill; buffered output does not.
+        fh.flush()
+        os.fsync(fh.fileno())
 
 
 def _completed_keys(path: Path) -> Set[Tuple[str, int]]:
