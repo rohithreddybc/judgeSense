@@ -1,30 +1,30 @@
 {
   "claude-haiku": {
     "coherence": {
-      "n_rows": 245,
-      "n_items": 245,
-      "n_items_analysed": 245,
-      "jss_strict": 0.8,
+      "n_rows": 250,
+      "n_items": 250,
+      "n_items_analysed": 250,
+      "jss_strict": 0.792,
       "ci95": [
-        0.7469,
-        0.849
+        0.74,
+        0.84
       ],
       "cluster_unit": "item",
-      "chance_corrected_jss": 0.6329,
-      "chance_corrected_jss_n": 245,
-      "jss_on_parseable_pairs": 0.8,
-      "decision_entropy_bits": 1.4852,
+      "chance_corrected_jss": 0.6228,
+      "chance_corrected_jss_n": 250,
+      "jss_on_parseable_pairs": 0.792,
+      "decision_entropy_bits": 1.5018,
       "label_histogram": {
-        "4": 312,
-        "3": 47,
-        "2": 91,
-        "5": 40
+        "2": 94,
+        "4": 315,
+        "3": 49,
+        "5": 42
       },
       "label_histogram_all_rows": {
-        "4": 312,
-        "3": 47,
-        "2": 91,
-        "5": 40
+        "2": 94,
+        "4": 315,
+        "3": 49,
+        "5": 42
       },
       "malformed_rate": 0.0,
       "malformed_rate_arm_a": 0.0,
@@ -33,8 +33,8 @@
       "unclear_rate_arm_b": 0.0,
       "refusal_rate": 0.0,
       "n_refusals": 0,
-      "n_metered_arms": 735,
-      "n_pairs_both_answered": 245,
+      "n_metered_arms": 750,
+      "n_pairs_both_answered": 250,
       "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
       "refusal_discordance_ci95": [
@@ -43,8 +43,8 @@
       ],
       "consistent_refusal_rate": 0.0,
       "outcome_partition": {
-        "n_arm_calls": 490,
-        "n_verdict_arms": 490,
+        "n_arm_calls": 500,
+        "n_verdict_arms": 500,
         "n_refused_arms": 0,
         "n_malformed_arms": 0,
         "partitions": true
@@ -52,16 +52,17 @@
       "jss_bounds": null,
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
-      "quadratic_weighted_kappa": 0.8546,
+      "quadratic_weighted_kappa": 0.8594,
       "quadratic_weighted_kappa_policy": "drop",
-      "quadratic_weighted_kappa_punitive": 0.8546,
+      "quadratic_weighted_kappa_punitive": 0.8594,
       "jss_repeat_delta": {
-        "jss": 0.8,
-        "jss_rep": 0.8612244897959184,
-        "ci_lower": -0.11428571428571432,
-        "ci_upper": -0.012244897959183598,
+        "jss": 0.792,
+        "jss_rep": 0.998,
+        "delta": -0.20599999999999996,
+        "ci_lower": -0.258,
+        "ci_upper": -0.15400000000000003,
         "cluster_unit": "item",
-        "n_clusters": 245,
+        "n_clusters": 250,
         "n_items_paraphrase_only": 0,
         "n_items_repeat_only": 0,
         "n_bootstrap": 2000,
@@ -69,38 +70,34 @@
         "unclear_policy": "disagree",
         "support": "canonical ordering, verdict pairs",
         "repeat_agreement_by_arm": {
-          "a": 0.8612
+          "a": 1.0,
+          "b": 0.996
         },
-        "ceiling_single_arm": true,
-        "ceiling_arms_present": [
-          "a"
-        ],
-        "delta_withheld_reason": "repeat baseline collected on one prompt arm only; delta cannot separate paraphrase sensitivity from template-specific decoding noise. Re-collect with --repeat-baseline on the current runner.",
-        "delta_single_arm_ceiling": -0.061224489795918324,
+        "arm_ceiling_gap": 0.004,
         "item_loss_fraction": 0.0
       }
     },
     "factuality": {
-      "n_rows": 245,
-      "n_items": 245,
-      "n_items_analysed": 245,
-      "jss_strict": 0.951,
+      "n_rows": 250,
+      "n_items": 250,
+      "n_items_analysed": 250,
+      "jss_strict": 0.956,
       "ci95": [
-        0.9224,
-        0.9755
+        0.928,
+        0.98
       ],
       "cluster_unit": "item",
-      "chance_corrected_jss": 0.8976,
-      "chance_corrected_jss_n": 245,
-      "jss_on_parseable_pairs": 0.951,
-      "decision_entropy_bits": 0.9685,
+      "chance_corrected_jss": 0.9047,
+      "chance_corrected_jss_n": 250,
+      "jss_on_parseable_pairs": 0.956,
+      "decision_entropy_bits": 0.9443,
       "label_histogram": {
-        "NO": 296,
-        "YES": 194
+        "NO": 319,
+        "YES": 181
       },
       "label_histogram_all_rows": {
-        "NO": 296,
-        "YES": 194
+        "NO": 319,
+        "YES": 181
       },
       "malformed_rate": 0.0,
       "malformed_rate_arm_a": 0.0,
@@ -109,8 +106,8 @@
       "unclear_rate_arm_b": 0.0,
       "refusal_rate": 0.0,
       "n_refusals": 0,
-      "n_metered_arms": 735,
-      "n_pairs_both_answered": 245,
+      "n_metered_arms": 750,
+      "n_pairs_both_answered": 250,
       "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
       "refusal_discordance_ci95": [
@@ -119,8 +116,8 @@
       ],
       "consistent_refusal_rate": 0.0,
       "outcome_partition": {
-        "n_arm_calls": 490,
-        "n_verdict_arms": 490,
+        "n_arm_calls": 500,
+        "n_verdict_arms": 500,
         "n_refused_arms": 0,
         "n_malformed_arms": 0,
         "partitions": true
@@ -129,12 +126,13 @@
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
       "jss_repeat_delta": {
-        "jss": 0.9510204081632653,
-        "jss_rep": 0.9755102040816327,
-        "ci_lower": -0.053061224489796,
-        "ci_upper": 0.004081632653061273,
+        "jss": 0.956,
+        "jss_rep": 1.0,
+        "delta": -0.04400000000000004,
+        "ci_lower": -0.07199999999999995,
+        "ci_upper": -0.020000000000000018,
         "cluster_unit": "item",
-        "n_clusters": 245,
+        "n_clusters": 250,
         "n_items_paraphrase_only": 0,
         "n_items_repeat_only": 0,
         "n_bootstrap": 2000,
@@ -142,50 +140,49 @@
         "unclear_policy": "disagree",
         "support": "canonical ordering, verdict pairs",
         "repeat_agreement_by_arm": {
-          "a": 0.9755
+          "a": 1.0,
+          "b": 1.0
         },
-        "ceiling_single_arm": true,
-        "ceiling_arms_present": [
-          "a"
-        ],
-        "delta_withheld_reason": "repeat baseline collected on one prompt arm only; delta cannot separate paraphrase sensitivity from template-specific decoding noise. Re-collect with --repeat-baseline on the current runner.",
-        "delta_single_arm_ceiling": -0.02448979591836742,
-        "item_loss_fraction": 0.0
+        "arm_ceiling_gap": 0.0,
+        "item_loss_fraction": 0.0,
+        "ceiling_at_boundary": true,
+        "ceiling_disagreement_upper_95": 0.006,
+        "ceiling_note": "repeat agreement is exactly 1.000, so the bootstrap attributes no variance to the ceiling; with one repeat per item the true self-disagreement rate is bounded above by 3/n, not zero"
       }
     },
     "preference": {
-      "n_rows": 447,
-      "n_items": 224,
-      "n_items_analysed": 224,
-      "jss_strict": 0.8277,
+      "n_rows": 260,
+      "n_items": 130,
+      "n_items_analysed": 130,
+      "jss_strict": 0.8962,
       "ci95": [
-        0.7902,
-        0.8635
+        0.8538,
+        0.9385
       ],
       "cluster_unit": "item",
-      "chance_corrected_jss": 0.7846,
-      "chance_corrected_jss_n": 414,
-      "jss_on_parseable_pairs": 0.8937,
-      "decision_entropy_bits": 1.2005,
+      "chance_corrected_jss": 0.9017,
+      "chance_corrected_jss_n": 245,
+      "jss_on_parseable_pairs": 0.951,
+      "decision_entropy_bits": 1.1643,
       "label_histogram": {
-        "A": 481,
-        "B": 375,
-        "UNCLEAR": 38
+        "B": 235,
+        "A": 269,
+        "UNCLEAR": 16
       },
       "label_histogram_all_rows": {
-        "A": 481,
-        "B": 375,
-        "UNCLEAR": 38
+        "B": 235,
+        "A": 269,
+        "UNCLEAR": 16
       },
-      "malformed_rate": 0.0425,
-      "malformed_rate_arm_a": 0.0425,
-      "malformed_rate_arm_b": 0.0425,
-      "unclear_rate_arm_a": 0.0425,
-      "unclear_rate_arm_b": 0.0425,
+      "malformed_rate": 0.0308,
+      "malformed_rate_arm_a": 0.0308,
+      "malformed_rate_arm_b": 0.0308,
+      "unclear_rate_arm_a": 0.0308,
+      "unclear_rate_arm_b": 0.0308,
       "refusal_rate": 0.0,
       "n_refusals": 0,
-      "n_metered_arms": 1117,
-      "n_pairs_both_answered": 447,
+      "n_metered_arms": 650,
+      "n_pairs_both_answered": 260,
       "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
       "refusal_discordance_ci95": [
@@ -194,88 +191,8 @@
       ],
       "consistent_refusal_rate": 0.0,
       "outcome_partition": {
-        "n_arm_calls": 894,
-        "n_verdict_arms": 856,
-        "n_refused_arms": 0,
-        "n_malformed_arms": 38,
-        "partitions": true
-      },
-      "jss_bounds": null,
-      "jss_strict_refusal_inclusive": null,
-      "jss_support": "verdict_pairs",
-      "pairwise": {
-        "accuracy": 0.7616822429906542,
-        "answer_A_rate": 0.5584112149532711,
-        "n": 428
-      },
-      "jss_repeat_delta": {
-        "jss": 0.8071748878923767,
-        "jss_rep": 0.8834080717488789,
-        "ci_lower": -0.12556053811659196,
-        "ci_upper": -0.026905829596412523,
-        "cluster_unit": "item",
-        "n_clusters": 223,
-        "n_items_paraphrase_only": 0,
-        "n_items_repeat_only": 0,
-        "n_bootstrap": 2000,
-        "confidence": 0.95,
-        "unclear_policy": "disagree",
-        "support": "canonical ordering, verdict pairs",
-        "repeat_agreement_by_arm": {
-          "a": 0.9013
-        },
-        "ceiling_single_arm": true,
-        "ceiling_arms_present": [
-          "a"
-        ],
-        "delta_withheld_reason": "repeat baseline collected on one prompt arm only; delta cannot separate paraphrase sensitivity from template-specific decoding noise. Re-collect with --repeat-baseline on the current runner.",
-        "delta_single_arm_ceiling": -0.07623318385650224,
-        "item_loss_fraction": 0.0
-      }
-    },
-    "relevance": {
-      "n_rows": 495,
-      "n_items": 248,
-      "n_items_analysed": 248,
-      "jss_strict": 0.9232,
-      "ci95": [
-        0.897,
-        0.9475
-      ],
-      "cluster_unit": "item",
-      "chance_corrected_jss": 0.894,
-      "chance_corrected_jss_n": 482,
-      "jss_on_parseable_pairs": 0.9481,
-      "decision_entropy_bits": 1.0862,
-      "label_histogram": {
-        "B": 412,
-        "A": 562,
-        "UNCLEAR": 16
-      },
-      "label_histogram_all_rows": {
-        "B": 412,
-        "A": 562,
-        "UNCLEAR": 16
-      },
-      "malformed_rate": 0.0162,
-      "malformed_rate_arm_a": 0.0101,
-      "malformed_rate_arm_b": 0.0222,
-      "unclear_rate_arm_a": 0.0101,
-      "unclear_rate_arm_b": 0.0222,
-      "refusal_rate": 0.0,
-      "n_refusals": 0,
-      "n_metered_arms": 1237,
-      "n_pairs_both_answered": 495,
-      "n_pairs_transport_error": 0,
-      "refusal_discordance_rate": 0.0,
-      "refusal_discordance_ci95": [
-        0.0,
-        0.0
-      ],
-      "consistent_refusal_rate": 0.0,
-      "outcome_partition": {
-        "n_arm_calls": 990,
-        "n_verdict_arms": 974,
+        "n_arm_calls": 520,
+        "n_verdict_arms": 504,
         "n_refused_arms": 0,
         "n_malformed_arms": 16,
         "partitions": true
@@ -284,17 +201,18 @@
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
       "pairwise": {
-        "accuracy": 0.8408163265306122,
-        "answer_A_rate": 0.5795918367346938,
-        "n": 490
+        "accuracy": 0.873015873015873,
+        "answer_A_rate": 0.5158730158730159,
+        "n": 252
       },
       "jss_repeat_delta": {
-        "jss": 0.9433198380566802,
-        "jss_rep": 0.97165991902834,
-        "ci_lower": -0.06072874493927127,
-        "ci_upper": 0.004048582995951344,
+        "jss": 0.8846153846153846,
+        "jss_rep": 0.9653846153846154,
+        "delta": -0.08076923076923082,
+        "ci_lower": -0.12692307692307692,
+        "ci_upper": -0.03846153846153855,
         "cluster_unit": "item",
-        "n_clusters": 247,
+        "n_clusters": 130,
         "n_items_paraphrase_only": 0,
         "n_items_repeat_only": 0,
         "n_bootstrap": 2000,
@@ -302,46 +220,119 @@
         "unclear_policy": "disagree",
         "support": "canonical ordering, verdict pairs",
         "repeat_agreement_by_arm": {
-          "a": 0.9757
+          "a": 0.9923,
+          "b": 1.0
         },
-        "ceiling_single_arm": true,
-        "ceiling_arms_present": [
-          "a"
-        ],
-        "delta_withheld_reason": "repeat baseline collected on one prompt arm only; delta cannot separate paraphrase sensitivity from template-specific decoding noise. Re-collect with --repeat-baseline on the current runner.",
-        "delta_single_arm_ceiling": -0.028340080971659853,
+        "arm_ceiling_gap": 0.0077,
+        "item_loss_fraction": 0.0
+      }
+    },
+    "relevance": {
+      "n_rows": 500,
+      "n_items": 250,
+      "n_items_analysed": 250,
+      "jss_strict": 0.93,
+      "ci95": [
+        0.906,
+        0.952
+      ],
+      "cluster_unit": "item",
+      "chance_corrected_jss": 0.8884,
+      "chance_corrected_jss_n": 492,
+      "jss_on_parseable_pairs": 0.9451,
+      "decision_entropy_bits": 1.0581,
+      "label_histogram": {
+        "A": 561,
+        "B": 429,
+        "UNCLEAR": 10
+      },
+      "label_histogram_all_rows": {
+        "A": 561,
+        "B": 429,
+        "UNCLEAR": 10
+      },
+      "malformed_rate": 0.01,
+      "malformed_rate_arm_a": 0.012,
+      "malformed_rate_arm_b": 0.008,
+      "unclear_rate_arm_a": 0.012,
+      "unclear_rate_arm_b": 0.008,
+      "refusal_rate": 0.0,
+      "n_refusals": 0,
+      "n_metered_arms": 1250,
+      "n_pairs_both_answered": 500,
+      "n_pairs_transport_error": 0,
+      "refusal_discordance_rate": 0.0,
+      "refusal_discordance_ci95": [
+        0.0,
+        0.0
+      ],
+      "consistent_refusal_rate": 0.0,
+      "outcome_partition": {
+        "n_arm_calls": 1000,
+        "n_verdict_arms": 990,
+        "n_refused_arms": 0,
+        "n_malformed_arms": 10,
+        "partitions": true
+      },
+      "jss_bounds": null,
+      "jss_strict_refusal_inclusive": null,
+      "jss_support": "verdict_pairs",
+      "pairwise": {
+        "accuracy": 0.8380566801619433,
+        "answer_A_rate": 0.5688259109311741,
+        "n": 494
+      },
+      "jss_repeat_delta": {
+        "jss": 0.932,
+        "jss_rep": 0.99,
+        "delta": -0.05799999999999994,
+        "ci_lower": -0.08599999999999997,
+        "ci_upper": -0.03200000000000003,
+        "cluster_unit": "item",
+        "n_clusters": 250,
+        "n_items_paraphrase_only": 0,
+        "n_items_repeat_only": 0,
+        "n_bootstrap": 2000,
+        "confidence": 0.95,
+        "unclear_policy": "disagree",
+        "support": "canonical ordering, verdict pairs",
+        "repeat_agreement_by_arm": {
+          "a": 1.0,
+          "b": 1.0
+        },
+        "arm_ceiling_gap": 0.0,
         "item_loss_fraction": 0.0
       }
     }
   },
   "claude-opus-4-7": {
     "coherence": {
-      "n_rows": 245,
-      "n_items": 245,
-      "n_items_analysed": 245,
-      "jss_strict": 0.751,
+      "n_rows": 250,
+      "n_items": 250,
+      "n_items_analysed": 250,
+      "jss_strict": 0.736,
       "ci95": [
-        0.698,
-        0.8041
+        0.68,
+        0.792
       ],
       "cluster_unit": "item",
-      "chance_corrected_jss": 0.6223,
-      "chance_corrected_jss_n": 245,
-      "jss_on_parseable_pairs": 0.751,
-      "decision_entropy_bits": 1.7916,
+      "chance_corrected_jss": 0.5941,
+      "chance_corrected_jss_n": 250,
+      "jss_on_parseable_pairs": 0.736,
+      "decision_entropy_bits": 1.7805,
       "label_histogram": {
-        "4": 241,
+        "2": 71,
         "5": 130,
-        "2": 74,
-        "3": 39,
-        "1": 6
+        "4": 253,
+        "3": 38,
+        "1": 8
       },
       "label_histogram_all_rows": {
-        "4": 241,
+        "2": 71,
         "5": 130,
-        "2": 74,
-        "3": 39,
-        "1": 6
+        "4": 253,
+        "3": 38,
+        "1": 8
       },
       "malformed_rate": 0.0,
       "malformed_rate_arm_a": 0.0,
@@ -350,8 +341,8 @@
       "unclear_rate_arm_b": 0.0,
       "refusal_rate": 0.0,
       "n_refusals": 0,
-      "n_metered_arms": 735,
-      "n_pairs_both_answered": 245,
+      "n_metered_arms": 750,
+      "n_pairs_both_answered": 250,
       "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
       "refusal_discordance_ci95": [
@@ -360,8 +351,8 @@
       ],
       "consistent_refusal_rate": 0.0,
       "outcome_partition": {
-        "n_arm_calls": 490,
-        "n_verdict_arms": 490,
+        "n_arm_calls": 500,
+        "n_verdict_arms": 500,
         "n_refused_arms": 0,
         "n_malformed_arms": 0,
         "partitions": true
@@ -369,16 +360,17 @@
       "jss_bounds": null,
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
-      "quadratic_weighted_kappa": 0.868,
+      "quadratic_weighted_kappa": 0.8714,
       "quadratic_weighted_kappa_policy": "drop",
-      "quadratic_weighted_kappa_punitive": 0.868,
+      "quadratic_weighted_kappa_punitive": 0.8714,
       "jss_repeat_delta": {
-        "jss": 0.7510204081632653,
-        "jss_rep": 0.9469387755102041,
-        "ci_lower": -0.25306122448979584,
-        "ci_upper": -0.13877551020408163,
+        "jss": 0.736,
+        "jss_rep": 0.916,
+        "delta": -0.18000000000000005,
+        "ci_lower": -0.236,
+        "ci_upper": -0.12795000000000029,
         "cluster_unit": "item",
-        "n_clusters": 245,
+        "n_clusters": 250,
         "n_items_paraphrase_only": 0,
         "n_items_repeat_only": 0,
         "n_bootstrap": 2000,
@@ -386,38 +378,34 @@
         "unclear_policy": "disagree",
         "support": "canonical ordering, verdict pairs",
         "repeat_agreement_by_arm": {
-          "a": 0.9469
+          "a": 0.924,
+          "b": 0.908
         },
-        "ceiling_single_arm": true,
-        "ceiling_arms_present": [
-          "a"
-        ],
-        "delta_withheld_reason": "repeat baseline collected on one prompt arm only; delta cannot separate paraphrase sensitivity from template-specific decoding noise. Re-collect with --repeat-baseline on the current runner.",
-        "delta_single_arm_ceiling": -0.1959183673469388,
+        "arm_ceiling_gap": 0.016,
         "item_loss_fraction": 0.0
       }
     },
     "factuality": {
-      "n_rows": 245,
-      "n_items": 245,
-      "n_items_analysed": 245,
-      "jss_strict": 0.9796,
+      "n_rows": 250,
+      "n_items": 250,
+      "n_items_analysed": 250,
+      "jss_strict": 0.96,
       "ci95": [
-        0.9592,
-        0.9959
+        0.9359,
+        0.984
       ],
       "cluster_unit": "item",
-      "chance_corrected_jss": 0.9591,
-      "chance_corrected_jss_n": 245,
-      "jss_on_parseable_pairs": 0.9796,
-      "decision_entropy_bits": 0.9992,
+      "chance_corrected_jss": 0.92,
+      "chance_corrected_jss_n": 250,
+      "jss_on_parseable_pairs": 0.96,
+      "decision_entropy_bits": 0.9998,
       "label_histogram": {
-        "NO": 253,
-        "YES": 237
+        "NO": 254,
+        "YES": 246
       },
       "label_histogram_all_rows": {
-        "NO": 253,
-        "YES": 237
+        "NO": 254,
+        "YES": 246
       },
       "malformed_rate": 0.0,
       "malformed_rate_arm_a": 0.0,
@@ -426,8 +414,8 @@
       "unclear_rate_arm_b": 0.0,
       "refusal_rate": 0.0,
       "n_refusals": 0,
-      "n_metered_arms": 735,
-      "n_pairs_both_answered": 245,
+      "n_metered_arms": 750,
+      "n_pairs_both_answered": 250,
       "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
       "refusal_discordance_ci95": [
@@ -436,8 +424,8 @@
       ],
       "consistent_refusal_rate": 0.0,
       "outcome_partition": {
-        "n_arm_calls": 490,
-        "n_verdict_arms": 490,
+        "n_arm_calls": 500,
+        "n_verdict_arms": 500,
         "n_refused_arms": 0,
         "n_malformed_arms": 0,
         "partitions": true
@@ -446,12 +434,13 @@
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
       "jss_repeat_delta": {
-        "jss": 0.9795918367346939,
-        "jss_rep": 0.9959183673469387,
-        "ci_lower": -0.03673469387755102,
-        "ci_upper": 0.0,
+        "jss": 0.96,
+        "jss_rep": 0.99,
+        "delta": -0.030000000000000027,
+        "ci_lower": -0.05600000000000005,
+        "ci_upper": -0.006000000000000005,
         "cluster_unit": "item",
-        "n_clusters": 245,
+        "n_clusters": 250,
         "n_items_paraphrase_only": 0,
         "n_items_repeat_only": 0,
         "n_bootstrap": 2000,
@@ -459,106 +448,178 @@
         "unclear_policy": "disagree",
         "support": "canonical ordering, verdict pairs",
         "repeat_agreement_by_arm": {
-          "a": 0.9959
+          "a": 0.992,
+          "b": 0.988
         },
-        "ceiling_single_arm": true,
-        "ceiling_arms_present": [
-          "a"
-        ],
-        "delta_withheld_reason": "repeat baseline collected on one prompt arm only; delta cannot separate paraphrase sensitivity from template-specific decoding noise. Re-collect with --repeat-baseline on the current runner.",
-        "delta_single_arm_ceiling": -0.01632653061224487,
+        "arm_ceiling_gap": 0.004,
         "item_loss_fraction": 0.0
       }
     },
-    "relevance": {
-      "n_rows": 143,
-      "n_items": 72,
-      "n_items_analysed": 69,
-      "jss_strict": 0.9854,
+    "preference": {
+      "n_rows": 170,
+      "n_items": 85,
+      "n_items_analysed": 81,
+      "jss_strict": 0.9625,
       "ci95": [
-        0.9635,
-        1.0
+        0.9236,
+        0.9938
       ],
       "cluster_unit": "item",
-      "chance_corrected_jss": 0.9707,
-      "chance_corrected_jss_n": 137,
-      "jss_on_parseable_pairs": 0.9854,
-      "decision_entropy_bits": 0.9969,
+      "chance_corrected_jss": 0.925,
+      "chance_corrected_jss_n": 160,
+      "jss_on_parseable_pairs": 0.9625,
+      "decision_entropy_bits": 0.9999,
       "label_histogram": {
-        "B": 128,
-        "A": 146
+        "B": 162,
+        "A": 158
       },
       "label_histogram_all_rows": {
-        "B": 129,
-        "A": 147,
-        "UNCLEAR": 10
+        "B": 163,
+        "A": 158,
+        "UNCLEAR": 19
+      },
+      "malformed_rate": 0.0559,
+      "malformed_rate_arm_a": 0.0,
+      "malformed_rate_arm_b": 0.0,
+      "unclear_rate_arm_a": 0.0588,
+      "unclear_rate_arm_b": 0.0529,
+      "refusal_rate": 0.0,
+      "n_refusals": 0,
+      "n_metered_arms": 425,
+      "n_pairs_both_answered": 160,
+      "n_pairs_transport_error": 10,
+      "refusal_discordance_rate": 0.0,
+      "refusal_discordance_ci95": [
+        0.0,
+        0.0
+      ],
+      "consistent_refusal_rate": 0.0,
+      "outcome_partition": {
+        "n_arm_calls": 340,
+        "n_verdict_arms": 321,
+        "n_refused_arms": 0,
+        "n_malformed_arms": 19,
+        "partitions": true
+      },
+      "jss_bounds": null,
+      "jss_strict_refusal_inclusive": 0.9059,
+      "jss_support": "verdict_pairs",
+      "pairwise": {
+        "accuracy": 0.8375,
+        "answer_A_rate": 0.5,
+        "n": 160
+      },
+      "jss_repeat_delta": {
+        "delta": null,
+        "n_clusters": 80,
+        "reason": "support 80 below the declared floor of 100 clusters"
+      }
+    },
+    "relevance": {
+      "n_rows": 500,
+      "n_items": 250,
+      "n_items_analysed": 238,
+      "jss_strict": 0.964,
+      "ci95": [
+        0.9466,
+        0.9789
+      ],
+      "cluster_unit": "item",
+      "chance_corrected_jss": 0.9276,
+      "chance_corrected_jss_n": 472,
+      "jss_on_parseable_pairs": 0.964,
+      "decision_entropy_bits": 0.9965,
+      "label_histogram": {
+        "A": 505,
+        "B": 439
+      },
+      "label_histogram_all_rows": {
+        "A": 507,
+        "B": 440,
+        "UNCLEAR": 53
       },
       "malformed_rate": 0.0,
       "malformed_rate_arm_a": 0.0,
       "malformed_rate_arm_b": 0.0,
-      "unclear_rate_arm_a": 0.028,
-      "unclear_rate_arm_b": 0.042,
-      "refusal_rate": 0.0336,
-      "n_refusals": 12,
-      "n_metered_arms": 357,
-      "n_pairs_both_answered": 137,
+      "unclear_rate_arm_a": 0.052,
+      "unclear_rate_arm_b": 0.054,
+      "refusal_rate": 0.052,
+      "n_refusals": 65,
+      "n_metered_arms": 1250,
+      "n_pairs_both_answered": 472,
       "n_pairs_transport_error": 0,
-      "refusal_discordance_rate": 0.014,
+      "refusal_discordance_rate": 0.006,
       "refusal_discordance_ci95": [
         0.0,
-        0.0423
+        0.016
       ],
-      "consistent_refusal_rate": 0.028,
+      "consistent_refusal_rate": 0.05,
       "outcome_partition": {
-        "n_arm_calls": 286,
-        "n_verdict_arms": 276,
-        "n_refused_arms": 10,
+        "n_arm_calls": 1000,
+        "n_verdict_arms": 947,
+        "n_refused_arms": 53,
         "n_malformed_arms": 0,
         "partitions": true
       },
       "jss_bounds": null,
-      "jss_strict_refusal_inclusive": 0.9441,
+      "jss_strict_refusal_inclusive": 0.91,
       "jss_support": "verdict_pairs",
       "pairwise": {
-        "accuracy": 0.8705035971223022,
-        "answer_A_rate": 0.539568345323741,
-        "n": 139
+        "accuracy": 0.8818565400843882,
+        "answer_A_rate": 0.5358649789029536,
+        "n": 474
       },
       "jss_repeat_delta": {
-        "delta": null,
-        "n_clusters": 68,
-        "reason": "support 68 below the declared floor of 100 clusters"
+        "jss": 0.9621848739495799,
+        "jss_rep": 0.9978991596638656,
+        "delta": -0.0357142857142857,
+        "ci_lower": -0.06302521008403361,
+        "ci_upper": -0.012605042016806678,
+        "cluster_unit": "item",
+        "n_clusters": 238,
+        "n_items_paraphrase_only": 0,
+        "n_items_repeat_only": 0,
+        "n_bootstrap": 2000,
+        "confidence": 0.95,
+        "unclear_policy": "disagree",
+        "support": "canonical ordering, verdict pairs",
+        "repeat_agreement_by_arm": {
+          "a": 1.0,
+          "b": 0.9958
+        },
+        "arm_ceiling_gap": 0.0042,
+        "item_loss_fraction": 0.048
       }
     }
   },
   "claude-sonnet": {
     "coherence": {
-      "n_rows": 245,
-      "n_items": 245,
-      "n_items_analysed": 245,
-      "jss_strict": 0.8122,
+      "n_rows": 250,
+      "n_items": 250,
+      "n_items_analysed": 250,
+      "jss_strict": 0.828,
       "ci95": [
-        0.7633,
-        0.8571
+        0.78,
+        0.872
       ],
       "cluster_unit": "item",
-      "chance_corrected_jss": 0.7005,
-      "chance_corrected_jss_n": 245,
-      "jss_on_parseable_pairs": 0.8122,
-      "decision_entropy_bits": 1.6317,
+      "chance_corrected_jss": 0.7269,
+      "chance_corrected_jss_n": 250,
+      "jss_on_parseable_pairs": 0.828,
+      "decision_entropy_bits": 1.6308,
       "label_histogram": {
-        "4": 253,
-        "2": 85,
-        "3": 136,
-        "5": 12,
-        "1": 4
+        "2": 92,
+        "4": 255,
+        "3": 138,
+        "1": 3,
+        "5": 12
       },
       "label_histogram_all_rows": {
-        "4": 253,
-        "2": 85,
-        "3": 136,
-        "5": 12,
-        "1": 4
+        "2": 92,
+        "4": 255,
+        "3": 138,
+        "1": 3,
+        "5": 12
       },
       "malformed_rate": 0.0,
       "malformed_rate_arm_a": 0.0,
@@ -567,8 +628,8 @@
       "unclear_rate_arm_b": 0.0,
       "refusal_rate": 0.0,
       "n_refusals": 0,
-      "n_metered_arms": 735,
-      "n_pairs_both_answered": 245,
+      "n_metered_arms": 750,
+      "n_pairs_both_answered": 250,
       "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
       "refusal_discordance_ci95": [
@@ -577,8 +638,8 @@
       ],
       "consistent_refusal_rate": 0.0,
       "outcome_partition": {
-        "n_arm_calls": 490,
-        "n_verdict_arms": 490,
+        "n_arm_calls": 500,
+        "n_verdict_arms": 500,
         "n_refused_arms": 0,
         "n_malformed_arms": 0,
         "partitions": true
@@ -586,16 +647,17 @@
       "jss_bounds": null,
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
-      "quadratic_weighted_kappa": 0.8621,
+      "quadratic_weighted_kappa": 0.8743,
       "quadratic_weighted_kappa_policy": "drop",
-      "quadratic_weighted_kappa_punitive": 0.8621,
+      "quadratic_weighted_kappa_punitive": 0.8743,
       "jss_repeat_delta": {
-        "jss": 0.8122448979591836,
-        "jss_rep": 0.963265306122449,
-        "ci_lower": -0.20000000000000007,
-        "ci_upper": -0.10204081632653061,
+        "jss": 0.828,
+        "jss_rep": 0.99,
+        "delta": -0.16200000000000003,
+        "ci_lower": -0.20999999999999996,
+        "ci_upper": -0.118,
         "cluster_unit": "item",
-        "n_clusters": 245,
+        "n_clusters": 250,
         "n_items_paraphrase_only": 0,
         "n_items_repeat_only": 0,
         "n_bootstrap": 2000,
@@ -603,50 +665,46 @@
         "unclear_policy": "disagree",
         "support": "canonical ordering, verdict pairs",
         "repeat_agreement_by_arm": {
-          "a": 0.9633
+          "a": 0.988,
+          "b": 0.992
         },
-        "ceiling_single_arm": true,
-        "ceiling_arms_present": [
-          "a"
-        ],
-        "delta_withheld_reason": "repeat baseline collected on one prompt arm only; delta cannot separate paraphrase sensitivity from template-specific decoding noise. Re-collect with --repeat-baseline on the current runner.",
-        "delta_single_arm_ceiling": -0.15102040816326534,
+        "arm_ceiling_gap": 0.004,
         "item_loss_fraction": 0.0
       }
     },
     "factuality": {
-      "n_rows": 245,
-      "n_items": 245,
-      "n_items_analysed": 245,
-      "jss_strict": 0.9592,
+      "n_rows": 250,
+      "n_items": 250,
+      "n_items_analysed": 250,
+      "jss_strict": 0.952,
       "ci95": [
-        0.9347,
-        0.9837
+        0.924,
+        0.976
       ],
       "cluster_unit": "item",
-      "chance_corrected_jss": 0.9657,
-      "chance_corrected_jss_n": 239,
-      "jss_on_parseable_pairs": 0.9833,
-      "decision_entropy_bits": 1.069,
+      "chance_corrected_jss": 0.9337,
+      "chance_corrected_jss_n": 246,
+      "jss_on_parseable_pairs": 0.9675,
+      "decision_entropy_bits": 1.0473,
       "label_histogram": {
-        "NO": 276,
-        "YES": 208,
-        "UNCLEAR": 6
+        "NO": 280,
+        "YES": 216,
+        "UNCLEAR": 4
       },
       "label_histogram_all_rows": {
-        "NO": 276,
-        "YES": 208,
-        "UNCLEAR": 6
+        "NO": 280,
+        "YES": 216,
+        "UNCLEAR": 4
       },
-      "malformed_rate": 0.0122,
-      "malformed_rate_arm_a": 0.0122,
-      "malformed_rate_arm_b": 0.0122,
-      "unclear_rate_arm_a": 0.0122,
-      "unclear_rate_arm_b": 0.0122,
+      "malformed_rate": 0.008,
+      "malformed_rate_arm_a": 0.004,
+      "malformed_rate_arm_b": 0.012,
+      "unclear_rate_arm_a": 0.004,
+      "unclear_rate_arm_b": 0.012,
       "refusal_rate": 0.0,
       "n_refusals": 0,
-      "n_metered_arms": 735,
-      "n_pairs_both_answered": 245,
+      "n_metered_arms": 750,
+      "n_pairs_both_answered": 250,
       "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
       "refusal_discordance_ci95": [
@@ -655,22 +713,23 @@
       ],
       "consistent_refusal_rate": 0.0,
       "outcome_partition": {
-        "n_arm_calls": 490,
-        "n_verdict_arms": 484,
+        "n_arm_calls": 500,
+        "n_verdict_arms": 496,
         "n_refused_arms": 0,
-        "n_malformed_arms": 6,
+        "n_malformed_arms": 4,
         "partitions": true
       },
       "jss_bounds": null,
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
       "jss_repeat_delta": {
-        "jss": 0.9591836734693877,
-        "jss_rep": 0.9795918367346939,
-        "ci_lower": -0.04489795918367345,
-        "ci_upper": 0.0,
+        "jss": 0.952,
+        "jss_rep": 0.99,
+        "delta": -0.038000000000000034,
+        "ci_lower": -0.061999999999999944,
+        "ci_upper": -0.018000000000000016,
         "cluster_unit": "item",
-        "n_clusters": 245,
+        "n_clusters": 250,
         "n_items_paraphrase_only": 0,
         "n_items_repeat_only": 0,
         "n_bootstrap": 2000,
@@ -678,76 +737,149 @@
         "unclear_policy": "disagree",
         "support": "canonical ordering, verdict pairs",
         "repeat_agreement_by_arm": {
-          "a": 0.9918
+          "a": 0.996,
+          "b": 1.0
         },
-        "ceiling_single_arm": true,
-        "ceiling_arms_present": [
-          "a"
-        ],
-        "delta_withheld_reason": "repeat baseline collected on one prompt arm only; delta cannot separate paraphrase sensitivity from template-specific decoding noise. Re-collect with --repeat-baseline on the current runner.",
-        "delta_single_arm_ceiling": -0.020408163265306145,
+        "arm_ceiling_gap": 0.004,
         "item_loss_fraction": 0.0
       }
     },
-    "relevance": {
-      "n_rows": 180,
-      "n_items": 90,
-      "n_items_analysed": 63,
-      "jss_strict": 0.5081,
+    "preference": {
+      "n_rows": 44,
+      "n_items": 22,
+      "n_items_analysed": 17,
+      "jss_strict": 0.5588,
       "ci95": [
-        0.408,
-        0.608
+        0.4118,
+        0.7059
       ],
       "cluster_unit": "item",
-      "chance_corrected_jss": 0.8232,
-      "chance_corrected_jss_n": 69,
-      "jss_on_parseable_pairs": 0.913,
-      "decision_entropy_bits": 1.5786,
+      "chance_corrected_jss": -0.05,
+      "chance_corrected_jss_n": 21,
+      "jss_on_parseable_pairs": 0.9048,
+      "decision_entropy_bits": 1.0119,
       "label_histogram": {
-        "UNCLEAR": 72,
-        "B": 86,
-        "A": 90
+        "B": 48,
+        "UNCLEAR": 18,
+        "A": 2
       },
       "label_histogram_all_rows": {
-        "UNCLEAR": 180,
-        "B": 89,
-        "A": 91
+        "B": 48,
+        "UNCLEAR": 38,
+        "A": 2
       },
-      "malformed_rate": 0.2857,
-      "malformed_rate_arm_a": 0.3889,
-      "malformed_rate_arm_b": 0.1825,
-      "unclear_rate_arm_a": 0.5722,
-      "unclear_rate_arm_b": 0.4278,
-      "refusal_rate": 0.2978,
-      "n_refusals": 134,
-      "n_metered_arms": 450,
-      "n_pairs_both_answered": 124,
-      "n_pairs_transport_error": 0,
-      "refusal_discordance_rate": 0.0222,
+      "malformed_rate": 0.4318,
+      "malformed_rate_arm_a": 0.3529,
+      "malformed_rate_arm_b": 0.1765,
+      "unclear_rate_arm_a": 0.5,
+      "unclear_rate_arm_b": 0.3636,
+      "refusal_rate": 0.0,
+      "n_refusals": 0,
+      "n_metered_arms": 110,
+      "n_pairs_both_answered": 34,
+      "n_pairs_transport_error": 10,
+      "refusal_discordance_rate": 0.0,
       "refusal_discordance_ci95": [
         0.0,
-        0.05
+        0.0
       ],
-      "consistent_refusal_rate": 0.2889,
+      "consistent_refusal_rate": 0.0,
       "outcome_partition": {
-        "n_arm_calls": 360,
-        "n_verdict_arms": 180,
-        "n_refused_arms": 108,
-        "n_malformed_arms": 72,
+        "n_arm_calls": 88,
+        "n_verdict_arms": 50,
+        "n_refused_arms": 0,
+        "n_malformed_arms": 38,
         "partitions": true
       },
       "jss_bounds": null,
-      "jss_strict_refusal_inclusive": 0.35,
+      "jss_strict_refusal_inclusive": 0.4318,
       "jss_support": "verdict_pairs",
       "pairwise": {
-        "accuracy": 0.8441558441558441,
-        "answer_A_rate": 0.5584415584415584,
-        "n": 77
+        "accuracy": 0.5454545454545454,
+        "answer_A_rate": 0.045454545454545456,
+        "n": 22
       },
       "jss_repeat_delta": {
         "delta": null,
-        "n_clusters": 62,
-        "reason": "support 62 below the declared floor of 100 clusters"
+        "n_clusters": 17,
+        "reason": "support 17 below the declared floor of 100 clusters"
+      }
+    },
+    "relevance": {
+      "n_rows": 500,
+      "n_items": 250,
+      "n_items_analysed": 188,
+      "jss_strict": 0.5838,
+      "ci95": [
+        0.5286,
+        0.6376
+      ],
+      "cluster_unit": "item",
+      "chance_corrected_jss": 0.8704,
+      "chance_corrected_jss_n": 231,
+      "jss_on_parseable_pairs": 0.9351,
+      "decision_entropy_bits": 1.5409,
+      "label_histogram": {
+        "A": 267,
+        "B": 307,
+        "UNCLEAR": 166
+      },
+      "label_histogram_all_rows": {
+        "UNCLEAR": 417,
+        "A": 270,
+        "B": 313
+      },
+      "malformed_rate": 0.2237,
+      "malformed_rate_arm_a": 0.3271,
+      "malformed_rate_arm_b": 0.1217,
+      "unclear_rate_arm_a": 0.498,
+      "unclear_rate_arm_b": 0.336,
+      "refusal_rate": 0.2488,
+      "n_refusals": 311,
+      "n_metered_arms": 1250,
+      "n_pairs_both_answered": 370,
+      "n_pairs_transport_error": 0,
+      "refusal_discordance_rate": 0.022,
+      "refusal_discordance_ci95": [
+        0.008,
+        0.038
+      ],
+      "consistent_refusal_rate": 0.238,
+      "outcome_partition": {
+        "n_arm_calls": 1000,
+        "n_verdict_arms": 583,
+        "n_refused_arms": 249,
+        "n_malformed_arms": 168,
+        "partitions": true
+      },
+      "jss_bounds": null,
+      "jss_strict_refusal_inclusive": 0.432,
+      "jss_support": "verdict_pairs",
+      "pairwise": {
+        "accuracy": 0.8645418326693227,
+        "answer_A_rate": 0.4940239043824701,
+        "n": 251
+      },
+      "jss_repeat_delta": {
+        "jss": 0.6310160427807486,
+        "jss_rep": 0.7887700534759359,
+        "delta": -0.15775401069518724,
+        "ci_lower": -0.20588235294117652,
+        "ci_upper": -0.10962566844919786,
+        "cluster_unit": "item",
+        "n_clusters": 187,
+        "n_items_paraphrase_only": 0,
+        "n_items_repeat_only": 0,
+        "n_bootstrap": 2000,
+        "confidence": 0.95,
+        "unclear_policy": "disagree",
+        "support": "canonical ordering, verdict pairs",
+        "repeat_agreement_by_arm": {
+          "a": 0.9358,
+          "b": 0.9679
+        },
+        "arm_ceiling_gap": 0.0321,
+        "item_loss_fraction": 0.252
       }
     }
   }

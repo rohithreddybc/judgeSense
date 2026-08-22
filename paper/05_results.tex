@@ -1,0 +1,144 @@
+\section{Results}
+\label{sec:results}
+
+We report three judges from one vendor family --- Claude Haiku 4.5, Sonnet 4.5
+and Opus 4.7 --- on the four tasks. Factuality, coherence and relevance are
+complete for all three; the preference split is complete for Haiku only, and
+Section~\ref{sec:results-limits} states what that costs. Every figure below is
+produced by \texttt{scripts/regenerate\_results.py} from the committed raw
+outputs; none is transcribed.
+
+\subsection{Paraphrasing costs stability beyond decoding noise}
+
+Table~\ref{tab:main} reports $\Delta\mathrm{JSS} = \mathrm{JSS}_{\text{para}} -
+\mathrm{JSS}_{\text{rep}}$, the pre-registered endpoint. In all ten cells with
+sufficient support the interval excludes zero and the effect is negative: a
+meaning-preserving rewording costs more agreement than re-issuing the identical
+prompt does.
+
+The magnitudes are not uniform. They span an order of magnitude, from $-0.030$
+(Opus, factuality) to $-0.206$ (Haiku, coherence), and all exceed the
+$|\Delta\mathrm{JSS}| < 0.02$ threshold declared in advance as not practically
+meaningful.
+
+The repeat ceiling itself is high everywhere: $\mathrm{JSS}_{\text{rep}}$ lies
+between $0.916$ and $1.000$ across the ten cells. At a matched decoding budget
+and temperature zero these judges are close to deterministic on a fixed prompt,
+which is what makes the paraphrase gap interpretable. It is also what a
+mismatched configuration destroys: in a discarded pilot in which one vendor's
+calls omitted the temperature parameter and defaulted to $1.0$, the same judge
+and task returned $\mathrm{JSS}_{\text{rep}} = 0.864$ --- a $13.6\%$
+self-disagreement rate on byte-identical prompts, large enough to absorb the
+entire effect reported here. We note this because the failure is silent: nothing
+in the output distinguishes a decoding-noise ceiling from a misconfigured one.
+
+\subsection{Sensitivity tracks the task more than the judge}
+
+The ordering of tasks by sensitivity is the same for every judge. Coherence is
+the most sensitive task in all three cases, factuality the least, with the
+pairwise tasks between:
+
+\begin{center}
+\begin{tabular}{lcccc}
+\toprule
+Judge & coherence & preference & relevance & factuality \
+\midrule
+Haiku 4.5   & $-0.206$ & $-0.081$ & $-0.058$ & $-0.044$ \
+Sonnet 4.5  & $-0.162$ & ---      & $-0.158$ & $-0.038$ \
+Opus 4.7    & $-0.180$ & ---      & $-0.036$ & $-0.030$ \
+\bottomrule
+\end{tabular}
+\end{center}
+
+Within a task the spread across judges is smaller than the spread across tasks
+within a judge. Coherence ranges $-0.162$ to $-0.206$ across three judges, while
+Haiku alone ranges $-0.044$ to $-0.206$ across four tasks. On this evidence,
+which evaluation you are asking a judge to perform predicts paraphrase
+sensitivity better than which judge you asked.
+
+The exception is Sonnet on relevance ($-0.158$ against $-0.058$ and $-0.036$ for
+the other two), and it has a specific cause treated in
+Section~\ref{sec:results-refusal} rather than reflecting sensitivity to wording.
+
+Coherence being the most sensitive task is consistent with its structure. It is
+the only ordinal task, so a judge has five admissible answers rather than two,
+and a rewording that shifts a judgement by one scale point counts as
+disagreement. Chance-corrected agreement supports this reading: on the quadratic
+weighted kappa, which charges an adjacent-category disagreement less than a
+distant one, coherence scores $0.859$--$0.874$, far above its unweighted kappa of
+$0.594$--$0.727$. Most coherence disagreements are one-point moves.
+
+\subsection{The tasks discriminate}
+\label{sec:results-discriminate}
+
+A benchmark on which no heuristic beats chance is worthless if no competent judge
+beats chance either. Section~\ref{sec:shortcuts} established the floor; the
+pre-registered ceiling requires the best judge on each task to exceed a
+threshold declared before the run. All four clear it:
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+Task & required & best observed & chance \
+\midrule
+factuality & $0.75$ & $0.944$ (Opus)   & $0.50$ \
+coherence  & $0.40$ & $0.452$ (Sonnet) & $0.20$ \
+relevance  & $0.70$ & $0.882$ (Opus)   & $0.50$ \
+preference & $0.65$ & $0.873$ (Haiku)  & $0.50$ \
+\bottomrule
+\end{tabular}
+\end{center}
+
+Coherence clears its threshold by the narrowest margin, which is expected on a
+five-point scale whose gold labels are a rounded three-annotator mean; the
+weighted kappa above is the better measure of that task's signal.
+
+Position-corrected accuracy also confirms the swap design is working on live
+judges rather than only on the artifact. Answer-A rates are $0.494$--$0.569$ on
+relevance and $0.500$--$0.516$ on preference, against the degenerate $1.000$ that
+the previous version of this benchmark produced for eleven of thirteen judges.
+
+\subsection{Refusal is a distinct failure mode, and it is judge-specific}
+\label{sec:results-refusal}
+
+Sonnet declined $24.9\%$ of relevance arm calls, reported by the provider as a
+refusal with empty content. Opus refused $5.2\%$ of the same prompts and Haiku
+none at all. The corpus is TREC-COVID, so the items are medical, and the effect
+is a property of one judge's safety behaviour rather than of the benchmark: the
+three judges saw identical prompts.
+
+Had refusals been folded into malformed output, Sonnet's relevance cell would
+report a $22.4\%$ format-adherence failure. It is not one. Separating the two
+outcome categories is what makes the reported malformed rate a statement about
+instruction-following, and the refusal rate a statement about willingness to
+judge.
+
+The refusal-conditioned JSS is identified only within bounds, because a rewording
+can itself change whether the judge answers --- refusal is an outcome, not a
+nuisance. We therefore report the worst-case interval alongside the point
+estimate wherever refusals occur, rather than presenting the conditioned value
+alone.
+
+\subsection{What this evidence does not cover}
+\label{sec:results-limits}
+
+Three judges, one vendor. Every result here is within the Claude family, so the
+consistency of the task ordering across judges is a within-family observation and
+may not extend to other vendors. The registry and harness support fourteen
+judges across seven providers, and the remaining eleven are unrun.
+
+The preference split is complete for Haiku only. Sonnet and Opus stopped short at
+$44$ and $170$ of $260$ rows when the API balance was exhausted mid-run; the
+pipeline refuses to emit $\Delta\mathrm{JSS}$ below the pre-registered floor of
+100 clusters, so those two cells report no endpoint rather than one computed
+from $17$ and $80$ clusters. The rows already collected are retained.
+
+One judge is not decoding-matched. Opus 4.7 rejects an explicit temperature
+parameter, so it ran at the provider default while the other two ran at zero.
+This is recorded on every one of its call records rather than inferred, and its
+cells should be read with that in mind: its ceiling of $0.916$ on coherence is
+the lowest observed, which is the direction an unmatched temperature would push.
+
+Finally, the design measures sensitivity within an item across two templates. It
+cannot compare templates to one another, because no item appears under more than
+one template pair (Section~\ref{sec:benchmark}).

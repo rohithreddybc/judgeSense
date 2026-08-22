@@ -690,19 +690,57 @@ def main(argv=None) -> int:
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
     OUT_JSON.write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
-    # Coherence table, sorted by JSS — the discriminating task, mirrors the paper.
-    rows = []
-    for judge, tasks in summary.items():
-        if "coherence" in tasks:
-            c = tasks["coherence"]
-            rows.append((judge, c["jss_strict"], c["chance_corrected_jss"],
-                         c["ci95"], c["n_items"]))
-    rows.sort(key=lambda r: -r[1])
-    lines = [r"\begin{tabular}{lcccc}", r"\toprule",
-             r"Judge & JSS & $\kappa$ & 95\% CI (item) & items \\", r"\midrule"]
-    for judge, j, k, ci, n in rows:
-        lines.append(f"{judge} & {j:.3f} & {k:.3f} & [{ci[0]:.3f}, {ci[1]:.3f}] & {n} \\\\")
-    lines += [r"\bottomrule", r"\end{tabular}"]
+    # The paper's main table. It carries the PRE-REGISTERED ENDPOINT, not raw
+    # JSS: the earlier version emitted coherence-only agreement with no delta,
+    # no caption and no label, so \ref{tab:main} in the results section resolved
+    # to nothing and the table the paper cited was not the table the pipeline
+    # produced. Anything a reader sees here is regenerated from raw outputs.
+    def _fmt(value, places=3):
+        return "---" if value is None else f"{value:.{places}f}"
+
+    lines = [
+        r"\begin{table}[t]",
+        r"\centering",
+        r"\caption{Paraphrase sensitivity per judge and task. "
+        r"$\Delta\mathrm{JSS} = \mathrm{JSS}_{\text{para}} - "
+        r"\mathrm{JSS}_{\text{rep}}$ is the pre-registered endpoint; a negative "
+        r"value means rewording costs more agreement than re-issuing the "
+        r"identical prompt. Intervals are 95\% item-clustered bootstrap over "
+        r"2{,}000 resamples. Cells below the pre-registered support floor of 100 "
+        r"clusters report no endpoint rather than one computed from too few. "
+        r"$r$ is the provider-reported refusal rate.}",
+        r"\label{tab:main}",
+        r"\begin{tabular}{llrrrlr}",
+        r"\toprule",
+        r"Judge & Task & $n$ & JSS & $\mathrm{JSS}_{\text{rep}}$ & "
+        r"$\Delta\mathrm{JSS}$ [95\% CI] & $r$ \\",
+        r"\midrule",
+    ]
+    for judge in sorted(summary):
+        first = True
+        for task in ("factuality", "coherence", "relevance", "preference"):
+            cell = summary[judge].get(task)
+            if not cell or "error" in cell:
+                continue
+            delta = cell.get("jss_repeat_delta") or {}
+            if delta.get("delta") is None:
+                # State WHY the endpoint is absent; a blank cell reads as an
+                # oversight, and the reason is itself a reportable result.
+                d_txt = r"\emph{support below floor}"
+            else:
+                d_txt = (f"${delta['delta']:+.3f}$ "
+                         f"[{delta['ci_lower']:.3f}, {delta['ci_upper']:.3f}]")
+            lines.append(
+                f"{judge if first else ''} & {task} & {cell.get('n_rows', 0)} & "
+                f"{_fmt(cell.get('jss_strict'))} & {_fmt(delta.get('jss_rep'))} & "
+                f"{d_txt} & {_fmt(cell.get('refusal_rate'))} \\\\"
+            )
+            first = False
+        if not first:
+            lines.append(r"\addlinespace")
+    if lines[-1] == r"\addlinespace":
+        lines.pop()
+    lines += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
     OUT_TEX.parent.mkdir(parents=True, exist_ok=True)
     OUT_TEX.write_text("\n".join(lines) + "\n", encoding="utf-8")
 

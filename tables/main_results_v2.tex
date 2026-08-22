@@ -1,6 +1,12 @@
-\begin{tabular}{lcccc}
+\begin{table}[t]
+\centering
+\caption{Paraphrase sensitivity per judge and task. $\Delta\mathrm{JSS} = \mathrm{JSS}_{\text{para}} - \mathrm{JSS}_{\text{rep}}$ is the pre-registered endpoint; a negative value means rewording costs more agreement than re-issuing the identical prompt. Intervals are 95\% item-clustered bootstrap over 2{,}000 resamples. Cells below the pre-registered support floor of 100 clusters report no endpoint rather than one computed from too few. $r$ is the provider-reported refusal rate.}
+\label{tab:main}
+\begin{tabular}{llrrrlr}
 \toprule
-Judge & JSS & $\kappa$ & 95\% CI (item) & items \\
+Judge & Task & $n$ & JSS & $\mathrm{JSS}_{\text{rep}}$ & $\Delta\mathrm{JSS}$ [95\% CI] & $r$ \\
 \midrule
+goodjudge & factuality & 10 & 1.000 & --- & \emph{support below floor} & --- \\
 \bottomrule
 \end{tabular}
+\end{table}
