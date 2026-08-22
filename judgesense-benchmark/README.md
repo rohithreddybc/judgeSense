@@ -1,18 +1,35 @@
 ---
 license: cc-by-4.0
-task_categories:
-  - text-classification
 language:
-  - en
-tags:
-  - llm-as-a-judge
-  - evaluation
-  - benchmark
-  - prompt-sensitivity
-  - reproducibility
-pretty_name: JudgeSense
+- en
 size_categories:
-  - 1K<n<10K
+- 1K<n<10K
+task_categories:
+- text-classification
+tags:
+- llm-as-a-judge
+- evaluation
+- prompt-sensitivity
+- benchmark
+- meta-evaluation
+pretty_name: JudgeSense
+configs:
+- config_name: factuality
+  data_files:
+  - split: test
+    path: data/factuality.jsonl
+- config_name: coherence
+  data_files:
+  - split: test
+    path: data/coherence.jsonl
+- config_name: relevance
+  data_files:
+  - split: test
+    path: data/relevance.jsonl
+- config_name: preference
+  data_files:
+  - split: test
+    path: data/preference.jsonl
 ---
 
 # JudgeSense
@@ -156,17 +173,25 @@ record, not the item, if you need conservative uncertainty.
 
 ## Citation
 
-The accompanying paper is under revision; the preprint below describes the
-withdrawn v1 and its numbers do not apply to this data.
-
 ```bibtex
-@misc{judgesense2026,
-  title  = {JudgeSense: Measuring the Prompt Sensitivity of LLM-as-a-Judge},
-  author = {Bellibatlu, Rohith Reddy},
-  year   = {2026},
-  note   = {Dataset v2.1. Code and analysis:
-            https://github.com/rohithreddybc/judgeSense}
+@misc{bellibatlu2026judgesense,
+  title         = {JudgeSense: Measuring the Prompt Sensitivity of LLM-as-a-Judge},
+  author        = {Bellibatlu, Rohith Reddy},
+  year          = {2026},
+  eprint        = {2604.23478},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  url           = {https://arxiv.org/abs/2604.23478}
 }
 ```
+
+**Version note.** The preprint at
+[arXiv:2604.23478](https://arxiv.org/abs/2604.23478) describes dataset v1, which
+was withdrawn; its reported numbers were computed on data this release replaces
+and do not apply here. Cite it for the benchmark and the method; take the counts,
+splits and results from this card and from
+[the code repository](https://github.com/rohithreddybc/judgeSense), which are
+regenerated from the current build. A revised paper covering v2.1 is in
+preparation.
 
 Licensed CC-BY-4.0. Source corpora retain their own licences.
