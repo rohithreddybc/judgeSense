@@ -19,16 +19,16 @@ judge that is wrong on every item but wrong \emph{identically} under both
 phrasings scores $1.0$, and this is intended: it is a measure of reproducibility,
 not of accuracy. We report accuracy separately, and the two answer different
 questions. On the pairwise tasks the companion measure is \emph{position-corrected}
-accuracy --- whether the judge selected the side carrying the ground truth, given
-that the swap design places it at position A in exactly half the rows --- and on
-the pointwise tasks it is ordinary accuracy against the source label. The
+accuracy: whether the judge selected the side carrying the ground truth, given
+that the swap design places it at position A in exactly half the rows. On the
+pointwise tasks it is ordinary accuracy against the source label. The
 distinction matters: a judge that always answers ``A'' has an ordinary accuracy
 that depends only on the layout, while its position-corrected accuracy is
 $0.500$ and its behaviour is immediately visible.
 
-Because raw agreement is inflated when a judge's output distribution is
-compressed --- a judge answering ``YES'' almost always agrees with itself --- we
-report the chance-corrected form (Cohen's $\kappa$; quadratic-weighted for the
+Raw agreement is inflated when a judge's output distribution is compressed, since
+a judge answering ``YES'' almost always agrees with itself. We therefore report
+the chance-corrected form (Cohen's $\kappa$; quadratic-weighted for the
 ordinal coherence task) alongside every raw figure.
 
 \subsection{The repeat baseline, and why it is the endpoint}
@@ -79,10 +79,10 @@ the endpoint's prose was stated backwards relative to the estimator, which had
 been implemented and tested beforehand. The estimator was unchanged and both
 orderings were visible in the committed output throughout.
 
-The multiplicity plan added at \texttt{82ea522} --- a pooled contrast per task
-with Holm correction, per-cell intervals demoted to exploratory under
-Benjamini--Hochberg control, and a reported minimum detectable effect --- is not
-applied in this paper. We report per-cell intervals without adjustment and label
+The multiplicity plan added at \texttt{82ea522} is not applied in this paper. It
+called for a pooled contrast per task with Holm correction, per-cell intervals
+demoted to exploratory under Benjamini--Hochberg control, and a reported minimum
+detectable effect. We report per-cell intervals without adjustment and label
 them accordingly: the twelve cells are descriptive, not confirmatory, and no
 judge is ranked against another on the strength of an unadjusted cell.
 
@@ -106,11 +106,11 @@ Each call terminates in exactly one of three outcomes.
 
 A \textbf{verdict} is a response the strict parser maps to a label in the task's
 answer space. A \textbf{refusal} is a response the provider itself flags as
-declined, typically with empty content. Providers spell this differently ---
+declined, typically with empty content. Providers spell this differently:
 \texttt{stop\_reason="refusal"} for Anthropic, \texttt{finish\_reason=
 "content\_filter"} for OpenAI-compatible APIs, \texttt{SAFETY} or
-\texttt{RECITATION} for Google --- so the accepted set is enumerated in a single
-place in the released code and matched case-insensitively, and the raw string the
+\texttt{RECITATION} for Google. The accepted set is therefore enumerated in a
+single place in the released code and matched case-insensitively, and the raw string the
 provider returned is retained on every record. Recognising only one family's
 spelling would report a refusal rate of zero for every other family regardless of
 what those judges did, and would silently charge their declines as paraphrase

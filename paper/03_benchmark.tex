@@ -60,9 +60,9 @@ scored as unstable, and semantic drift rather than prompt sensitivity would
 explain the result. We therefore state plainly what we have checked and what we
 have not.
 
-We audit the released files themselves --- recovering each template from the
-shipped prompts and the payload recorded alongside them, rather than trusting
-the generator --- across all four tasks. The audit is offline and deterministic;
+We audit the released files themselves, across all four tasks, recovering each
+template from the shipped prompts and the payload recorded alongside them rather
+than trusting the generator. The audit is offline and deterministic;
 it makes no model calls, and it is run in continuous integration. Four
 properties are enforced. \emph{Label space}: the set of admissible answers each
 template requests, parsed from the instruction with the item text and the
@@ -75,7 +75,7 @@ template names a term from its own task's declared vocabulary and none from
 another task's. \emph{Non-triviality}: no pair is a near-duplicate, so every
 pair is a real manipulation. All four hold on the shipped templates for all four
 tasks. This supersedes our earlier check, which iterated only the factuality and
-coherence templates --- leaving the two pairwise tasks entirely uncovered --- and
+coherence templates, leaving the two pairwise tasks entirely uncovered, and
 tested substring presence rather than the answer set requested.
 
 Two further properties are measured and reported rather than enforced, because
@@ -89,12 +89,11 @@ make one arm intrinsically harder, and neither is controlled by our design.
 We do not claim these checks establish semantic equivalence. They bound specific
 failure modes; nothing computable from the template strings settles whether a
 competent reader maps two wordings onto the same question. Three residuals
-remain open. The audit groups surface forms into one construct by an authored
-mapping --- factuality templates ask variously about a statement being
-``factually correct'', ``accurate'' or worth ``fact-checking'', and preference
-templates ask which response is ``better'', ``of higher quality'' or
-``stronger'' --- and whether those are synonyms for a given judge is an
-assumption, not a measurement. Implicit thresholds may shift between such
+remain open. The audit groups surface forms into one construct by an authored mapping.
+Factuality templates ask variously about a statement being ``factually
+correct'', ``accurate'' or worth ``fact-checking''; preference templates ask
+which response is ``better'', ``of higher quality'' or ``stronger''. Whether
+those are synonyms for a given judge is an assumption, not a measurement. Implicit thresholds may shift between such
 phrasings even when the construct does not. And tokenisation or pretraining
 frequency may favour one phrasing for a particular model. Semantic drift is
 therefore reduced as an alternative explanation for measured sensitivity, not
@@ -114,10 +113,9 @@ phrasings yield equivalent verdicts.
 We state the direction of the resulting bias rather than leave it implicit.
 Polarity-inverted pairings are among the hardest items in the set, so excluding
 them can only push measured consistency \emph{upward}; our stability figures are
-conditioned on that exclusion and should be read accordingly. The alternative ---
-retaining the inverted templates and remapping each template's raw answers onto a
-single canonical decision space before comparison --- is implemented in the
-released code, and we report the remapped analysis alongside the
+conditioned on that exclusion and should be read accordingly. The alternative is implemented in the released code: retain the inverted
+templates, and remap each template's raw answers onto a single canonical decision
+space before comparison. and we report the remapped analysis alongside the
 excluded-pairing analysis so the exclusion's effect on the reported numbers is
 visible rather than assumed.
 

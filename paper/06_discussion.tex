@@ -13,8 +13,7 @@ We stop short of the general version of that claim. It holds decisively on
 coherence and factuality, but on relevance the across-judge spread ($0.122$) is
 indistinguishable from the within-judge spread it would need to beat ($0.124$),
 and both figures depend on a cell we exclude as uninterpretable
-(Section~
-ef{sec:results-sonnet-relevance}). Establishing that task dominates
+(Section~\ref{sec:results-sonnet-relevance}). Establishing that task dominates
 judge in general would need judges from more than one vendor.
 
 The ordinal task is the least stable of the four, and we think the mechanism is
@@ -69,7 +68,7 @@ The evidence base is three judges from one vendor family. The task ordering is
 consistent across them, but that consistency is a within-family observation and
 we do not claim it generalises; the harness supports fourteen judges across seven
 providers and eleven are unrun. Two of the twelve judge--task cells report no
-endpoint, their support having fallen below the pre-registered floor. One judge
+endpoint, their support having fallen below the declared floor. One judge
 rejects an explicit temperature parameter and therefore ran at a provider
 default while the others ran at zero; this is recorded per call rather than
 inferred, and that judge's cells should be read accordingly.
@@ -100,7 +99,7 @@ shows a real loss of agreement under meaning-preserving rewording, beyond what
 the judge's own decoding variance explains. The size of that loss depends more on
 the evaluation task than on the model performing it.
 
-The benchmark, the analysis plan fixed before the sweep, the raw judge outputs,
+The benchmark, the analysis plan with its commit history, the raw judge outputs,
 and the heuristic baselines that would beat the tasks are all released. So are
 the defects we found in our own construction, and the measurements that exposed
 them.

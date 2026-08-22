@@ -1,8 +1,8 @@
 \section{Results}
 \label{sec:results}
 
-We report three judges from one vendor family --- Claude Haiku 4.5, Sonnet 4.5
-and Opus 4.7 --- on the four tasks. Factuality, coherence and relevance are
+We report three judges from one vendor family (Claude Haiku 4.5, Sonnet 4.5 and
+Opus 4.7) on the four tasks. Factuality, coherence and relevance are
 complete for all three; the preference split is complete for Haiku only, and
 Section~\ref{sec:results-limits} states what that costs. Every figure below is
 produced by \texttt{scripts/regenerate\_results.py} from the committed raw
@@ -17,7 +17,12 @@ outputs; none is transcribed.
 Table~\ref{tab:main} reports $\Delta\mathrm{JSS} = \mathrm{JSS}_{\text{para}} -
 \mathrm{JSS}_{\text{rep}}$. In all ten cells with sufficient support the interval
 excludes zero and the effect is negative: a meaning-preserving rewording costs
-more agreement than re-issuing the identical prompt does.
+more agreement than re-issuing the identical prompt does. One of those ten, Sonnet on relevance, we judge uninterpretable as evidence about
+wording, for
+reasons given in Section~\ref{sec:results-sonnet-relevance}. We keep it in the
+count and in the table rather than deleting it, and exclude it from the
+comparative claims that follow, so a reader can see exactly which conclusions
+rest on it and which do not.
 
 We state immediately what that uniformity does and does not establish, because
 the estimator makes a weaker claim than a ten-for-ten result suggests. Under the
@@ -37,16 +42,18 @@ at a matched budget and temperature zero these judges are close to deterministic
 on a fixed prompt. The tenth is treated separately in
 Section~\ref{sec:results-sonnet-relevance}, because a ceiling of $0.789$ means
 the judge disagrees with itself on more than a fifth of byte-identical prompts.
-That is not a small caveat: in a pilot we discarded, a misconfigured decoding
-parameter produced a ceiling of $0.864$ --- higher than this one --- and we
-discarded it precisely because a ceiling that low can absorb the effect being
-measured. We apply the same standard to our own shipped cell.
+That is not a small caveat. In a pilot we discarded, a misconfigured decoding
+parameter produced a ceiling of $0.864$, higher than this one, and we discarded
+it precisely because a ceiling that low can absorb the effect being measured. We apply the same standard to our own shipped cell.
 
 \subsection{Effect magnitudes against the declared threshold}
 \label{sec:results-sesoi}
 
-We declared in advance that $|\Delta\mathrm{JSS}| < 0.02$ is not practically
-meaningful. Applying that to intervals rather than to point estimates, as an
+We declared $|\Delta\mathrm{JSS}| < 0.02$ to be not practically meaningful. That
+threshold was set after the first judge's results were in hand (see
+Section~\ref{sec:metrics}), so it is a declared standard rather than a
+pre-registered one; we state it because a reader should know which of our
+thresholds preceded the data and which did not. Applying that to intervals rather than to point estimates, as an
 equivalence-style reading requires, separates the cells sharply:
 
 \begin{center}
@@ -69,10 +76,10 @@ Opus   & factuality & $-0.030$ & upper edge inside \\
 \end{center}
 
 Five cells are unambiguously beyond the threshold. Four are consistent with an
-effect we declared in advance to be practically meaningless: on factuality the
+effect we declared to be practically meaningless: on factuality the
 data do not distinguish a real cost from a negligible one for any judge. We
-report factuality as a null on that reading. Our pre-registration committed us to
-treating a null as a result, and this is one.
+report factuality as a null on that reading. Our pre-registration does commit us
+to treating a null as a result, and this is one.
 
 \subsection{Sensitivity is larger on the ordinal task than on the others}
 
@@ -177,8 +184,8 @@ range.
 \subsection{Refusal and malformed output are separate failures, and Sonnet has both}
 \label{sec:results-refusal}
 
-Sonnet declined $24.9\%$ of relevance arm calls, reported by the provider as a
-refusal with empty content. Opus refused $5.2\%$ of the same prompts and Haiku
+Sonnet declined $24.7\%$ of relevance arm calls, reported by the provider as a
+refusal with empty content. Opus refused $5.1\%$ of the same prompts and Haiku
 none at all. The corpus is TREC-COVID, so the items are medical, and the effect
 is a property of one judge's safety behaviour rather than of the benchmark: the
 three judges saw identical prompts.

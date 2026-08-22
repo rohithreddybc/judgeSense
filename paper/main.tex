@@ -56,8 +56,8 @@ discriminating at all. Across three judges drawn from a single vendor family,
 meaning-preserving rewording costs agreement in all ten of the twelve
 judge--task cells that reached the declared support floor. The loss is largest on
 the ordinal task for every judge and smallest on factuality, where the intervals
-are consistent with an effect we declared in advance to be practically
-meaningless --- a null we report as a result. We also report a judge-specific
+are consistent with an effect we declared to be practically meaningless --- a
+null we report as a result. We also report a judge-specific
 refusal behaviour that a naive harness would misreport as a format-adherence
 failure, and the construction defects we found in our own benchmark, with the
 measurements that exposed them.
@@ -70,9 +70,18 @@ measurements that exposed them.
 \input{05_results}
 \input{06_discussion}
 
+\subsubsection*{Use of AI assistance}
+An AI coding assistant was used throughout this work: to implement the dataset
+loaders, the metric and bootstrap code, the analysis pipeline and the test
+suite; to run adversarial audits of the released files, several of which found
+the construction defects reported in Sections~\ref{sec:benchmark}
+and~\ref{sec:discussion}; and to draft and revise this manuscript. Every
+quantitative claim was verified against committed artifacts, and the authors take
+full responsibility for the content, the analysis and any remaining errors.
+
 \subsubsection*{Reproducibility statement}
-The dataset, loaders, analysis pipeline, pre-registered analysis plan, and every
-raw judge output behind the reported numbers are released at
+The dataset, loaders, analysis pipeline, analysis plan with its full commit
+history, and every raw judge output behind the reported numbers are released at
 \url{https://github.com/rohithreddybc/judgeSense}. Each table is regenerated from
 the committed raw outputs by a single script; no number in this paper is
 transcribed by hand. Each split is content-hashed, and a 28-check audit gate runs
