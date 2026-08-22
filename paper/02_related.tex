@@ -18,35 +18,55 @@ that is uniformly wrong scores perfectly on it.
 \paragraph{Known judge biases.}
 A body of work documents specific, systematic ways judges fail. Position bias ---
 preferring whichever candidate is presented first --- is strong enough to require
-explicit correction \citep{wang2023fair}. Judges reward verbosity and surface
-polish independently of content \citep{zhuo2024prosa, shi2024judging}, and are
-vulnerable to superficial manipulations of the response
-\citep{razavi2025benchmarking}. These are findings about \emph{what} judges
-prefer. We take them as constraints on benchmark construction rather than as our
-object of study: because position and length bias are known, a benchmark that
-does not control them measures the bias instead of the judge, so we present both
-candidate orderings for every pairwise item and balance the length distribution
-exactly, then verify on the released files that neither heuristic beats chance.
+explicit correction \citep{wang2023fair} and has been characterised
+systematically across pairwise comparative assessment \citep{shi2024judging}.
+Length is the other well-known confound, and rather than lean on a citation we
+measure it directly in our own source data: in the MT-Bench human preference
+votes we draw from, annotators preferred the longer of the two responses in
+roughly 70\% of usable comparisons (Section~\ref{sec:shortcuts}), so a judge that
+simply picked the longer answer would score far above chance on an unfiltered
+sample of them.
+
+These are findings about \emph{what} judges prefer. We take them as constraints
+on benchmark construction rather than as our object of study: because position
+and length bias are known, a benchmark that does not control them measures the
+bias instead of the judge. We therefore present both candidate orderings for
+every pairwise item and balance the length distribution exactly, then verify on
+the released files that neither heuristic beats chance.
 
 \paragraph{Prompt sensitivity in language models generally.}
 That model behaviour moves under meaning-preserving reformulation is
 well-established outside the evaluation setting. Formatting choices alone shift
 accuracy across a wide spread \citep{sclar2024quantifying}; paraphrasing task
 instructions changes measured capability enough to alter model rankings
-\citep{mizrahi2024state}; and consistency under rephrasing has been treated as a
-first-class property of pretrained models \citep{elazar2021measuring}. Systematic
-surveys of evaluation practice reach the same conclusion from the other direction
-\citep{wei2024systematic}. Our contribution is to apply this lens where it has
-the most leverage: not to a model being tested, but to the model doing the
-testing, where instability propagates silently into every downstream number.
+\citep{mizrahi2024state}; consistency under rephrasing has been treated as a
+first-class property of pretrained models \citep{elazar2021measuring}; and the
+sensitivity itself has been assessed and benchmarked as a phenomenon in its own
+right \citep{zhuo2024prosa, razavi2025benchmarking}. Systematic surveys of
+evaluation practice reach the same conclusion from the other direction
+\citep{wei2024systematic}. All of this concerns a model \emph{being tested}. Our
+contribution is to apply the same lens to the model doing the testing, where
+instability propagates silently into every downstream number.
 
 \paragraph{Judging judges.}
-Recent work evaluates LLM judges as objects in their own right, including in
-retrieval settings \citep{thakur2024judging, arabzadeh2025human} and as general
-capability benchmarks \citep{li2024llms}. These efforts mostly ask whether judges
-are \emph{right}. We ask whether they are \emph{repeatable}, and separate that
-question from decoding variance by measuring each judge against its own
-repeat-agreement ceiling rather than against an assumed noise floor of zero.
+Recent work evaluates LLM judges as objects in their own right, including
+alignment with human labels \citep{thakur2024judging} and general capability
+benchmarks \citep{li2024llms}. These efforts mostly ask whether judges are
+\emph{right}.
+
+The closest prior work to ours is \citet{arabzadeh2025human}, who study prompt
+sensitivity in LLM-based relevance judgment directly, comparing human- and
+LLM-authored prompt variants across binary, graded and pairwise formulations of
+the same relevance task. The difference is in what the measurement is referenced
+against. That work evaluates labels produced under varying prompts against human
+relevance gold, so it measures how rewording moves a judge's \emph{accuracy};
+JSS never consults the gold label and measures how rewording moves a judge's
+\emph{agreement with itself}. The two are complementary and can diverge: a judge
+whose accuracy is unchanged under rewording may still be flipping individual
+verdicts in compensating directions, which our measurement sees and an
+accuracy-referenced one does not. We also separate that quantity from decoding
+variance by measuring each judge against its own repeat-agreement ceiling rather
+than against an assumed noise floor of zero.
 
 \paragraph{Sources and statistical machinery.}
 The items come from existing human-labelled corpora: TruthfulQA for factual

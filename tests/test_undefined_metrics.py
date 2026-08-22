@@ -82,6 +82,13 @@ def test_one_broken_cell_does_not_void_the_other_cells(tmp_path, monkeypatch, ca
     monkeypatch.setattr(regen, "metrics_for_cell", flaky)
     monkeypatch.setattr(regen, "RAW", raw)
     monkeypatch.setattr(regen, "OUT_JSON", tmp_path / "metrics.json")
+    # OUT_TEX must be redirected too. It was not, so every run of this test
+    # overwrote the paper's main results table with this fixture's synthetic
+    # judge -- and because the suite runs before committing, the table that
+    # reached the repository read "goodjudge & factuality & 10 & 1.000". The
+    # manuscript \input's this file, so Table 1 rendered a smoke-test row while
+    # the surrounding prose discussed the real measurements.
+    monkeypatch.setattr(regen, "OUT_TEX", tmp_path / "main_results_v2.tex")
 
     regen.main([]) if regen.main.__code__.co_argcount else regen.main()
     summary = json.loads((tmp_path / "metrics.json").read_text(encoding="utf-8"))

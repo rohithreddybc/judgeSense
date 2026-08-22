@@ -249,19 +249,23 @@ def run_cell(judge: str, task: str, budget_policy: str, repeat_baseline: bool,
             "usage_a": use_a,
             "usage_b": use_b,
         }
-        # The repeat baseline is ONE extra call per ITEM, not per row. Pairwise
-        # tasks emit two rows per item (original + swapped orderings), so firing
-        # it on every row would issue 1,212 repeat calls per judge against the
-        # 1,000 the run plan budgets — a 12.5% overspend on the total sweep.
-        # The noise ceiling only needs one prompt repeated, so it is taken on the
-        # canonical ordering.
-        # BOTH arms are repeated, not just arm A. The ceiling has to be
-        # measured on the same template whose disagreement it is meant to
-        # explain: if template B is intrinsically higher-entropy -- longer, more
-        # likely to draw a preamble the strict parser rejects -- then noise
-        # under B is charged to paraphrasing, because a ceiling measured only
-        # under A cannot absorb it. With one arm repeated, the endpoint was
-        # partly a property of which template happened to be designated A.
+        # The repeat baseline is TWO extra calls per ITEM -- one per arm -- and
+        # per item rather than per row.
+        #
+        # Per ITEM: pairwise tasks emit two rows per item (original and swapped
+        # orderings), so firing on every row would issue one repeat per row
+        # instead of per item and overspend the budget by the pairwise row
+        # surplus. The gate below restricts it to the canonical ordering.
+        #
+        # BOTH arms: a ceiling measured under one template cannot absorb noise
+        # the other generates. If template B is intrinsically higher-entropy --
+        # longer, likelier to draw a preamble the strict parser rejects -- that
+        # noise is charged to paraphrasing, and the endpoint becomes partly a
+        # property of which template happened to be designated A.
+        #
+        # Both facts feed MAIN_AXIS_REPEAT_ARMS_PER_ITEM, which is what the
+        # printed budget is built from; changing this gate without changing that
+        # constant makes the number at the approval prompt wrong.
         if repeat_baseline and row.get("ab_order") in (None, "original"):
             raw_r, dec_r, err_r, use_r = _decide(provider, client, model_id, row["prompt_a"], task, max_tokens)
             rec["prompt_a_repeat_raw"] = raw_r
