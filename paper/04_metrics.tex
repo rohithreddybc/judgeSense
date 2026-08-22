@@ -54,17 +54,37 @@ is the quantity the paper's claim is about, and it was fixed in a pre-registered
 analysis plan committed to the repository (commit \texttt{b1b507a}) before the
 full sweep was run.
 
-We state the limits of that claim precisely, because a pre-registration is worth
-only what is true of it. The plan was written after a five-row-per-cell smoke
-wave had been executed against three judges to exercise the harness; that wave
-produced no reportable estimate and none of its output enters the results, but it
-was run, and the plan therefore preceded the sweep rather than the first API
-call. One subsequent correction is recorded in the plan itself: the direction of
-subtraction in the endpoint's prose was stated backwards relative to the
-estimator, which had been implemented and tested beforehand, and was corrected
-after the first full judge completed. The quantity, estimator, clustering unit
-and decision rule were unchanged by that correction, and both orderings were
-visible in the committed output throughout.
+We state the history precisely, because a pre-registration is worth only what is
+true of it, and ours is partly post-hoc.
+
+At commit \texttt{b1b507a} the plan fixed the endpoint, the estimator, the
+item-level clustering unit, and one decision rule: an effect is present when the
+interval excludes zero. Those four are genuinely pre-committed, and they preceded
+the sweep --- though not the first API call, since a five-row-per-cell smoke wave
+had already been run against three judges to exercise the harness. That wave
+produced no reportable estimate and none of its output enters the results.
+
+Three further elements were added at commit \texttt{82ea522}, roughly seventy
+minutes after the first full judge's results were committed: the support floors,
+the multiplicity plan, and the discrimination thresholds. They are \emph{not}
+pre-registered and we do not describe them as such. Two of the four
+discrimination thresholds were set while the corresponding accuracies were
+already visible in the repository, which we regard as disqualifying them as
+confirmatory tests; they are reported as post-hoc descriptive checks. The other
+two, on the pointwise tasks, were set before any pointwise accuracy had been
+computed.
+
+One correction is recorded in the plan itself: the direction of subtraction in
+the endpoint's prose was stated backwards relative to the estimator, which had
+been implemented and tested beforehand. The estimator was unchanged and both
+orderings were visible in the committed output throughout.
+
+The multiplicity plan added at \texttt{82ea522} --- a pooled contrast per task
+with Holm correction, per-cell intervals demoted to exploratory under
+Benjamini--Hochberg control, and a reported minimum detectable effect --- is not
+applied in this paper. We report per-cell intervals without adjustment and label
+them accordingly: the twelve cells are descriptive, not confirmatory, and no
+judge is ranked against another on the strength of an unadjusted cell.
 
 \subsection{Uncertainty}
 

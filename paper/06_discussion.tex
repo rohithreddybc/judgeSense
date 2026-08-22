@@ -3,13 +3,19 @@
 
 \subsection{What the result means for practice}
 
-The finding that sensitivity tracks the task more than the judge has a direct
-consequence: choosing a stronger judge is not a reliable way to buy stability.
-Across the three judges measured, the most and least sensitive judge on coherence
-differ by $0.044$ $\Delta\mathrm{JSS}$, while the most and least sensitive
-\emph{task} within a single judge differ by $0.162$. A practitioner worried about
-reproducibility gains more by reconsidering what they are asking the judge to do
-than by upgrading the model.
+On the ordinal task, choosing a stronger judge does not buy stability. The most
+and least sensitive judge on coherence differ by $0.044$
+$\Delta\mathrm{JSS}$, while the tasks within a single judge span $0.162$. A
+practitioner who cares about reproducibility of coherence scoring gains more by
+reconsidering the response format than by upgrading the model.
+
+We stop short of the general version of that claim. It holds decisively on
+coherence and factuality, but on relevance the across-judge spread ($0.122$) is
+indistinguishable from the within-judge spread it would need to beat ($0.124$),
+and both figures depend on a cell we exclude as uninterpretable
+(Section~
+ef{sec:results-sonnet-relevance}). Establishing that task dominates
+judge in general would need judges from more than one vendor.
 
 The ordinal task is the least stable of the four, and we think the mechanism is
 general rather than particular to coherence. A five-point scale gives a rewording
@@ -77,11 +83,13 @@ strings establishes that a competent reader maps two wordings onto the same
 question. Semantic drift is reduced as an alternative explanation, not
 eliminated.
 
-Finally, the effect sizes are modest in absolute terms. A $\Delta\mathrm{JSS}$ of
-$-0.04$ on factuality means a judge that reproduces itself on the identical
-prompt loses four points of agreement under rewording. Whether that matters
-depends on the decision being made downstream, and we have declared in advance
-that we do not regard anything below $0.02$ as practically meaningful.
+Finally, the effect sizes are modest on three of the four tasks, and on one they
+are not distinguishable from nothing. Applying the declared $0.02$ threshold to
+intervals rather than point estimates, four cells --- all three factuality cells
+and Opus on relevance --- are consistent with an effect we said in advance would
+not matter. We report factuality as a null. The result that survives that
+standard unambiguously is the ordinal one: coherence, on all three judges, at
+three to ten times the threshold.
 
 \section{Conclusion}
 

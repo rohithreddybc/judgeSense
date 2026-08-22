@@ -1,0 +1,2594 @@
+[
+  {
+    "task": "factuality",
+    "templates": {
+      "T1": {
+        "skeleton": "Is this statement factually correct? Answer YES or NO only.\n\n{text}",
+        "instruction": "Is this statement factually correct? Answer YES or NO only.",
+        "label_space": [
+          "NO",
+          "YES"
+        ],
+        "label_space_evidence": {
+          "caps_tokens": [
+            "NO",
+            "YES"
+          ]
+        },
+        "format_cues": [
+          "only"
+        ],
+        "token_bindings": {},
+        "predicate": {
+          "predicate": "Is this statement factually correct? Answer or only.",
+          "direction": 1,
+          "inverting_terms": [],
+          "direction_terms": []
+        },
+        "construct": {
+          "canonical": "factual_accuracy",
+          "matched_terms": [
+            "factually correct"
+          ],
+          "foreign_terms": []
+        },
+        "positions": {
+          "text": {
+            "char_offset": 61,
+            "frac_of_template": 0.9104,
+            "frac_of_instruction": 1.0
+          }
+        },
+        "readability": {
+          "chars": 59,
+          "words": 10,
+          "sentences": 2,
+          "words_per_sentence": 5.0,
+          "flesch_reading_ease": 57.9,
+          "flesch_kincaid_grade": 6.42
+        }
+      },
+      "T2": {
+        "skeleton": "Fact-check the statement below. Reply YES (correct) or NO (incorrect).\n\n{text}",
+        "instruction": "Fact-check the statement below. Reply YES (correct) or NO (incorrect).",
+        "label_space": [
+          "NO",
+          "YES"
+        ],
+        "label_space_evidence": {
+          "caps_tokens": [
+            "NO",
+            "YES"
+          ]
+        },
+        "format_cues": [],
+        "token_bindings": {
+          "YES": 1,
+          "NO": -1
+        },
+        "predicate": {
+          "predicate": "Fact-check the statement below. Reply or .",
+          "direction": 1,
+          "inverting_terms": [],
+          "direction_terms": []
+        },
+        "construct": {
+          "canonical": "factual_accuracy",
+          "matched_terms": [
+            "fact-check"
+          ],
+          "foreign_terms": []
+        },
+        "positions": {
+          "text": {
+            "char_offset": 72,
+            "frac_of_template": 0.9231,
+            "frac_of_instruction": 1.0
+          }
+        },
+        "readability": {
+          "chars": 70,
+          "words": 10,
+          "sentences": 2,
+          "words_per_sentence": 5.0,
+          "flesch_reading_ease": 49.5,
+          "flesch_kincaid_grade": 7.6
+        }
+      },
+      "T3": {
+        "skeleton": "Is the following statement accurate? Answer with one word: YES or NO.\n\n{text}",
+        "instruction": "Is the following statement accurate? Answer with one word: YES or NO.",
+        "label_space": [
+          "NO",
+          "YES"
+        ],
+        "label_space_evidence": {
+          "caps_tokens": [
+            "NO",
+            "YES"
+          ]
+        },
+        "format_cues": [
+          "one word"
+        ],
+        "token_bindings": {},
+        "predicate": {
+          "predicate": "Is the following statement accurate? Answer with one word: or .",
+          "direction": 1,
+          "inverting_terms": [],
+          "direction_terms": []
+        },
+        "construct": {
+          "canonical": "factual_accuracy",
+          "matched_terms": [
+            "accurate"
+          ],
+          "foreign_terms": []
+        },
+        "positions": {
+          "text": {
+            "char_offset": 71,
+            "frac_of_template": 0.9221,
+            "frac_of_instruction": 1.0
+          }
+        },
+        "readability": {
+          "chars": 69,
+          "words": 12,
+          "sentences": 2,
+          "words_per_sentence": 6.0,
+          "flesch_reading_ease": 66.8,
+          "flesch_kincaid_grade": 5.43
+        }
+      },
+      "T4": {
+        "skeleton": "Evaluate the factual accuracy of this statement. Respond YES if it is correct, NO if it is not.\n\n{text}",
+        "instruction": "Evaluate the factual accuracy of this statement. Respond YES if it is correct, NO if it is not.",
+        "label_space": [
+          "NO",
+          "YES"
+        ],
+        "label_space_evidence": {
+          "caps_tokens": [
+            "NO",
+            "YES"
+          ]
+        },
+        "format_cues": [],
+        "token_bindings": {
+          "YES": 1,
+          "NO": -1
+        },
+        "predicate": {
+          "predicate": "Evaluate the factual accuracy of this statement. Respond , .",
+          "direction": 1,
+          "inverting_terms": [],
+          "direction_terms": []
+        },
+        "construct": {
+          "canonical": "factual_accuracy",
+          "matched_terms": [
+            "factual accuracy"
+          ],
+          "foreign_terms": []
+        },
+        "positions": {
+          "text": {
+            "char_offset": 97,
+            "frac_of_template": 0.9417,
+            "frac_of_instruction": 1.0
+          }
+        },
+        "readability": {
+          "chars": 95,
+          "words": 18,
+          "sentences": 2,
+          "words_per_sentence": 9.0,
+          "flesch_reading_ease": 66.1,
+          "flesch_kincaid_grade": 6.28
+        }
+      },
+      "T5": {
+        "skeleton": "Judge whether the statement is factually correct. Your entire answer must be YES or NO.\n\n{text}",
+        "instruction": "Judge whether the statement is factually correct. Your entire answer must be YES or NO.",
+        "label_space": [
+          "NO",
+          "YES"
+        ],
+        "label_space_evidence": {
+          "caps_tokens": [
+            "NO",
+            "YES"
+          ]
+        },
+        "format_cues": [
+          "entire answer must be",
+          "answer must be"
+        ],
+        "token_bindings": {},
+        "predicate": {
+          "predicate": "Judge whether the statement is factually correct. Your entire answer must be or .",
+          "direction": 1,
+          "inverting_terms": [],
+          "direction_terms": []
+        },
+        "construct": {
+          "canonical": "factual_accuracy",
+          "matched_terms": [
+            "factually correct"
+          ],
+          "foreign_terms": []
+        },
+        "positions": {
+          "text": {
+            "char_offset": 89,
+            "frac_of_template": 0.9368,
+            "frac_of_instruction": 1.0
+          }
+        },
+        "readability": {
+          "chars": 87,
+          "words": 15,
+          "sentences": 2,
+          "words_per_sentence": 7.5,
+          "flesch_reading_ease": 69.5,
+          "flesch_kincaid_grade": 5.43
+        }
+      }
+    },
+    "pairs": {
+      "T1-T2": {
+        "wording": {
+          "token_jaccard": 0.3125,
+          "char_similarity": 0.5271,
+          "identical": false
+        },
+        "position_delta": {
+          "text": {
+            "frac_of_template": [
+              0.9104,
+              0.9231
+            ],
+            "abs_delta_template": 0.0127,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 11,
+          "words": 0,
+          "flesch_reading_ease": -8.4,
+          "flesch_kincaid_grade": 1.18
+        },
+        "label_space_identical": true
+      },
+      "T1-T3": {
+        "wording": {
+          "token_jaccard": 0.375,
+          "char_similarity": 0.625,
+          "identical": false
+        },
+        "position_delta": {
+          "text": {
+            "frac_of_template": [
+              0.9104,
+              0.9221
+            ],
+            "abs_delta_template": 0.0117,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 10,
+          "words": 2,
+          "flesch_reading_ease": 8.9,
+          "flesch_kincaid_grade": -0.99
+        },
+        "label_space_identical": true
+      },
+      "T1-T4": {
+        "wording": {
+          "token_jaccard": 0.3158,
+          "char_similarity": 0.4156,
+          "identical": false
+        },
+        "position_delta": {
+          "text": {
+            "frac_of_template": [
+              0.9104,
+              0.9417
+            ],
+            "abs_delta_template": 0.0313,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 36,
+          "words": 8,
+          "flesch_reading_ease": 8.2,
+          "flesch_kincaid_grade": -0.14
+        },
+        "label_space_identical": true
+      },
+      "T1-T5": {
+        "wording": {
+          "token_jaccard": 0.4706,
+          "char_similarity": 0.6575,
+          "identical": false
+        },
+        "position_delta": {
+          "text": {
+            "frac_of_template": [
+              0.9104,
+              0.9368
+            ],
+            "abs_delta_template": 0.0264,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 28,
+          "words": 5,
+          "flesch_reading_ease": 11.6,
+          "flesch_kincaid_grade": -0.99
+        },
+        "label_space_identical": true
+      },
+      "T2-T3": {
+        "wording": {
+          "token_jaccard": 0.2778,
+          "char_similarity": 0.4173,
+          "identical": false
+        },
+        "position_delta": {
+          "text": {
+            "frac_of_template": [
+              0.9231,
+              0.9221
+            ],
+            "abs_delta_template": 0.001,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": -1,
+          "words": 2,
+          "flesch_reading_ease": 17.3,
+          "flesch_kincaid_grade": -2.17
+        },
+        "label_space_identical": true
+      },
+      "T2-T4": {
+        "wording": {
+          "token_jaccard": 0.2381,
+          "char_similarity": 0.5212,
+          "identical": false
+        },
+        "position_delta": {
+          "text": {
+            "frac_of_template": [
+              0.9231,
+              0.9417
+            ],
+            "abs_delta_template": 0.0186,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 25,
+          "words": 8,
+          "flesch_reading_ease": 16.6,
+          "flesch_kincaid_grade": -1.32
+        },
+        "label_space_identical": true
+      },
+      "T2-T5": {
+        "wording": {
+          "token_jaccard": 0.3,
+          "char_similarity": 0.4459,
+          "identical": false
+        },
+        "position_delta": {
+          "text": {
+            "frac_of_template": [
+              0.9231,
+              0.9368
+            ],
+            "abs_delta_template": 0.0137,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 17,
+          "words": 5,
+          "flesch_reading_ease": 20.0,
+          "flesch_kincaid_grade": -2.17
+        },
+        "label_space_identical": true
+      },
+      "T3-T4": {
+        "wording": {
+          "token_jaccard": 0.2273,
+          "char_similarity": 0.4268,
+          "identical": false
+        },
+        "position_delta": {
+          "text": {
+            "frac_of_template": [
+              0.9221,
+              0.9417
+            ],
+            "abs_delta_template": 0.0196,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 26,
+          "words": 6,
+          "flesch_reading_ease": -0.7,
+          "flesch_kincaid_grade": 0.85
+        },
+        "label_space_identical": true
+      },
+      "T3-T5": {
+        "wording": {
+          "token_jaccard": 0.35,
+          "char_similarity": 0.5256,
+          "identical": false
+        },
+        "position_delta": {
+          "text": {
+            "frac_of_template": [
+              0.9221,
+              0.9368
+            ],
+            "abs_delta_template": 0.0147,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 18,
+          "words": 3,
+          "flesch_reading_ease": 2.7,
+          "flesch_kincaid_grade": 0.0
+        },
+        "label_space_identical": true
+      },
+      "T4-T5": {
+        "wording": {
+          "token_jaccard": 0.25,
+          "char_similarity": 0.3516,
+          "identical": false
+        },
+        "position_delta": {
+          "text": {
+            "frac_of_template": [
+              0.9417,
+              0.9368
+            ],
+            "abs_delta_template": 0.0049,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": -8,
+          "words": -3,
+          "flesch_reading_ease": 3.4,
+          "flesch_kincaid_grade": -0.85
+        },
+        "label_space_identical": true
+      }
+    },
+    "design": {
+      "rows": 250,
+      "distinct_items": 250,
+      "distinct_templates": 5,
+      "template_ids": [
+        "T1",
+        "T2",
+        "T3",
+        "T4",
+        "T5"
+      ],
+      "distinct_template_pairs": 10,
+      "possible_template_pairs": 10,
+      "items_per_pair": {
+        "T1-T2": 25,
+        "T1-T3": 25,
+        "T1-T4": 25,
+        "T1-T5": 25,
+        "T2-T3": 25,
+        "T2-T4": 25,
+        "T2-T5": 25,
+        "T3-T4": 25,
+        "T3-T5": 25,
+        "T4-T5": 25
+      },
+      "items_per_pair_min": 25,
+      "items_per_pair_max": 25,
+      "rows_per_item": 1.0,
+      "templates_per_item_distribution": {
+        "2": 250
+      },
+      "items_under_more_than_two_templates": 0,
+      "items_under_more_than_one_pair": 0,
+      "template_effect_confounded_with_item": true
+    },
+    "findings": [
+      {
+        "level": "WARN",
+        "check": "answer_format",
+        "task": "factuality",
+        "message": "T2, T4 state no single-token answer constraint, so their parse surface differs from their partners'"
+      },
+      {
+        "level": "INFO",
+        "check": "construct",
+        "task": "factuality",
+        "message": "4 distinct surface realisations of the construct in use: ['accurate', 'fact-check', 'factual accuracy', 'factually correct']. Treating them as one construct is an authored assumption, not something this audit measures"
+      }
+    ]
+  },
+  {
+    "task": "coherence",
+    "templates": {
+      "T1": {
+        "skeleton": "Rate the coherence of this text from 1 (incoherent) to 5 (very coherent). Reply with one number only.\n\n{text}",
+        "instruction": "Rate the coherence of this text from 1 (incoherent) to 5 (very coherent). Reply with one number only.",
+        "label_space": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ],
+        "label_space_evidence": {
+          "range": [
+            1,
+            5
+          ]
+        },
+        "format_cues": [
+          "only",
+          "one number",
+          "number only"
+        ],
+        "token_bindings": {
+          "1": -1,
+          "5": 1
+        },
+        "predicate": {
+          "predicate": "Rate the coherence of this text from to . Reply with one number only.",
+          "direction": 1,
+          "inverting_terms": [],
+          "direction_terms": []
+        },
+        "construct": {
+          "canonical": "coherence",
+          "matched_terms": [
+            "coherence",
+            "coherent"
+          ],
+          "foreign_terms": []
+        },
+        "positions": {
+          "text": {
+            "char_offset": 103,
+            "frac_of_template": 0.945,
+            "frac_of_instruction": 1.0
+          }
+        },
+        "readability": {
+          "chars": 101,
+          "words": 16,
+          "sentences": 2,
+          "words_per_sentence": 8.0,
+          "flesch_reading_ease": 56.0,
+          "flesch_kincaid_grade": 7.44
+        }
+      },
+      "T2": {
+        "skeleton": "How coherent is the following text? Score it 1-5 (1 = incoherent, 5 = very coherent). Number only.\n\n{text}",
+        "instruction": "How coherent is the following text? Score it 1-5 (1 = incoherent, 5 = very coherent). Number only.",
+        "label_space": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ],
+        "label_space_evidence": {
+          "range": [
+            1,
+            5
+          ]
+        },
+        "format_cues": [
+          "only",
+          "number only"
+        ],
+        "token_bindings": {
+          "1": -1,
+          "5": 1
+        },
+        "predicate": {
+          "predicate": "How coherent is the following text? Score it - . Number only.",
+          "direction": 1,
+          "inverting_terms": [],
+          "direction_terms": []
+        },
+        "construct": {
+          "canonical": "coherence",
+          "matched_terms": [
+            "coherent"
+          ],
+          "foreign_terms": []
+        },
+        "positions": {
+          "text": {
+            "char_offset": 100,
+            "frac_of_template": 0.9434,
+            "frac_of_instruction": 1.0
+          }
+        },
+        "readability": {
+          "chars": 98,
+          "words": 13,
+          "sentences": 3,
+          "words_per_sentence": 4.33,
+          "flesch_reading_ease": 39.7,
+          "flesch_kincaid_grade": 8.79
+        }
+      },
+      "T3": {
+        "skeleton": "Assign a coherence rating from 1 to 5, where 1 means incoherent and 5 means very coherent. Answer with a single digit.\n\n{text}",
+        "instruction": "Assign a coherence rating from 1 to 5, where 1 means incoherent and 5 means very coherent. Answer with a single digit.",
+        "label_space": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ],
+        "label_space_evidence": {
+          "range": [
+            1,
+            5
+          ]
+        },
+        "format_cues": [
+          "single digit"
+        ],
+        "token_bindings": {
+          "1": -1,
+          "5": 1
+        },
+        "predicate": {
+          "predicate": "Assign a coherence rating from to ,",
+          "direction": 1,
+          "inverting_terms": [],
+          "direction_terms": []
+        },
+        "construct": {
+          "canonical": "coherence",
+          "matched_terms": [
+            "coherence",
+            "coherent"
+          ],
+          "foreign_terms": []
+        },
+        "positions": {
+          "text": {
+            "char_offset": 120,
+            "frac_of_template": 0.9524,
+            "frac_of_instruction": 1.0
+          }
+        },
+        "readability": {
+          "chars": 118,
+          "words": 18,
+          "sentences": 2,
+          "words_per_sentence": 9.0,
+          "flesch_reading_ease": 52.0,
+          "flesch_kincaid_grade": 8.24
+        }
+      },
+      "T4": {
+        "skeleton": "On a 1-5 coherence scale (1 = incoherent, 5 = very coherent), what score does this text deserve? Respond with the number only.\n\n{text}",
+        "instruction": "On a 1-5 coherence scale (1 = incoherent, 5 = very coherent), what score does this text deserve? Respond with the number only.",
+        "label_space": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ],
+        "label_space_evidence": {
+          "range": [
+            1,
+            5
+          ]
+        },
+        "format_cues": [
+          "only",
+          "number only",
+          "with the number",
+          "respond with"
+        ],
+        "token_bindings": {
+          "1": -1,
+          "5": 1
+        },
+        "predicate": {
+          "predicate": "On a - coherence scale , what score does this text deserve? Respond with the number only.",
+          "direction": 1,
+          "inverting_terms": [],
+          "direction_terms": []
+        },
+        "construct": {
+          "canonical": "coherence",
+          "matched_terms": [
+            "coherence",
+            "coherent"
+          ],
+          "foreign_terms": []
+        },
+        "positions": {
+          "text": {
+            "char_offset": 128,
+            "frac_of_template": 0.9552,
+            "frac_of_instruction": 1.0
+          }
+        },
+        "readability": {
+          "chars": 126,
+          "words": 18,
+          "sentences": 2,
+          "words_per_sentence": 9.0,
+          "flesch_reading_ease": 52.0,
+          "flesch_kincaid_grade": 8.24
+        }
+      },
+      "T5": {
+        "skeleton": "Score this text's coherence: 1 (incoherent) through 5 (very coherent). Give only the number.\n\n{text}",
+        "instruction": "Score this text's coherence: 1 (incoherent) through 5 (very coherent). Give only the number.",
+        "label_space": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ],
+        "label_space_evidence": {
+          "range": [
+            1,
+            5
+          ]
+        },
+        "format_cues": [
+          "only",
+          "give only"
+        ],
+        "token_bindings": {
+          "1": -1,
+          "5": 1
+        },
+        "predicate": {
+          "predicate": "Score this text's coherence: through . Give only the number.",
+          "direction": 1,
+          "inverting_terms": [],
+          "direction_terms": []
+        },
+        "construct": {
+          "canonical": "coherence",
+          "matched_terms": [
+            "coherence",
+            "coherent"
+          ],
+          "foreign_terms": []
+        },
+        "positions": {
+          "text": {
+            "char_offset": 94,
+            "frac_of_template": 0.94,
+            "frac_of_instruction": 1.0
+          }
+        },
+        "readability": {
+          "chars": 92,
+          "words": 12,
+          "sentences": 2,
+          "words_per_sentence": 6.0,
+          "flesch_reading_ease": 45.6,
+          "flesch_kincaid_grade": 8.38
+        }
+      }
+    },
+    "pairs": {
+      "T1-T2": {
+        "wording": {
+          "token_jaccard": 0.3333,
+          "char_similarity": 0.6432,
+          "identical": false
+        },
+        "position_delta": {
+          "text": {
+            "frac_of_template": [
+              0.945,
+              0.9434
+            ],
+            "abs_delta_template": 0.0016,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": -3,
+          "words": -3,
+          "flesch_reading_ease": -16.3,
+          "flesch_kincaid_grade": 1.35
+        },
+        "label_space_identical": true
+      },
+      "T1-T3": {
+        "wording": {
+          "token_jaccard": 0.28,
+          "char_similarity": 0.5662,
+          "identical": false
+        },
+        "position_delta": {
+          "text": {
+            "frac_of_template": [
+              0.945,
+              0.9524
+            ],
+            "abs_delta_template": 0.0074,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 17,
+          "words": 2,
+          "flesch_reading_ease": -4.0,
+          "flesch_kincaid_grade": 0.8
+        },
+        "label_space_identical": true
+      },
+      "T1-T4": {
+        "wording": {
+          "token_jaccard": 0.4167,
+          "char_similarity": 0.5903,
+          "identical": false
+        },
+        "position_delta": {
+          "text": {
+            "frac_of_template": [
+              0.945,
+              0.9552
+            ],
+            "abs_delta_template": 0.0102,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 25,
+          "words": 2,
+          "flesch_reading_ease": -4.0,
+          "flesch_kincaid_grade": 0.8
+        },
+        "label_space_identical": true
+      },
+      "T1-T5": {
+        "wording": {
+          "token_jaccard": 0.4,
+          "char_similarity": 0.7047,
+          "identical": false
+        },
+        "position_delta": {
+          "text": {
+            "frac_of_template": [
+              0.945,
+              0.94
+            ],
+            "abs_delta_template": 0.005,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": -9,
+          "words": -4,
+          "flesch_reading_ease": -10.4,
+          "flesch_kincaid_grade": 0.94
+        },
+        "label_space_identical": true
+      },
+      "T2-T3": {
+        "wording": {
+          "token_jaccard": 0.12,
+          "char_similarity": 0.5278,
+          "identical": false
+        },
+        "position_delta": {
+          "text": {
+            "frac_of_template": [
+              0.9434,
+              0.9524
+            ],
+            "abs_delta_template": 0.009,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 20,
+          "words": 5,
+          "flesch_reading_ease": 12.3,
+          "flesch_kincaid_grade": -0.55
+        },
+        "label_space_identical": true
+      },
+      "T2-T4": {
+        "wording": {
+          "token_jaccard": 0.3636,
+          "char_similarity": 0.5357,
+          "identical": false
+        },
+        "position_delta": {
+          "text": {
+            "frac_of_template": [
+              0.9434,
+              0.9552
+            ],
+            "abs_delta_template": 0.0118,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 28,
+          "words": 5,
+          "flesch_reading_ease": 12.3,
+          "flesch_kincaid_grade": -0.55
+        },
+        "label_space_identical": true
+      },
+      "T2-T5": {
+        "wording": {
+          "token_jaccard": 0.4118,
+          "char_similarity": 0.5158,
+          "identical": false
+        },
+        "position_delta": {
+          "text": {
+            "frac_of_template": [
+              0.9434,
+              0.94
+            ],
+            "abs_delta_template": 0.0034,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": -6,
+          "words": -1,
+          "flesch_reading_ease": 5.9,
+          "flesch_kincaid_grade": -0.41
+        },
+        "label_space_identical": true
+      },
+      "T3-T4": {
+        "wording": {
+          "token_jaccard": 0.2143,
+          "char_similarity": 0.4836,
+          "identical": false
+        },
+        "position_delta": {
+          "text": {
+            "frac_of_template": [
+              0.9524,
+              0.9552
+            ],
+            "abs_delta_template": 0.0028,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 8,
+          "words": 0,
+          "flesch_reading_ease": 0.0,
+          "flesch_kincaid_grade": 0.0
+        },
+        "label_space_identical": true
+      },
+      "T3-T5": {
+        "wording": {
+          "token_jaccard": 0.1667,
+          "char_similarity": 0.4571,
+          "identical": false
+        },
+        "position_delta": {
+          "text": {
+            "frac_of_template": [
+              0.9524,
+              0.94
+            ],
+            "abs_delta_template": 0.0124,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": -26,
+          "words": -6,
+          "flesch_reading_ease": -6.4,
+          "flesch_kincaid_grade": 0.14
+        },
+        "label_space_identical": true
+      },
+      "T4-T5": {
+        "wording": {
+          "token_jaccard": 0.4286,
+          "char_similarity": 0.5413,
+          "identical": false
+        },
+        "position_delta": {
+          "text": {
+            "frac_of_template": [
+              0.9552,
+              0.94
+            ],
+            "abs_delta_template": 0.0152,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": -34,
+          "words": -6,
+          "flesch_reading_ease": -6.4,
+          "flesch_kincaid_grade": 0.14
+        },
+        "label_space_identical": true
+      }
+    },
+    "design": {
+      "rows": 250,
+      "distinct_items": 250,
+      "distinct_templates": 5,
+      "template_ids": [
+        "T1",
+        "T2",
+        "T3",
+        "T4",
+        "T5"
+      ],
+      "distinct_template_pairs": 10,
+      "possible_template_pairs": 10,
+      "items_per_pair": {
+        "T1-T2": 25,
+        "T1-T3": 25,
+        "T1-T4": 25,
+        "T1-T5": 25,
+        "T2-T3": 25,
+        "T2-T4": 25,
+        "T2-T5": 25,
+        "T3-T4": 25,
+        "T3-T5": 25,
+        "T4-T5": 25
+      },
+      "items_per_pair_min": 25,
+      "items_per_pair_max": 25,
+      "rows_per_item": 1.0,
+      "templates_per_item_distribution": {
+        "2": 250
+      },
+      "items_under_more_than_two_templates": 0,
+      "items_under_more_than_one_pair": 0,
+      "template_effect_confounded_with_item": true
+    },
+    "findings": [
+      {
+        "level": "INFO",
+        "check": "construct",
+        "task": "coherence",
+        "message": "2 distinct surface realisations of the construct in use: ['coherence', 'coherent']. Treating them as one construct is an authored assumption, not something this audit measures"
+      }
+    ]
+  },
+  {
+    "task": "relevance",
+    "templates": {
+      "T1": {
+        "skeleton": "Which passage is more relevant to the query \"{query}\"? Answer A or B only.\nA: {first}\nB: {second}",
+        "instruction": "Which passage is more relevant to the query \" \"? Answer A or B only. A: B:",
+        "label_space": [
+          "A",
+          "B"
+        ],
+        "label_space_evidence": {
+          "letter_tokens": [
+            "A",
+            "B"
+          ]
+        },
+        "format_cues": [
+          "only"
+        ],
+        "token_bindings": {},
+        "predicate": {
+          "predicate": "Which passage is more relevant to the query \" \"? Answer or only. : :",
+          "direction": 1,
+          "inverting_terms": [],
+          "direction_terms": [
+            "more"
+          ]
+        },
+        "construct": {
+          "canonical": "relevance",
+          "matched_terms": [
+            "relevant"
+          ],
+          "foreign_terms": []
+        },
+        "positions": {
+          "query": {
+            "char_offset": 45,
+            "frac_of_template": 0.4639,
+            "frac_of_instruction": 0.6081
+          },
+          "first": {
+            "char_offset": 78,
+            "frac_of_template": 0.8041,
+            "frac_of_instruction": 0.9595
+          },
+          "second": {
+            "char_offset": 89,
+            "frac_of_template": 0.9175,
+            "frac_of_instruction": 1.0
+          }
+        },
+        "readability": {
+          "chars": 74,
+          "words": 15,
+          "sentences": 3,
+          "words_per_sentence": 5.0,
+          "flesch_reading_ease": 83.3,
+          "flesch_kincaid_grade": 2.88
+        }
+      },
+      "T2": {
+        "skeleton": "For the query \"{query}\", which passage is more relevant? Reply with A or B.\nA: {first}\nB: {second}",
+        "instruction": "For the query \" \", which passage is more relevant? Reply with A or B. A: B:",
+        "label_space": [
+          "A",
+          "B"
+        ],
+        "label_space_evidence": {
+          "letter_tokens": [
+            "A",
+            "B"
+          ]
+        },
+        "format_cues": [],
+        "token_bindings": {},
+        "predicate": {
+          "predicate": "For the query \" \", which passage is more relevant? Reply with or . : :",
+          "direction": 1,
+          "inverting_terms": [],
+          "direction_terms": [
+            "more"
+          ]
+        },
+        "construct": {
+          "canonical": "relevance",
+          "matched_terms": [
+            "relevant"
+          ],
+          "foreign_terms": []
+        },
+        "positions": {
+          "query": {
+            "char_offset": 15,
+            "frac_of_template": 0.1531,
+            "frac_of_instruction": 0.2
+          },
+          "first": {
+            "char_offset": 79,
+            "frac_of_template": 0.8061,
+            "frac_of_instruction": 0.96
+          },
+          "second": {
+            "char_offset": 90,
+            "frac_of_template": 0.9184,
+            "frac_of_instruction": 1.0
+          }
+        },
+        "readability": {
+          "chars": 75,
+          "words": 15,
+          "sentences": 3,
+          "words_per_sentence": 5.0,
+          "flesch_reading_ease": 89.0,
+          "flesch_kincaid_grade": 2.09
+        }
+      },
+      "T3": {
+        "skeleton": "Query: \"{query}\". Choose the more relevant passage. Answer A or B.\nA: {first}\nB: {second}",
+        "instruction": "Query: \" \". Choose the more relevant passage. Answer A or B. A: B:",
+        "label_space": [
+          "A",
+          "B"
+        ],
+        "label_space_evidence": {
+          "letter_tokens": [
+            "A",
+            "B"
+          ]
+        },
+        "format_cues": [],
+        "token_bindings": {},
+        "predicate": {
+          "predicate": "Query: \" \". Choose the more relevant passage. Answer or . : :",
+          "direction": 1,
+          "inverting_terms": [],
+          "direction_terms": [
+            "more"
+          ]
+        },
+        "construct": {
+          "canonical": "relevance",
+          "matched_terms": [
+            "relevant"
+          ],
+          "foreign_terms": []
+        },
+        "positions": {
+          "query": {
+            "char_offset": 8,
+            "frac_of_template": 0.0899,
+            "frac_of_instruction": 0.1212
+          },
+          "first": {
+            "char_offset": 70,
+            "frac_of_template": 0.7865,
+            "frac_of_instruction": 0.9545
+          },
+          "second": {
+            "char_offset": 81,
+            "frac_of_template": 0.9101,
+            "frac_of_instruction": 1.0
+          }
+        },
+        "readability": {
+          "chars": 66,
+          "words": 12,
+          "sentences": 4,
+          "words_per_sentence": 3.0,
+          "flesch_reading_ease": 83.9,
+          "flesch_kincaid_grade": 2.3
+        }
+      },
+      "T4": {
+        "skeleton": "Considering the query \"{query}\", decide which passage is more relevant. Respond A or B only.\nA: {first}\nB: {second}",
+        "instruction": "Considering the query \" \", decide which passage is more relevant. Respond A or B only. A: B:",
+        "label_space": [
+          "A",
+          "B"
+        ],
+        "label_space_evidence": {
+          "letter_tokens": [
+            "A",
+            "B"
+          ]
+        },
+        "format_cues": [
+          "only"
+        ],
+        "token_bindings": {},
+        "predicate": {
+          "predicate": "Considering the query \" \", decide which passage is more relevant. Respond or only. : :",
+          "direction": 1,
+          "inverting_terms": [],
+          "direction_terms": [
+            "more"
+          ]
+        },
+        "construct": {
+          "canonical": "relevance",
+          "matched_terms": [
+            "relevant"
+          ],
+          "foreign_terms": []
+        },
+        "positions": {
+          "query": {
+            "char_offset": 23,
+            "frac_of_template": 0.2,
+            "frac_of_instruction": 0.25
+          },
+          "first": {
+            "char_offset": 96,
+            "frac_of_template": 0.8348,
+            "frac_of_instruction": 0.9674
+          },
+          "second": {
+            "char_offset": 107,
+            "frac_of_template": 0.9304,
+            "frac_of_instruction": 1.0
+          }
+        },
+        "readability": {
+          "chars": 92,
+          "words": 16,
+          "sentences": 3,
+          "words_per_sentence": 5.33,
+          "flesch_reading_ease": 63.9,
+          "flesch_kincaid_grade": 5.67
+        }
+      },
+      "T5": {
+        "skeleton": "Given the query \"{query}\", pick the passage with higher relevance. Your answer must be A or B.\nA: {first}\nB: {second}",
+        "instruction": "Given the query \" \", pick the passage with higher relevance. Your answer must be A or B. A: B:",
+        "label_space": [
+          "A",
+          "B"
+        ],
+        "label_space_evidence": {
+          "letter_tokens": [
+            "A",
+            "B"
+          ]
+        },
+        "format_cues": [
+          "answer must be"
+        ],
+        "token_bindings": {},
+        "predicate": {
+          "predicate": "Given the query \" \", pick the passage with higher relevance. Your answer must be or . : :",
+          "direction": 1,
+          "inverting_terms": [],
+          "direction_terms": [
+            "higher"
+          ]
+        },
+        "construct": {
+          "canonical": "relevance",
+          "matched_terms": [
+            "relevance"
+          ],
+          "foreign_terms": []
+        },
+        "positions": {
+          "query": {
+            "char_offset": 17,
+            "frac_of_template": 0.1453,
+            "frac_of_instruction": 0.1809
+          },
+          "first": {
+            "char_offset": 98,
+            "frac_of_template": 0.8376,
+            "frac_of_instruction": 0.9681
+          },
+          "second": {
+            "char_offset": 109,
+            "frac_of_template": 0.9316,
+            "frac_of_instruction": 1.0
+          }
+        },
+        "readability": {
+          "chars": 94,
+          "words": 18,
+          "sentences": 3,
+          "words_per_sentence": 6.0,
+          "flesch_reading_ease": 83.2,
+          "flesch_kincaid_grade": 3.14
+        }
+      }
+    },
+    "pairs": {
+      "T1-T2": {
+        "wording": {
+          "token_jaccard": 0.625,
+          "char_similarity": 0.6309,
+          "identical": false
+        },
+        "position_delta": {
+          "first": {
+            "frac_of_template": [
+              0.8041,
+              0.8061
+            ],
+            "abs_delta_template": 0.002,
+            "abs_delta_instruction": 0.0005
+          },
+          "query": {
+            "frac_of_template": [
+              0.4639,
+              0.1531
+            ],
+            "abs_delta_template": 0.3108,
+            "abs_delta_instruction": 0.4081
+          },
+          "second": {
+            "frac_of_template": [
+              0.9175,
+              0.9184
+            ],
+            "abs_delta_template": 0.0009,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 1,
+          "words": 0,
+          "flesch_reading_ease": 5.7,
+          "flesch_kincaid_grade": -0.79
+        },
+        "label_space_identical": true
+      },
+      "T1-T3": {
+        "wording": {
+          "token_jaccard": 0.6429,
+          "char_similarity": 0.5857,
+          "identical": false
+        },
+        "position_delta": {
+          "first": {
+            "frac_of_template": [
+              0.8041,
+              0.7865
+            ],
+            "abs_delta_template": 0.0176,
+            "abs_delta_instruction": 0.005
+          },
+          "query": {
+            "frac_of_template": [
+              0.4639,
+              0.0899
+            ],
+            "abs_delta_template": 0.374,
+            "abs_delta_instruction": 0.4869
+          },
+          "second": {
+            "frac_of_template": [
+              0.9175,
+              0.9101
+            ],
+            "abs_delta_template": 0.0074,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": -8,
+          "words": -3,
+          "flesch_reading_ease": 0.6,
+          "flesch_kincaid_grade": -0.58
+        },
+        "label_space_identical": true
+      },
+      "T1-T4": {
+        "wording": {
+          "token_jaccard": 0.6875,
+          "char_similarity": 0.6145,
+          "identical": false
+        },
+        "position_delta": {
+          "first": {
+            "frac_of_template": [
+              0.8041,
+              0.8348
+            ],
+            "abs_delta_template": 0.0307,
+            "abs_delta_instruction": 0.0079
+          },
+          "query": {
+            "frac_of_template": [
+              0.4639,
+              0.2
+            ],
+            "abs_delta_template": 0.2639,
+            "abs_delta_instruction": 0.3581
+          },
+          "second": {
+            "frac_of_template": [
+              0.9175,
+              0.9304
+            ],
+            "abs_delta_template": 0.0129,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 18,
+          "words": 1,
+          "flesch_reading_ease": -19.4,
+          "flesch_kincaid_grade": 2.79
+        },
+        "label_space_identical": true
+      },
+      "T1-T5": {
+        "wording": {
+          "token_jaccard": 0.3333,
+          "char_similarity": 0.4405,
+          "identical": false
+        },
+        "position_delta": {
+          "first": {
+            "frac_of_template": [
+              0.8041,
+              0.8376
+            ],
+            "abs_delta_template": 0.0335,
+            "abs_delta_instruction": 0.0086
+          },
+          "query": {
+            "frac_of_template": [
+              0.4639,
+              0.1453
+            ],
+            "abs_delta_template": 0.3186,
+            "abs_delta_instruction": 0.4272
+          },
+          "second": {
+            "frac_of_template": [
+              0.9175,
+              0.9316
+            ],
+            "abs_delta_template": 0.0141,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 20,
+          "words": 3,
+          "flesch_reading_ease": -0.1,
+          "flesch_kincaid_grade": 0.26
+        },
+        "label_space_identical": true
+      },
+      "T2-T3": {
+        "wording": {
+          "token_jaccard": 0.5333,
+          "char_similarity": 0.5248,
+          "identical": false
+        },
+        "position_delta": {
+          "first": {
+            "frac_of_template": [
+              0.8061,
+              0.7865
+            ],
+            "abs_delta_template": 0.0196,
+            "abs_delta_instruction": 0.0055
+          },
+          "query": {
+            "frac_of_template": [
+              0.1531,
+              0.0899
+            ],
+            "abs_delta_template": 0.0632,
+            "abs_delta_instruction": 0.0788
+          },
+          "second": {
+            "frac_of_template": [
+              0.9184,
+              0.9101
+            ],
+            "abs_delta_template": 0.0083,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": -9,
+          "words": -3,
+          "flesch_reading_ease": -5.1,
+          "flesch_kincaid_grade": 0.21
+        },
+        "label_space_identical": true
+      },
+      "T2-T4": {
+        "wording": {
+          "token_jaccard": 0.5882,
+          "char_similarity": 0.7904,
+          "identical": false
+        },
+        "position_delta": {
+          "first": {
+            "frac_of_template": [
+              0.8061,
+              0.8348
+            ],
+            "abs_delta_template": 0.0287,
+            "abs_delta_instruction": 0.0074
+          },
+          "query": {
+            "frac_of_template": [
+              0.1531,
+              0.2
+            ],
+            "abs_delta_template": 0.0469,
+            "abs_delta_instruction": 0.05
+          },
+          "second": {
+            "frac_of_template": [
+              0.9184,
+              0.9304
+            ],
+            "abs_delta_template": 0.012,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 17,
+          "words": 1,
+          "flesch_reading_ease": -25.1,
+          "flesch_kincaid_grade": 3.58
+        },
+        "label_space_identical": true
+      },
+      "T2-T5": {
+        "wording": {
+          "token_jaccard": 0.3333,
+          "char_similarity": 0.6627,
+          "identical": false
+        },
+        "position_delta": {
+          "first": {
+            "frac_of_template": [
+              0.8061,
+              0.8376
+            ],
+            "abs_delta_template": 0.0315,
+            "abs_delta_instruction": 0.0081
+          },
+          "query": {
+            "frac_of_template": [
+              0.1531,
+              0.1453
+            ],
+            "abs_delta_template": 0.0078,
+            "abs_delta_instruction": 0.0191
+          },
+          "second": {
+            "frac_of_template": [
+              0.9184,
+              0.9316
+            ],
+            "abs_delta_template": 0.0132,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 19,
+          "words": 3,
+          "flesch_reading_ease": -5.8,
+          "flesch_kincaid_grade": 1.05
+        },
+        "label_space_identical": true
+      },
+      "T3-T4": {
+        "wording": {
+          "token_jaccard": 0.5,
+          "char_similarity": 0.557,
+          "identical": false
+        },
+        "position_delta": {
+          "first": {
+            "frac_of_template": [
+              0.7865,
+              0.8348
+            ],
+            "abs_delta_template": 0.0483,
+            "abs_delta_instruction": 0.0129
+          },
+          "query": {
+            "frac_of_template": [
+              0.0899,
+              0.2
+            ],
+            "abs_delta_template": 0.1101,
+            "abs_delta_instruction": 0.1288
+          },
+          "second": {
+            "frac_of_template": [
+              0.9101,
+              0.9304
+            ],
+            "abs_delta_template": 0.0203,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 26,
+          "words": 4,
+          "flesch_reading_ease": -20.0,
+          "flesch_kincaid_grade": 3.37
+        },
+        "label_space_identical": true
+      },
+      "T3-T5": {
+        "wording": {
+          "token_jaccard": 0.3889,
+          "char_similarity": 0.475,
+          "identical": false
+        },
+        "position_delta": {
+          "first": {
+            "frac_of_template": [
+              0.7865,
+              0.8376
+            ],
+            "abs_delta_template": 0.0511,
+            "abs_delta_instruction": 0.0136
+          },
+          "query": {
+            "frac_of_template": [
+              0.0899,
+              0.1453
+            ],
+            "abs_delta_template": 0.0554,
+            "abs_delta_instruction": 0.0597
+          },
+          "second": {
+            "frac_of_template": [
+              0.9101,
+              0.9316
+            ],
+            "abs_delta_template": 0.0215,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 28,
+          "words": 6,
+          "flesch_reading_ease": -0.7,
+          "flesch_kincaid_grade": 0.84
+        },
+        "label_space_identical": true
+      },
+      "T4-T5": {
+        "wording": {
+          "token_jaccard": 0.2609,
+          "char_similarity": 0.6237,
+          "identical": false
+        },
+        "position_delta": {
+          "first": {
+            "frac_of_template": [
+              0.8348,
+              0.8376
+            ],
+            "abs_delta_template": 0.0028,
+            "abs_delta_instruction": 0.0007
+          },
+          "query": {
+            "frac_of_template": [
+              0.2,
+              0.1453
+            ],
+            "abs_delta_template": 0.0547,
+            "abs_delta_instruction": 0.0691
+          },
+          "second": {
+            "frac_of_template": [
+              0.9304,
+              0.9316
+            ],
+            "abs_delta_template": 0.0012,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 2,
+          "words": 2,
+          "flesch_reading_ease": 19.3,
+          "flesch_kincaid_grade": -2.53
+        },
+        "label_space_identical": true
+      }
+    },
+    "design": {
+      "rows": 500,
+      "distinct_items": 250,
+      "distinct_templates": 5,
+      "template_ids": [
+        "T1",
+        "T2",
+        "T3",
+        "T4",
+        "T5"
+      ],
+      "distinct_template_pairs": 10,
+      "possible_template_pairs": 10,
+      "items_per_pair": {
+        "T1-T2": 25,
+        "T1-T3": 25,
+        "T1-T4": 25,
+        "T1-T5": 25,
+        "T2-T3": 25,
+        "T2-T4": 25,
+        "T2-T5": 25,
+        "T3-T4": 25,
+        "T3-T5": 25,
+        "T4-T5": 25
+      },
+      "items_per_pair_min": 25,
+      "items_per_pair_max": 25,
+      "rows_per_item": 2.0,
+      "templates_per_item_distribution": {
+        "2": 250
+      },
+      "items_under_more_than_two_templates": 0,
+      "items_under_more_than_one_pair": 0,
+      "template_effect_confounded_with_item": true
+    },
+    "findings": [
+      {
+        "level": "WARN",
+        "check": "answer_format",
+        "task": "relevance",
+        "message": "T2, T3 state no single-token answer constraint, so their parse surface differs from their partners'"
+      },
+      {
+        "level": "INFO",
+        "check": "construct",
+        "task": "relevance",
+        "message": "2 distinct surface realisations of the construct in use: ['relevance', 'relevant']. Treating them as one construct is an authored assumption, not something this audit measures"
+      },
+      {
+        "level": "WARN",
+        "check": "payload_position",
+        "task": "relevance",
+        "message": "largest payload-position divergence is 37.4% of the template (T1-T3, placeholder 'query'); the two arms present the material at materially different points"
+      },
+      {
+        "level": "WARN",
+        "check": "readability",
+        "task": "relevance",
+        "message": "largest instruction grade-level gap is 3.6 grades (T2-T4); one arm may be intrinsically harder to parse"
+      }
+    ]
+  },
+  {
+    "task": "preference",
+    "templates": {
+      "T1": {
+        "skeleton": "Which response to \"{query}\" is better? Answer A or B only.\nA: {first}\nB: {second}",
+        "instruction": "Which response to \" \" is better? Answer A or B only. A: B:",
+        "label_space": [
+          "A",
+          "B"
+        ],
+        "label_space_evidence": {
+          "letter_tokens": [
+            "A",
+            "B"
+          ]
+        },
+        "format_cues": [
+          "only"
+        ],
+        "token_bindings": {},
+        "predicate": {
+          "predicate": "Which response to \" \" is better? Answer or only. : :",
+          "direction": 1,
+          "inverting_terms": [],
+          "direction_terms": [
+            "better"
+          ]
+        },
+        "construct": {
+          "canonical": "pairwise_preference",
+          "matched_terms": [
+            "better"
+          ],
+          "foreign_terms": []
+        },
+        "positions": {
+          "query": {
+            "char_offset": 19,
+            "frac_of_template": 0.2346,
+            "frac_of_instruction": 0.3276
+          },
+          "first": {
+            "char_offset": 62,
+            "frac_of_template": 0.7654,
+            "frac_of_instruction": 0.9483
+          },
+          "second": {
+            "char_offset": 73,
+            "frac_of_template": 0.9012,
+            "frac_of_instruction": 1.0
+          }
+        },
+        "readability": {
+          "chars": 58,
+          "words": 12,
+          "sentences": 3,
+          "words_per_sentence": 4.0,
+          "flesch_reading_ease": 90.0,
+          "flesch_kincaid_grade": 1.7
+        }
+      },
+      "T2": {
+        "skeleton": "For the question \"{query}\", which response is of higher quality? Reply with A or B.\nA: {first}\nB: {second}",
+        "instruction": "For the question \" \", which response is of higher quality? Reply with A or B. A: B:",
+        "label_space": [
+          "A",
+          "B"
+        ],
+        "label_space_evidence": {
+          "letter_tokens": [
+            "A",
+            "B"
+          ]
+        },
+        "format_cues": [],
+        "token_bindings": {},
+        "predicate": {
+          "predicate": "For the question \" \", which response is of higher quality? Reply with or . : :",
+          "direction": 1,
+          "inverting_terms": [],
+          "direction_terms": [
+            "higher"
+          ]
+        },
+        "construct": {
+          "canonical": "pairwise_preference",
+          "matched_terms": [
+            "higher quality"
+          ],
+          "foreign_terms": []
+        },
+        "positions": {
+          "query": {
+            "char_offset": 18,
+            "frac_of_template": 0.1698,
+            "frac_of_instruction": 0.2169
+          },
+          "first": {
+            "char_offset": 87,
+            "frac_of_template": 0.8208,
+            "frac_of_instruction": 0.9639
+          },
+          "second": {
+            "char_offset": 98,
+            "frac_of_template": 0.9245,
+            "frac_of_instruction": 1.0
+          }
+        },
+        "readability": {
+          "chars": 83,
+          "words": 16,
+          "sentences": 3,
+          "words_per_sentence": 5.33,
+          "flesch_reading_ease": 85.1,
+          "flesch_kincaid_grade": 2.71
+        }
+      },
+      "T3": {
+        "skeleton": "Question: \"{query}\". Choose the better response. Answer A or B.\nA: {first}\nB: {second}",
+        "instruction": "Question: \" \". Choose the better response. Answer A or B. A: B:",
+        "label_space": [
+          "A",
+          "B"
+        ],
+        "label_space_evidence": {
+          "letter_tokens": [
+            "A",
+            "B"
+          ]
+        },
+        "format_cues": [],
+        "token_bindings": {},
+        "predicate": {
+          "predicate": "Question: \" \". Choose the better response. Answer or . : :",
+          "direction": 1,
+          "inverting_terms": [],
+          "direction_terms": [
+            "better"
+          ]
+        },
+        "construct": {
+          "canonical": "pairwise_preference",
+          "matched_terms": [
+            "better"
+          ],
+          "foreign_terms": []
+        },
+        "positions": {
+          "query": {
+            "char_offset": 11,
+            "frac_of_template": 0.1279,
+            "frac_of_instruction": 0.1746
+          },
+          "first": {
+            "char_offset": 67,
+            "frac_of_template": 0.7791,
+            "frac_of_instruction": 0.9524
+          },
+          "second": {
+            "char_offset": 78,
+            "frac_of_template": 0.907,
+            "frac_of_instruction": 1.0
+          }
+        },
+        "readability": {
+          "chars": 63,
+          "words": 11,
+          "sentences": 4,
+          "words_per_sentence": 2.75,
+          "flesch_reading_ease": 88.7,
+          "flesch_kincaid_grade": 1.57
+        }
+      },
+      "T4": {
+        "skeleton": "Considering the question \"{query}\", decide which response is better. Respond A or B only.\nA: {first}\nB: {second}",
+        "instruction": "Considering the question \" \", decide which response is better. Respond A or B only. A: B:",
+        "label_space": [
+          "A",
+          "B"
+        ],
+        "label_space_evidence": {
+          "letter_tokens": [
+            "A",
+            "B"
+          ]
+        },
+        "format_cues": [
+          "only"
+        ],
+        "token_bindings": {},
+        "predicate": {
+          "predicate": "Considering the question \" \", decide which response is better. Respond or only. : :",
+          "direction": 1,
+          "inverting_terms": [],
+          "direction_terms": [
+            "better"
+          ]
+        },
+        "construct": {
+          "canonical": "pairwise_preference",
+          "matched_terms": [
+            "better"
+          ],
+          "foreign_terms": []
+        },
+        "positions": {
+          "query": {
+            "char_offset": 26,
+            "frac_of_template": 0.2321,
+            "frac_of_instruction": 0.2921
+          },
+          "first": {
+            "char_offset": 93,
+            "frac_of_template": 0.8304,
+            "frac_of_instruction": 0.9663
+          },
+          "second": {
+            "char_offset": 104,
+            "frac_of_template": 0.9286,
+            "frac_of_instruction": 1.0
+          }
+        },
+        "readability": {
+          "chars": 89,
+          "words": 15,
+          "sentences": 3,
+          "words_per_sentence": 5.0,
+          "flesch_reading_ease": 66.4,
+          "flesch_kincaid_grade": 5.24
+        }
+      },
+      "T5": {
+        "skeleton": "Given the question \"{query}\", pick the stronger response. Your answer must be A or B.\nA: {first}\nB: {second}",
+        "instruction": "Given the question \" \", pick the stronger response. Your answer must be A or B. A: B:",
+        "label_space": [
+          "A",
+          "B"
+        ],
+        "label_space_evidence": {
+          "letter_tokens": [
+            "A",
+            "B"
+          ]
+        },
+        "format_cues": [
+          "answer must be"
+        ],
+        "token_bindings": {},
+        "predicate": {
+          "predicate": "Given the question \" \", pick the stronger response. Your answer must be or . : :",
+          "direction": 1,
+          "inverting_terms": [],
+          "direction_terms": [
+            "stronger"
+          ]
+        },
+        "construct": {
+          "canonical": "pairwise_preference",
+          "matched_terms": [
+            "stronger"
+          ],
+          "foreign_terms": []
+        },
+        "positions": {
+          "query": {
+            "char_offset": 20,
+            "frac_of_template": 0.1852,
+            "frac_of_instruction": 0.2353
+          },
+          "first": {
+            "char_offset": 89,
+            "frac_of_template": 0.8241,
+            "frac_of_instruction": 0.9647
+          },
+          "second": {
+            "char_offset": 100,
+            "frac_of_template": 0.9259,
+            "frac_of_instruction": 1.0
+          }
+        },
+        "readability": {
+          "chars": 85,
+          "words": 16,
+          "sentences": 3,
+          "words_per_sentence": 5.33,
+          "flesch_reading_ease": 90.4,
+          "flesch_kincaid_grade": 1.98
+        }
+      }
+    },
+    "pairs": {
+      "T1-T2": {
+        "wording": {
+          "token_jaccard": 0.3333,
+          "char_similarity": 0.5106,
+          "identical": false
+        },
+        "position_delta": {
+          "first": {
+            "frac_of_template": [
+              0.7654,
+              0.8208
+            ],
+            "abs_delta_template": 0.0554,
+            "abs_delta_instruction": 0.0156
+          },
+          "query": {
+            "frac_of_template": [
+              0.2346,
+              0.1698
+            ],
+            "abs_delta_template": 0.0648,
+            "abs_delta_instruction": 0.1107
+          },
+          "second": {
+            "frac_of_template": [
+              0.9012,
+              0.9245
+            ],
+            "abs_delta_template": 0.0233,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 25,
+          "words": 4,
+          "flesch_reading_ease": -4.9,
+          "flesch_kincaid_grade": 1.01
+        },
+        "label_space_identical": true
+      },
+      "T1-T3": {
+        "wording": {
+          "token_jaccard": 0.4615,
+          "char_similarity": 0.5289,
+          "identical": false
+        },
+        "position_delta": {
+          "first": {
+            "frac_of_template": [
+              0.7654,
+              0.7791
+            ],
+            "abs_delta_template": 0.0137,
+            "abs_delta_instruction": 0.0041
+          },
+          "query": {
+            "frac_of_template": [
+              0.2346,
+              0.1279
+            ],
+            "abs_delta_template": 0.1067,
+            "abs_delta_instruction": 0.153
+          },
+          "second": {
+            "frac_of_template": [
+              0.9012,
+              0.907
+            ],
+            "abs_delta_template": 0.0058,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 5,
+          "words": -1,
+          "flesch_reading_ease": -1.3,
+          "flesch_kincaid_grade": -0.13
+        },
+        "label_space_identical": true
+      },
+      "T1-T4": {
+        "wording": {
+          "token_jaccard": 0.5333,
+          "char_similarity": 0.5986,
+          "identical": false
+        },
+        "position_delta": {
+          "first": {
+            "frac_of_template": [
+              0.7654,
+              0.8304
+            ],
+            "abs_delta_template": 0.065,
+            "abs_delta_instruction": 0.018
+          },
+          "query": {
+            "frac_of_template": [
+              0.2346,
+              0.2321
+            ],
+            "abs_delta_template": 0.0025,
+            "abs_delta_instruction": 0.0355
+          },
+          "second": {
+            "frac_of_template": [
+              0.9012,
+              0.9286
+            ],
+            "abs_delta_template": 0.0274,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 31,
+          "words": 3,
+          "flesch_reading_ease": -23.6,
+          "flesch_kincaid_grade": 3.54
+        },
+        "label_space_identical": true
+      },
+      "T1-T5": {
+        "wording": {
+          "token_jaccard": 0.2778,
+          "char_similarity": 0.4895,
+          "identical": false
+        },
+        "position_delta": {
+          "first": {
+            "frac_of_template": [
+              0.7654,
+              0.8241
+            ],
+            "abs_delta_template": 0.0587,
+            "abs_delta_instruction": 0.0164
+          },
+          "query": {
+            "frac_of_template": [
+              0.2346,
+              0.1852
+            ],
+            "abs_delta_template": 0.0494,
+            "abs_delta_instruction": 0.0923
+          },
+          "second": {
+            "frac_of_template": [
+              0.9012,
+              0.9259
+            ],
+            "abs_delta_template": 0.0247,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 27,
+          "words": 4,
+          "flesch_reading_ease": 0.4,
+          "flesch_kincaid_grade": 0.28
+        },
+        "label_space_identical": true
+      },
+      "T2-T3": {
+        "wording": {
+          "token_jaccard": 0.3529,
+          "char_similarity": 0.5616,
+          "identical": false
+        },
+        "position_delta": {
+          "first": {
+            "frac_of_template": [
+              0.8208,
+              0.7791
+            ],
+            "abs_delta_template": 0.0417,
+            "abs_delta_instruction": 0.0115
+          },
+          "query": {
+            "frac_of_template": [
+              0.1698,
+              0.1279
+            ],
+            "abs_delta_template": 0.0419,
+            "abs_delta_instruction": 0.0423
+          },
+          "second": {
+            "frac_of_template": [
+              0.9245,
+              0.907
+            ],
+            "abs_delta_template": 0.0175,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": -20,
+          "words": -5,
+          "flesch_reading_ease": 3.6,
+          "flesch_kincaid_grade": -1.14
+        },
+        "label_space_identical": true
+      },
+      "T2-T4": {
+        "wording": {
+          "token_jaccard": 0.4211,
+          "char_similarity": 0.686,
+          "identical": false
+        },
+        "position_delta": {
+          "first": {
+            "frac_of_template": [
+              0.8208,
+              0.8304
+            ],
+            "abs_delta_template": 0.0096,
+            "abs_delta_instruction": 0.0024
+          },
+          "query": {
+            "frac_of_template": [
+              0.1698,
+              0.2321
+            ],
+            "abs_delta_template": 0.0623,
+            "abs_delta_instruction": 0.0752
+          },
+          "second": {
+            "frac_of_template": [
+              0.9245,
+              0.9286
+            ],
+            "abs_delta_template": 0.0041,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 6,
+          "words": -1,
+          "flesch_reading_ease": -18.7,
+          "flesch_kincaid_grade": 2.53
+        },
+        "label_space_identical": true
+      },
+      "T2-T5": {
+        "wording": {
+          "token_jaccard": 0.2857,
+          "char_similarity": 0.6429,
+          "identical": false
+        },
+        "position_delta": {
+          "first": {
+            "frac_of_template": [
+              0.8208,
+              0.8241
+            ],
+            "abs_delta_template": 0.0033,
+            "abs_delta_instruction": 0.0008
+          },
+          "query": {
+            "frac_of_template": [
+              0.1698,
+              0.1852
+            ],
+            "abs_delta_template": 0.0154,
+            "abs_delta_instruction": 0.0184
+          },
+          "second": {
+            "frac_of_template": [
+              0.9245,
+              0.9259
+            ],
+            "abs_delta_template": 0.0014,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 2,
+          "words": 0,
+          "flesch_reading_ease": 5.3,
+          "flesch_kincaid_grade": -0.73
+        },
+        "label_space_identical": true
+      },
+      "T3-T4": {
+        "wording": {
+          "token_jaccard": 0.4667,
+          "char_similarity": 0.5395,
+          "identical": false
+        },
+        "position_delta": {
+          "first": {
+            "frac_of_template": [
+              0.7791,
+              0.8304
+            ],
+            "abs_delta_template": 0.0513,
+            "abs_delta_instruction": 0.0139
+          },
+          "query": {
+            "frac_of_template": [
+              0.1279,
+              0.2321
+            ],
+            "abs_delta_template": 0.1042,
+            "abs_delta_instruction": 0.1175
+          },
+          "second": {
+            "frac_of_template": [
+              0.907,
+              0.9286
+            ],
+            "abs_delta_template": 0.0216,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 26,
+          "words": 4,
+          "flesch_reading_ease": -22.3,
+          "flesch_kincaid_grade": 3.67
+        },
+        "label_space_identical": true
+      },
+      "T3-T5": {
+        "wording": {
+          "token_jaccard": 0.4667,
+          "char_similarity": 0.6757,
+          "identical": false
+        },
+        "position_delta": {
+          "first": {
+            "frac_of_template": [
+              0.7791,
+              0.8241
+            ],
+            "abs_delta_template": 0.045,
+            "abs_delta_instruction": 0.0123
+          },
+          "query": {
+            "frac_of_template": [
+              0.1279,
+              0.1852
+            ],
+            "abs_delta_template": 0.0573,
+            "abs_delta_instruction": 0.0607
+          },
+          "second": {
+            "frac_of_template": [
+              0.907,
+              0.9259
+            ],
+            "abs_delta_template": 0.0189,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": 22,
+          "words": 5,
+          "flesch_reading_ease": 1.7,
+          "flesch_kincaid_grade": 0.41
+        },
+        "label_space_identical": true
+      },
+      "T4-T5": {
+        "wording": {
+          "token_jaccard": 0.3,
+          "char_similarity": 0.5862,
+          "identical": false
+        },
+        "position_delta": {
+          "first": {
+            "frac_of_template": [
+              0.8304,
+              0.8241
+            ],
+            "abs_delta_template": 0.0063,
+            "abs_delta_instruction": 0.0016
+          },
+          "query": {
+            "frac_of_template": [
+              0.2321,
+              0.1852
+            ],
+            "abs_delta_template": 0.0469,
+            "abs_delta_instruction": 0.0568
+          },
+          "second": {
+            "frac_of_template": [
+              0.9286,
+              0.9259
+            ],
+            "abs_delta_template": 0.0027,
+            "abs_delta_instruction": 0.0
+          }
+        },
+        "readability_delta": {
+          "chars": -4,
+          "words": 1,
+          "flesch_reading_ease": 24.0,
+          "flesch_kincaid_grade": -3.26
+        },
+        "label_space_identical": true
+      }
+    },
+    "design": {
+      "rows": 260,
+      "distinct_items": 130,
+      "distinct_templates": 5,
+      "template_ids": [
+        "T1",
+        "T2",
+        "T3",
+        "T4",
+        "T5"
+      ],
+      "distinct_template_pairs": 10,
+      "possible_template_pairs": 10,
+      "items_per_pair": {
+        "T1-T2": 13,
+        "T1-T3": 13,
+        "T1-T4": 13,
+        "T1-T5": 13,
+        "T2-T3": 13,
+        "T2-T4": 13,
+        "T2-T5": 13,
+        "T3-T4": 13,
+        "T3-T5": 13,
+        "T4-T5": 13
+      },
+      "items_per_pair_min": 13,
+      "items_per_pair_max": 13,
+      "rows_per_item": 2.0,
+      "templates_per_item_distribution": {
+        "2": 130
+      },
+      "items_under_more_than_two_templates": 0,
+      "items_under_more_than_one_pair": 0,
+      "template_effect_confounded_with_item": true
+    },
+    "findings": [
+      {
+        "level": "WARN",
+        "check": "answer_format",
+        "task": "preference",
+        "message": "T2, T3 state no single-token answer constraint, so their parse surface differs from their partners'"
+      },
+      {
+        "level": "INFO",
+        "check": "construct",
+        "task": "preference",
+        "message": "3 distinct surface realisations of the construct in use: ['better', 'higher quality', 'stronger']. Treating them as one construct is an authored assumption, not something this audit measures"
+      },
+      {
+        "level": "WARN",
+        "check": "readability",
+        "task": "preference",
+        "message": "largest instruction grade-level gap is 3.7 grades (T3-T4); one arm may be intrinsically harder to parse"
+      }
+    ]
+  }
+]

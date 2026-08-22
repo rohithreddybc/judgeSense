@@ -148,6 +148,46 @@ def _accuracy(recs: List[dict], task: str) -> Dict:
     return {"accuracy": correct / len(scored), "answer_A_rate": a_rate, "n": len(scored)}
 
 
+# Gold labels are stored in the source corpus's vocabulary; the judge answers in
+# the task's answer space. Mapping them here rather than at the call site keeps
+# the correspondence in one place.
+_POINTWISE_LABEL = {"accurate": "YES", "inaccurate": "NO"}
+
+
+def _pointwise_accuracy(recs: List[dict], task: str) -> Dict:
+    """Exact-match accuracy on arm A for the pointwise tasks.
+
+    Computed in the pipeline because the paper's discrimination check depends on
+    it, and the two figures it needed were previously hand-derived in a shell --
+    beneath a reproducibility statement asserting that no number in the paper is
+    transcribed by hand.
+
+    Also reports the majority-class rate, which is the honest floor: a constant
+    judge scores that, not the uniform 1/k a five-point scale suggests. On
+    coherence the gold distribution is skewed enough that the two differ by 15
+    points, and quoting uniform chance overstates the discrimination margin.
+    """
+    import collections
+    scored, correct = 0, 0
+    gold = collections.Counter()
+    for rec in recs:
+        label = rec.get("ground_truth_label")
+        decision = rec.get("decision_a")
+        if label is None or decision in (None, UNCLEAR):
+            continue
+        gold[str(label)] += 1
+        scored += 1
+        correct += str(decision) == _POINTWISE_LABEL.get(str(label), str(label))
+    if not scored:
+        return {"accuracy": None, "n": 0, "majority_class_rate": None}
+    return {
+        "accuracy": round(correct / scored, 4),
+        "n": scored,
+        "majority_class_rate": round(max(gold.values()) / scored, 4),
+        "arm": "a",
+    }
+
+
 def _defined(fn, *args, **kwargs):
     """A metric's value, or None where it is mathematically undefined.
 
@@ -246,6 +286,19 @@ def _arm_malformed_rate(recs: List[dict], arm: str) -> Optional[float]:
     return (malformed / considered) if considered else None
 
 
+# Pair-class labels are constants, not literals. These were literals, the class
+# was renamed from "both_verdict" to "both_answered", and one comparison in
+# _refusal_bounds kept the old spelling. It never matched, so the Manski bounds
+# were silently None in every cell -- while two sections of the paper claimed to
+# report them and one described their width. A typo in a string literal produced
+# a false claim in a manuscript, and no test caught it because the function
+# returned a well-formed dict either way.
+PAIR_BOTH_ANSWERED = "both_answered"
+PAIR_ONE_REFUSED = "one_refused"
+PAIR_BOTH_REFUSED = "both_refused"
+PAIR_TRANSPORT_ERROR = "transport_error"
+
+
 def _pair_class(rec: dict) -> str:
     """One of: both_verdict, one_refused, both_refused.
 
@@ -253,13 +306,13 @@ def _pair_class(rec: dict) -> str:
     a refusal, so they classify as both_verdict and behave exactly as before.
     """
     if _arm_transport_failed(rec, "a") or _arm_transport_failed(rec, "b"):
-        return "transport_error"
+        return PAIR_TRANSPORT_ERROR
     a, b = _arm_refused(rec, "a"), _arm_refused(rec, "b")
     if a and b:
-        return "both_refused"
+        return PAIR_BOTH_REFUSED
     if a or b:
-        return "one_refused"
-    return "both_answered"
+        return PAIR_ONE_REFUSED
+    return PAIR_BOTH_ANSWERED
 
 
 def _malformed_rate(recs: List[dict]) -> Optional[float]:
@@ -344,7 +397,7 @@ def _refusal_taxonomy(recs: List[dict]) -> Dict:
     # bare proportion over ROWS also double-counted every pairwise item.
     rdr_ci = _defined(
         cluster_bootstrap_ci,
-        recs, lambda rs: sum(1 for r in rs if _pair_class(r) == "one_refused") / len(rs),
+        recs, lambda rs: sum(1 for r in rs if _pair_class(r) == PAIR_ONE_REFUSED) / len(rs),
         "item", n_bootstrap=2000,
     )
     return {
@@ -353,14 +406,14 @@ def _refusal_taxonomy(recs: List[dict]) -> Dict:
         # read is judge behaviour, unlike a refusal or a dead call. Calling it
         # "verdict pairs" implied the preregistered both-arms-parsed support,
         # which is a different and smaller set.
-        "n_pairs_both_answered": classes.count("both_answered"),
-        "n_pairs_transport_error": classes.count("transport_error"),
-        "refusal_discordance_rate": round(classes.count("one_refused") / n, 4),
+        "n_pairs_both_answered": classes.count(PAIR_BOTH_ANSWERED),
+        "n_pairs_transport_error": classes.count(PAIR_TRANSPORT_ERROR),
+        "refusal_discordance_rate": round(classes.count(PAIR_ONE_REFUSED) / n, 4),
         "refusal_discordance_ci95": (
             [round(rdr_ci["ci_lower"], 4), round(rdr_ci["ci_upper"], 4)]
             if rdr_ci else None
         ),
-        "consistent_refusal_rate": round(classes.count("both_refused") / n, 4),
+        "consistent_refusal_rate": round(classes.count(PAIR_BOTH_REFUSED) / n, 4),
     }
 
 
@@ -375,7 +428,7 @@ def _refusal_stats(recs: List[dict]) -> Dict:
     """
     refused = arms = 0
     for r in recs:
-        for key in ("usage_a", "usage_b", "usage_a_repeat"):
+        for key in ("usage_a", "usage_b", "usage_a_repeat", "usage_b_repeat"):
             if key not in r:
                 continue
             usage = r.get(key) or {}
@@ -398,7 +451,7 @@ def metrics_for_cell(recs: List[dict], task: str) -> Dict:
     # the judge actually rendered a verdict on both phrasings. The
     # refusal-inclusive figure is reported below as a sensitivity analysis, so
     # nothing is hidden by the conditioning.
-    verdict = [r for r in recs if _pair_class(r) == "both_answered"]
+    verdict = [r for r in recs if _pair_class(r) == PAIR_BOTH_ANSWERED]
     scored = verdict or recs
     strict = cluster_bootstrap_ci(scored, lambda r: jss(r, "disagree"), "item", n_bootstrap=2000)
     out = {
@@ -484,6 +537,8 @@ def metrics_for_cell(recs: List[dict], task: str) -> Dict:
             _defined(quadratic_weighted_kappa, scored, unclear_policy="disagree"))
     if task not in POINTWISE:
         out["pairwise"] = _accuracy(recs, task)
+    else:
+        out["pointwise"] = _pointwise_accuracy(scored, task)
     if any(r.get("decision_a_repeat") is not None for r in recs):
         out["jss_repeat_delta"] = _repeat_delta(verdict or recs, all_recs=recs)
     return out
@@ -526,8 +581,8 @@ def _refusal_bounds(recs: List[dict]) -> Dict:
     conditioning is actually worth.
     """
     classes = [_pair_class(r) for r in recs]
-    verdict = [r for r, c in zip(recs, classes) if c == "both_verdict"]
-    n_refused = sum(1 for c in classes if c != "both_verdict")
+    verdict = [r for r, c in zip(recs, classes) if c == PAIR_BOTH_ANSWERED]
+    n_refused = sum(1 for c in classes if c != PAIR_BOTH_ANSWERED)
     n = len(recs)
     if not n or not verdict:
         return {"jss_bounds": None}
@@ -620,9 +675,17 @@ def _repeat_delta(recs: List[dict], all_recs: Optional[List[dict]] = None) -> Di
     for arm in ("a", "b"):
         pairs = [r for r in canonical if r.get(f"decision_{arm}_repeat") is not None]
         if pairs:
-            agree = sum(1 for r in pairs
-                        if r[f"decision_{arm}"] == r[f"decision_{arm}_repeat"])
-            per_arm[arm] = round(agree / len(pairs), 4)
+            # Same unclear_policy as jss_rep. Raw string equality credited
+            # UNCLEAR == UNCLEAR as agreement while jss_rep charged it as
+            # disagreement, so the guard that exists to detect non-exchangeable
+            # templates reported a 0.032 gap on a cell whose true gap is 0.209
+            # and whose arms differ 2.7x in parse-failure rate.
+            paired = [{"decision_a": r[f"decision_{arm}"],
+                       "decision_b": r[f"decision_{arm}_repeat"],
+                       "item_id": r["item_id"]} for r in pairs]
+            value = _defined(jss, paired, "disagree")
+            if value is not None:
+                per_arm[arm] = round(value, 4)
     out["repeat_agreement_by_arm"] = per_arm or None
     if len(per_arm) == 2:
         out["arm_ceiling_gap"] = round(abs(per_arm["a"] - per_arm["b"]), 4)

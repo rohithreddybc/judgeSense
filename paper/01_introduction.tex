@@ -52,7 +52,8 @@ If a task can be passed by a heuristic that ignores the intended construct ---
 always answer A, pick the longer candidate, pick the passage sharing more words
 with the query --- then a high score says nothing about judgment. We therefore
 run those heuristics against the released files and report what they score, with
-intervals and support counts. Equally, a benchmark on which \emph{nothing} works,
+intervals and support counts. None beats chance, and we report which control is
+weakest and why. Equally, a benchmark on which \emph{nothing} works,
 including a competent judge, is shortcut-free and useless; so we also
 pre-register a floor that the best judge must clear for a task to count as
 discriminating at all. Both directions are checked, because a construction that
@@ -89,7 +90,9 @@ look for it.
     Provider-flagged declines are recorded and reported separately from
     unparseable output, which are indistinguishable after parsing but are
     different facts about a judge.
-  \item \textbf{Evidence that sensitivity is a property of the task.} Across
-    three judges the ordering of tasks by sensitivity is identical, and the
-    spread within a task is smaller than the spread within a judge across tasks.
+  \item \textbf{Evidence that the ordinal task is the least stable.} Coherence
+    carries the largest effect for all three judges and factuality the smallest,
+    and on coherence the variation across judges is smaller than the variation
+    across tasks within a judge. All three judges come from one vendor family, so
+    this is a within-family observation and we do not claim it generalises.
 \end{enumerate}

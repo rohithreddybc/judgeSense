@@ -41,16 +41,18 @@ metric never consults the ground-truth label --- a judge that is uniformly wrong
 but uniformly consistent scores perfectly --- and it is reported against each
 judge's own repeat-agreement ceiling, so ordinary decoding variance is separated
 from sensitivity to wording rather than attributed to it. We release the
-heuristic baselines that would beat each task, with intervals and support counts,
-alongside a pre-registered floor that a competent judge must clear for a task to
-count as discriminating at all. Across three judges, meaning-preserving rewording
-costs real agreement in every measurable cell, and the size of that loss depends
-more on the evaluation task than on the model performing it: the ordering of
-tasks by sensitivity is identical across judges, and the spread within a task is
-smaller than the spread within a judge across tasks. We also report a
-judge-specific refusal behaviour that a naive harness would misreport as a
-format-adherence failure, and the construction defects we found in our own
-benchmark, with the measurements that exposed them.
+heuristic baselines that would beat each task if the construction were flawed,
+with the scores they actually achieve, their intervals and their support counts,
+alongside a threshold that a competent judge must clear for a task to count as
+discriminating at all. Across three judges drawn from a single vendor family,
+meaning-preserving rewording costs agreement in all ten of the twelve
+judge--task cells that reached the declared support floor. The loss is largest on
+the ordinal task for every judge and smallest on factuality, where the intervals
+are consistent with an effect we declared in advance to be practically
+meaningless --- a null we report as a result. We also report a judge-specific
+refusal behaviour that a naive harness would misreport as a format-adherence
+failure, and the construction defects we found in our own benchmark, with the
+measurements that exposed them.
 \end{abstract}
 
 \input{01_introduction}
@@ -65,7 +67,7 @@ The dataset, loaders, analysis pipeline, pre-registered analysis plan, and every
 raw judge output behind the reported numbers are released at
 \url{https://github.com/rohithreddybc/judgeSense}. Each table is regenerated from
 the committed raw outputs by a single script; no number in this paper is
-transcribed by hand. Each split is content-hashed, and a 32-check audit gate runs
+transcribed by hand. Each split is content-hashed, and a 28-check audit gate runs
 in continuous integration. Judge model identifiers, resolved decoding parameters
 and the provider-reported model string are recorded on every call record, so
 configuration drift is detectable after the fact rather than assumed absent.

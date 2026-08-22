@@ -33,7 +33,7 @@
       "unclear_rate_arm_b": 0.0,
       "refusal_rate": 0.0,
       "n_refusals": 0,
-      "n_metered_arms": 750,
+      "n_metered_arms": 1000,
       "n_pairs_both_answered": 250,
       "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
@@ -49,12 +49,24 @@
         "n_malformed_arms": 0,
         "partitions": true
       },
-      "jss_bounds": null,
+      "jss_bounds": {
+        "lower": 0.792,
+        "upper": 0.792,
+        "width": 0.0,
+        "n_unidentified_pairs": 0,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
+      },
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
       "quadratic_weighted_kappa": 0.8594,
       "quadratic_weighted_kappa_policy": "drop",
       "quadratic_weighted_kappa_punitive": 0.8594,
+      "pointwise": {
+        "accuracy": 0.428,
+        "n": 250,
+        "majority_class_rate": 0.348,
+        "arm": "a"
+      },
       "jss_repeat_delta": {
         "jss": 0.792,
         "jss_rep": 0.998,
@@ -106,7 +118,7 @@
       "unclear_rate_arm_b": 0.0,
       "refusal_rate": 0.0,
       "n_refusals": 0,
-      "n_metered_arms": 750,
+      "n_metered_arms": 1000,
       "n_pairs_both_answered": 250,
       "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
@@ -122,9 +134,21 @@
         "n_malformed_arms": 0,
         "partitions": true
       },
-      "jss_bounds": null,
+      "jss_bounds": {
+        "lower": 0.956,
+        "upper": 0.956,
+        "width": 0.0,
+        "n_unidentified_pairs": 0,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
+      },
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
+      "pointwise": {
+        "accuracy": 0.764,
+        "n": 250,
+        "majority_class_rate": 0.5,
+        "arm": "a"
+      },
       "jss_repeat_delta": {
         "jss": 0.956,
         "jss_rep": 1.0,
@@ -181,7 +205,7 @@
       "unclear_rate_arm_b": 0.0308,
       "refusal_rate": 0.0,
       "n_refusals": 0,
-      "n_metered_arms": 650,
+      "n_metered_arms": 780,
       "n_pairs_both_answered": 260,
       "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
@@ -197,7 +221,13 @@
         "n_malformed_arms": 16,
         "partitions": true
       },
-      "jss_bounds": null,
+      "jss_bounds": {
+        "lower": 0.9,
+        "upper": 0.9,
+        "width": 0.0,
+        "n_unidentified_pairs": 0,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
+      },
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
       "pairwise": {
@@ -220,8 +250,8 @@
         "unclear_policy": "disagree",
         "support": "canonical ordering, verdict pairs",
         "repeat_agreement_by_arm": {
-          "a": 0.9923,
-          "b": 1.0
+          "a": 0.9615,
+          "b": 0.9692
         },
         "arm_ceiling_gap": 0.0077,
         "item_loss_fraction": 0.0
@@ -258,7 +288,7 @@
       "unclear_rate_arm_b": 0.008,
       "refusal_rate": 0.0,
       "n_refusals": 0,
-      "n_metered_arms": 1250,
+      "n_metered_arms": 1500,
       "n_pairs_both_answered": 500,
       "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
@@ -274,7 +304,13 @@
         "n_malformed_arms": 10,
         "partitions": true
       },
-      "jss_bounds": null,
+      "jss_bounds": {
+        "lower": 0.934,
+        "upper": 0.934,
+        "width": 0.0,
+        "n_unidentified_pairs": 0,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
+      },
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
       "pairwise": {
@@ -297,10 +333,10 @@
         "unclear_policy": "disagree",
         "support": "canonical ordering, verdict pairs",
         "repeat_agreement_by_arm": {
-          "a": 1.0,
-          "b": 1.0
+          "a": 0.988,
+          "b": 0.992
         },
-        "arm_ceiling_gap": 0.0,
+        "arm_ceiling_gap": 0.004,
         "item_loss_fraction": 0.0
       }
     }
@@ -341,7 +377,7 @@
       "unclear_rate_arm_b": 0.0,
       "refusal_rate": 0.0,
       "n_refusals": 0,
-      "n_metered_arms": 750,
+      "n_metered_arms": 1000,
       "n_pairs_both_answered": 250,
       "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
@@ -357,12 +393,24 @@
         "n_malformed_arms": 0,
         "partitions": true
       },
-      "jss_bounds": null,
+      "jss_bounds": {
+        "lower": 0.736,
+        "upper": 0.736,
+        "width": 0.0,
+        "n_unidentified_pairs": 0,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
+      },
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
       "quadratic_weighted_kappa": 0.8714,
       "quadratic_weighted_kappa_policy": "drop",
       "quadratic_weighted_kappa_punitive": 0.8714,
+      "pointwise": {
+        "accuracy": 0.372,
+        "n": 250,
+        "majority_class_rate": 0.348,
+        "arm": "a"
+      },
       "jss_repeat_delta": {
         "jss": 0.736,
         "jss_rep": 0.916,
@@ -414,7 +462,7 @@
       "unclear_rate_arm_b": 0.0,
       "refusal_rate": 0.0,
       "n_refusals": 0,
-      "n_metered_arms": 750,
+      "n_metered_arms": 1000,
       "n_pairs_both_answered": 250,
       "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
@@ -430,9 +478,21 @@
         "n_malformed_arms": 0,
         "partitions": true
       },
-      "jss_bounds": null,
+      "jss_bounds": {
+        "lower": 0.96,
+        "upper": 0.96,
+        "width": 0.0,
+        "n_unidentified_pairs": 0,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
+      },
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
+      "pointwise": {
+        "accuracy": 0.944,
+        "n": 250,
+        "majority_class_rate": 0.5,
+        "arm": "a"
+      },
       "jss_repeat_delta": {
         "jss": 0.96,
         "jss_rep": 0.99,
@@ -485,7 +545,7 @@
       "unclear_rate_arm_b": 0.0529,
       "refusal_rate": 0.0,
       "n_refusals": 0,
-      "n_metered_arms": 425,
+      "n_metered_arms": 510,
       "n_pairs_both_answered": 160,
       "n_pairs_transport_error": 10,
       "refusal_discordance_rate": 0.0,
@@ -501,7 +561,13 @@
         "n_malformed_arms": 19,
         "partitions": true
       },
-      "jss_bounds": null,
+      "jss_bounds": {
+        "lower": 0.9059,
+        "upper": 0.9647,
+        "width": 0.0588,
+        "n_unidentified_pairs": 10,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
+      },
       "jss_strict_refusal_inclusive": 0.9059,
       "jss_support": "verdict_pairs",
       "pairwise": {
@@ -543,9 +609,9 @@
       "malformed_rate_arm_b": 0.0,
       "unclear_rate_arm_a": 0.052,
       "unclear_rate_arm_b": 0.054,
-      "refusal_rate": 0.052,
-      "n_refusals": 65,
-      "n_metered_arms": 1250,
+      "refusal_rate": 0.0507,
+      "n_refusals": 76,
+      "n_metered_arms": 1500,
       "n_pairs_both_answered": 472,
       "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.006,
@@ -561,7 +627,13 @@
         "n_malformed_arms": 0,
         "partitions": true
       },
-      "jss_bounds": null,
+      "jss_bounds": {
+        "lower": 0.91,
+        "upper": 0.966,
+        "width": 0.056,
+        "n_unidentified_pairs": 28,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
+      },
       "jss_strict_refusal_inclusive": 0.91,
       "jss_support": "verdict_pairs",
       "pairwise": {
@@ -628,7 +700,7 @@
       "unclear_rate_arm_b": 0.0,
       "refusal_rate": 0.0,
       "n_refusals": 0,
-      "n_metered_arms": 750,
+      "n_metered_arms": 1000,
       "n_pairs_both_answered": 250,
       "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
@@ -644,12 +716,24 @@
         "n_malformed_arms": 0,
         "partitions": true
       },
-      "jss_bounds": null,
+      "jss_bounds": {
+        "lower": 0.828,
+        "upper": 0.828,
+        "width": 0.0,
+        "n_unidentified_pairs": 0,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
+      },
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
       "quadratic_weighted_kappa": 0.8743,
       "quadratic_weighted_kappa_policy": "drop",
       "quadratic_weighted_kappa_punitive": 0.8743,
+      "pointwise": {
+        "accuracy": 0.452,
+        "n": 250,
+        "majority_class_rate": 0.348,
+        "arm": "a"
+      },
       "jss_repeat_delta": {
         "jss": 0.828,
         "jss_rep": 0.99,
@@ -703,7 +787,7 @@
       "unclear_rate_arm_b": 0.012,
       "refusal_rate": 0.0,
       "n_refusals": 0,
-      "n_metered_arms": 750,
+      "n_metered_arms": 1000,
       "n_pairs_both_answered": 250,
       "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
@@ -719,9 +803,21 @@
         "n_malformed_arms": 4,
         "partitions": true
       },
-      "jss_bounds": null,
+      "jss_bounds": {
+        "lower": 0.952,
+        "upper": 0.952,
+        "width": 0.0,
+        "n_unidentified_pairs": 0,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
+      },
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
+      "pointwise": {
+        "accuracy": 0.9036,
+        "n": 249,
+        "majority_class_rate": 0.502,
+        "arm": "a"
+      },
       "jss_repeat_delta": {
         "jss": 0.952,
         "jss_rep": 0.99,
@@ -737,8 +833,8 @@
         "unclear_policy": "disagree",
         "support": "canonical ordering, verdict pairs",
         "repeat_agreement_by_arm": {
-          "a": 0.996,
-          "b": 1.0
+          "a": 0.992,
+          "b": 0.988
         },
         "arm_ceiling_gap": 0.004,
         "item_loss_fraction": 0.0
@@ -775,7 +871,7 @@
       "unclear_rate_arm_b": 0.3636,
       "refusal_rate": 0.0,
       "n_refusals": 0,
-      "n_metered_arms": 110,
+      "n_metered_arms": 132,
       "n_pairs_both_answered": 34,
       "n_pairs_transport_error": 10,
       "refusal_discordance_rate": 0.0,
@@ -791,7 +887,13 @@
         "n_malformed_arms": 38,
         "partitions": true
       },
-      "jss_bounds": null,
+      "jss_bounds": {
+        "lower": 0.5455,
+        "upper": 0.7727,
+        "width": 0.2273,
+        "n_unidentified_pairs": 10,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
+      },
       "jss_strict_refusal_inclusive": 0.4318,
       "jss_support": "verdict_pairs",
       "pairwise": {
@@ -834,9 +936,9 @@
       "malformed_rate_arm_b": 0.1217,
       "unclear_rate_arm_a": 0.498,
       "unclear_rate_arm_b": 0.336,
-      "refusal_rate": 0.2488,
-      "n_refusals": 311,
-      "n_metered_arms": 1250,
+      "refusal_rate": 0.2467,
+      "n_refusals": 370,
+      "n_metered_arms": 1500,
       "n_pairs_both_answered": 370,
       "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.022,
@@ -852,7 +954,13 @@
         "n_malformed_arms": 168,
         "partitions": true
       },
-      "jss_bounds": null,
+      "jss_bounds": {
+        "lower": 0.486,
+        "upper": 0.746,
+        "width": 0.26,
+        "n_unidentified_pairs": 130,
+        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
+      },
       "jss_strict_refusal_inclusive": 0.432,
       "jss_support": "verdict_pairs",
       "pairwise": {
@@ -875,10 +983,10 @@
         "unclear_policy": "disagree",
         "support": "canonical ordering, verdict pairs",
         "repeat_agreement_by_arm": {
-          "a": 0.9358,
-          "b": 0.9679
+          "a": 0.6845,
+          "b": 0.893
         },
-        "arm_ceiling_gap": 0.0321,
+        "arm_ceiling_gap": 0.2085,
         "item_loss_fraction": 0.252
       }
     }
