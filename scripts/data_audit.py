@@ -14,6 +14,11 @@ Checks (each configurable via the audit config JSON):
                         name with no record id fails
   label_degeneracy      no label exceeds max_label_share; at least
                         min_distinct_labels distinct labels per split
+  candidate_gold_consistency  no candidate TEXT is gold-correct in one item
+                        and gold-wrong in another item on the same query;
+                        ground_truth_consistency cannot see this, because it
+                        keys on the concatenated "A: ... | B: ..." block, which
+                        is unique per row by construction
   effective_sample_size clusters at the declared clustering unit >= floor
   annotation_timing     median seconds between consecutive human-validation
                         decisions >= min_seconds_per_decision (when timing
@@ -308,6 +313,134 @@ def check_ground_truth_consistency(records: List[dict], cfg: dict) -> dict:
     }
 
 
+def _query_key(rec: dict) -> str:
+    """The judging CONTEXT an item's candidates were labelled against.
+
+    Gold on a pairwise item is conditional on the query: a passage that is
+    relevant to one TREC query and non-relevant to another is not a
+    contradiction, and neither is a response that is the better answer to one
+    MT-Bench question and the worse answer to a different one. The context is
+    read from the provenance id, which encodes it first in both pairwise
+    loaders — "query[32]#pair0" (relevance) and
+    "question_id=104;model_a=...;model_b=...;turn=1" (preference). Reading the
+    rendered prompt instead would not work: the same query appears under five
+    different template phrasings, so two items on one query would compare as
+    different contexts.
+    """
+    rid = str((rec.get("source") or {}).get("source_record_id", ""))
+    for sep in ("#", ";"):
+        if sep in rid:
+            rid = rid.split(sep, 1)[0]
+    return rid
+
+
+def check_candidate_gold_consistency(records: List[dict], cfg: dict) -> dict:
+    """
+    No candidate TEXT may be gold-correct in one item and gold-wrong in another
+    item judged against the same query.
+
+    This is the per-candidate form of `ground_truth_consistency`, and it exists
+    because that check cannot see this class at all. It keys on
+    `response_being_judged`, which for a pairwise task is the concatenated
+    "A: ... | B: ..." block — unique per row by construction, so a reused
+    candidate never collides and the check returns clean on a split that is
+    riddled with contradictions.
+
+    The v2 preference split was: 226 items drawn from 78 MT-Bench questions, in
+    which 52 candidate texts won in one item and lost in another, affecting
+    108/226 items (47.8%). Within question 104 the answer "David has three
+    brothers, one for each of his sisters." was gold-correct in one item while
+    "David has only one brother." was gold-correct in another. A judge that
+    reasons correctly and answers consistently is scored wrong on at least one
+    of any such pair, so the items measure agreement with an inconsistent key
+    rather than judgement.
+
+    Non-pairwise splits have a single judged text per item and are covered by
+    `ground_truth_consistency`; they pass here trivially.
+
+    The cross-query reuse count is reported alongside but NOT gated: it is
+    expected and legitimate (TREC-COVID documents are shared across queries),
+    and gating it would fail a sound relevance split.
+    """
+    positional = [r for r in records if r.get("ground_truth_position") in ("A", "B")]
+    if not positional:
+        return {"check": "candidate_gold_consistency", "observed": None,
+                "threshold": None, "passed": True,
+                "detail": "not a pairwise task; a single judged text per item."}
+
+    # One (query, winner, loser) triple per ITEM: the A/B swap emits each item
+    # twice and both rows carry the same content-level gold.
+    per_item: Dict[str, tuple] = {}
+    unreadable = 0
+    for r in positional:
+        iid = r.get("item_id") or r.get("pair_id")
+        if iid in per_item:
+            continue
+        a_txt, b_txt = _split_candidates(
+            str(r.get("prompt_a") or r.get("response_being_judged") or ""))
+        if a_txt is None:
+            unreadable += 1
+            continue
+        pos = r.get("ground_truth_position")
+        winner, loser = (a_txt, b_txt) if pos == "A" else (b_txt, a_txt)
+        per_item[iid] = (_query_key(r), winner, loser)
+
+    if not per_item:
+        # A check that read nothing must not report a clean bill of health.
+        return {
+            "check": "candidate_gold_consistency",
+            "observed": {"n_items_read": 0},
+            "threshold": {"n_contradictory_candidates": 0},
+            "passed": False,
+            "detail": ("pairwise split but no candidate pair could be read from "
+                       "prompt_a; contradictory gold is unmeasured, not absent."),
+        }
+
+    roles: Dict[tuple, set] = {}
+    global_roles: Dict[str, set] = {}
+    for _iid, (qkey, winner, loser) in per_item.items():
+        roles.setdefault((qkey, winner), set()).add("correct")
+        roles.setdefault((qkey, loser), set()).add("wrong")
+        global_roles.setdefault(winner, set()).add("correct")
+        global_roles.setdefault(loser, set()).add("wrong")
+
+    bad_keys = {k for k, v in roles.items() if len(v) > 1}
+    affected = [iid for iid, (q, w, l) in per_item.items()
+                if (q, w) in bad_keys or (q, l) in bad_keys]
+    cross_query = sum(1 for t, v in global_roles.items()
+                      if len(v) > 1 and not any(k[1] == t for k in bad_keys))
+
+    example = ""
+    if bad_keys:
+        _q, text = sorted(bad_keys)[0]
+        example = f", e.g. {text[:70]!r} under {_q!r}"
+    detail = (
+        f"{len(bad_keys)} candidate text(s) are gold-correct in one item and "
+        f"gold-wrong in another item on the same query, affecting "
+        f"{len(affected)}/{len(per_item)} items{example}. "
+        f"{cross_query} further text(s) change role across DIFFERENT queries, "
+        f"which is legitimate and not gated."
+    ) if bad_keys else (
+        f"no candidate text carries contradictory gold within a query across "
+        f"{len(per_item)} items; {cross_query} text(s) are reused across "
+        f"different queries, which is legitimate."
+    )
+    if unreadable:
+        detail += f" ({unreadable} row(s) had unreadable candidates.)"
+    return {
+        "check": "candidate_gold_consistency",
+        "observed": {
+            "n_contradictory_candidates": len(bad_keys),
+            "n_items_affected": len(affected),
+            "n_items_read": len(per_item),
+            "n_cross_query_reused_candidates": cross_query,
+        },
+        "threshold": {"n_contradictory_candidates": 0},
+        "passed": not bad_keys and unreadable == 0,
+        "detail": detail,
+    }
+
+
 def check_effective_sample_size(records: List[dict], cfg: dict) -> dict:
     unit = cfg["cluster_unit"]
     key = {"item": "item_id", "prompt_pair": "prompt_pair_id", "row": None}.get(unit, unit)
@@ -418,6 +551,7 @@ def audit(config_path: Path) -> dict:
             check_label_degeneracy(records, split_cfg),
             check_effective_sample_size(records, split_cfg),
             check_ground_truth_consistency(records, split_cfg),
+            check_candidate_gold_consistency(records, split_cfg),
             check_length_shortcut(records, split_cfg),
         ):
             result["split"] = split

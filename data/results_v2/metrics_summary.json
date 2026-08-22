@@ -11,8 +11,16 @@
       ],
       "cluster_unit": "item",
       "chance_corrected_jss": 0.6329,
+      "chance_corrected_jss_n": 245,
+      "jss_on_parseable_pairs": 0.8,
       "decision_entropy_bits": 1.4852,
       "label_histogram": {
+        "4": 312,
+        "3": 47,
+        "2": 91,
+        "5": 40
+      },
+      "label_histogram_all_rows": {
         "4": 312,
         "3": 47,
         "2": 91,
@@ -21,10 +29,13 @@
       "malformed_rate": 0.0,
       "malformed_rate_arm_a": 0.0,
       "malformed_rate_arm_b": 0.0,
+      "unclear_rate_arm_a": 0.0,
+      "unclear_rate_arm_b": 0.0,
       "refusal_rate": 0.0,
       "n_refusals": 0,
       "n_metered_arms": 735,
-      "n_verdict_pairs": 245,
+      "n_pairs_both_answered": 245,
+      "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
       "refusal_discordance_ci95": [
         0.0,
@@ -38,13 +49,7 @@
         "n_malformed_arms": 0,
         "partitions": true
       },
-      "jss_bounds": {
-        "lower": 0.8,
-        "upper": 0.8,
-        "width": 0.0,
-        "n_unidentified_pairs": 0,
-        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
-      },
+      "jss_bounds": null,
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
       "quadratic_weighted_kappa": 0.8546,
@@ -53,7 +58,6 @@
       "jss_repeat_delta": {
         "jss": 0.8,
         "jss_rep": 0.8612244897959184,
-        "delta": -0.061224489795918324,
         "ci_lower": -0.11428571428571432,
         "ci_upper": -0.012244897959183598,
         "cluster_unit": "item",
@@ -67,6 +71,12 @@
         "repeat_agreement_by_arm": {
           "a": 0.8612
         },
+        "ceiling_single_arm": true,
+        "ceiling_arms_present": [
+          "a"
+        ],
+        "delta_withheld_reason": "repeat baseline collected on one prompt arm only; delta cannot separate paraphrase sensitivity from template-specific decoding noise. Re-collect with --repeat-baseline on the current runner.",
+        "delta_single_arm_ceiling": -0.061224489795918324,
         "item_loss_fraction": 0.0
       }
     },
@@ -81,18 +91,27 @@
       ],
       "cluster_unit": "item",
       "chance_corrected_jss": 0.8976,
+      "chance_corrected_jss_n": 245,
+      "jss_on_parseable_pairs": 0.951,
       "decision_entropy_bits": 0.9685,
       "label_histogram": {
+        "NO": 296,
+        "YES": 194
+      },
+      "label_histogram_all_rows": {
         "NO": 296,
         "YES": 194
       },
       "malformed_rate": 0.0,
       "malformed_rate_arm_a": 0.0,
       "malformed_rate_arm_b": 0.0,
+      "unclear_rate_arm_a": 0.0,
+      "unclear_rate_arm_b": 0.0,
       "refusal_rate": 0.0,
       "n_refusals": 0,
       "n_metered_arms": 735,
-      "n_verdict_pairs": 245,
+      "n_pairs_both_answered": 245,
+      "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
       "refusal_discordance_ci95": [
         0.0,
@@ -106,19 +125,12 @@
         "n_malformed_arms": 0,
         "partitions": true
       },
-      "jss_bounds": {
-        "lower": 0.951,
-        "upper": 0.951,
-        "width": 0.0,
-        "n_unidentified_pairs": 0,
-        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
-      },
+      "jss_bounds": null,
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
       "jss_repeat_delta": {
         "jss": 0.9510204081632653,
         "jss_rep": 0.9755102040816327,
-        "delta": -0.02448979591836742,
         "ci_lower": -0.053061224489796,
         "ci_upper": 0.004081632653061273,
         "cluster_unit": "item",
@@ -132,6 +144,12 @@
         "repeat_agreement_by_arm": {
           "a": 0.9755
         },
+        "ceiling_single_arm": true,
+        "ceiling_arms_present": [
+          "a"
+        ],
+        "delta_withheld_reason": "repeat baseline collected on one prompt arm only; delta cannot separate paraphrase sensitivity from template-specific decoding noise. Re-collect with --repeat-baseline on the current runner.",
+        "delta_single_arm_ceiling": -0.02448979591836742,
         "item_loss_fraction": 0.0
       }
     },
@@ -146,8 +164,15 @@
       ],
       "cluster_unit": "item",
       "chance_corrected_jss": 0.7846,
+      "chance_corrected_jss_n": 414,
+      "jss_on_parseable_pairs": 0.8937,
       "decision_entropy_bits": 1.2005,
       "label_histogram": {
+        "A": 481,
+        "B": 375,
+        "UNCLEAR": 38
+      },
+      "label_histogram_all_rows": {
         "A": 481,
         "B": 375,
         "UNCLEAR": 38
@@ -155,10 +180,13 @@
       "malformed_rate": 0.0425,
       "malformed_rate_arm_a": 0.0425,
       "malformed_rate_arm_b": 0.0425,
+      "unclear_rate_arm_a": 0.0425,
+      "unclear_rate_arm_b": 0.0425,
       "refusal_rate": 0.0,
       "n_refusals": 0,
       "n_metered_arms": 1117,
-      "n_verdict_pairs": 447,
+      "n_pairs_both_answered": 447,
+      "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
       "refusal_discordance_ci95": [
         0.0,
@@ -172,13 +200,7 @@
         "n_malformed_arms": 38,
         "partitions": true
       },
-      "jss_bounds": {
-        "lower": 0.8389,
-        "upper": 0.8389,
-        "width": 0.0,
-        "n_unidentified_pairs": 0,
-        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
-      },
+      "jss_bounds": null,
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
       "pairwise": {
@@ -189,7 +211,6 @@
       "jss_repeat_delta": {
         "jss": 0.8071748878923767,
         "jss_rep": 0.8834080717488789,
-        "delta": -0.07623318385650224,
         "ci_lower": -0.12556053811659196,
         "ci_upper": -0.026905829596412523,
         "cluster_unit": "item",
@@ -203,6 +224,12 @@
         "repeat_agreement_by_arm": {
           "a": 0.9013
         },
+        "ceiling_single_arm": true,
+        "ceiling_arms_present": [
+          "a"
+        ],
+        "delta_withheld_reason": "repeat baseline collected on one prompt arm only; delta cannot separate paraphrase sensitivity from template-specific decoding noise. Re-collect with --repeat-baseline on the current runner.",
+        "delta_single_arm_ceiling": -0.07623318385650224,
         "item_loss_fraction": 0.0
       }
     },
@@ -217,8 +244,15 @@
       ],
       "cluster_unit": "item",
       "chance_corrected_jss": 0.894,
+      "chance_corrected_jss_n": 482,
+      "jss_on_parseable_pairs": 0.9481,
       "decision_entropy_bits": 1.0862,
       "label_histogram": {
+        "B": 412,
+        "A": 562,
+        "UNCLEAR": 16
+      },
+      "label_histogram_all_rows": {
         "B": 412,
         "A": 562,
         "UNCLEAR": 16
@@ -226,10 +260,13 @@
       "malformed_rate": 0.0162,
       "malformed_rate_arm_a": 0.0101,
       "malformed_rate_arm_b": 0.0222,
+      "unclear_rate_arm_a": 0.0101,
+      "unclear_rate_arm_b": 0.0222,
       "refusal_rate": 0.0,
       "n_refusals": 0,
       "n_metered_arms": 1237,
-      "n_verdict_pairs": 495,
+      "n_pairs_both_answered": 495,
+      "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
       "refusal_discordance_ci95": [
         0.0,
@@ -243,13 +280,7 @@
         "n_malformed_arms": 16,
         "partitions": true
       },
-      "jss_bounds": {
-        "lower": 0.9293,
-        "upper": 0.9293,
-        "width": 0.0,
-        "n_unidentified_pairs": 0,
-        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
-      },
+      "jss_bounds": null,
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
       "pairwise": {
@@ -260,7 +291,6 @@
       "jss_repeat_delta": {
         "jss": 0.9433198380566802,
         "jss_rep": 0.97165991902834,
-        "delta": -0.028340080971659853,
         "ci_lower": -0.06072874493927127,
         "ci_upper": 0.004048582995951344,
         "cluster_unit": "item",
@@ -274,6 +304,12 @@
         "repeat_agreement_by_arm": {
           "a": 0.9757
         },
+        "ceiling_single_arm": true,
+        "ceiling_arms_present": [
+          "a"
+        ],
+        "delta_withheld_reason": "repeat baseline collected on one prompt arm only; delta cannot separate paraphrase sensitivity from template-specific decoding noise. Re-collect with --repeat-baseline on the current runner.",
+        "delta_single_arm_ceiling": -0.028340080971659853,
         "item_loss_fraction": 0.0
       }
     }
@@ -290,8 +326,17 @@
       ],
       "cluster_unit": "item",
       "chance_corrected_jss": 0.6223,
+      "chance_corrected_jss_n": 245,
+      "jss_on_parseable_pairs": 0.751,
       "decision_entropy_bits": 1.7916,
       "label_histogram": {
+        "4": 241,
+        "5": 130,
+        "2": 74,
+        "3": 39,
+        "1": 6
+      },
+      "label_histogram_all_rows": {
         "4": 241,
         "5": 130,
         "2": 74,
@@ -301,10 +346,13 @@
       "malformed_rate": 0.0,
       "malformed_rate_arm_a": 0.0,
       "malformed_rate_arm_b": 0.0,
+      "unclear_rate_arm_a": 0.0,
+      "unclear_rate_arm_b": 0.0,
       "refusal_rate": 0.0,
       "n_refusals": 0,
       "n_metered_arms": 735,
-      "n_verdict_pairs": 245,
+      "n_pairs_both_answered": 245,
+      "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
       "refusal_discordance_ci95": [
         0.0,
@@ -318,13 +366,7 @@
         "n_malformed_arms": 0,
         "partitions": true
       },
-      "jss_bounds": {
-        "lower": 0.751,
-        "upper": 0.751,
-        "width": 0.0,
-        "n_unidentified_pairs": 0,
-        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
-      },
+      "jss_bounds": null,
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
       "quadratic_weighted_kappa": 0.868,
@@ -333,7 +375,6 @@
       "jss_repeat_delta": {
         "jss": 0.7510204081632653,
         "jss_rep": 0.9469387755102041,
-        "delta": -0.1959183673469388,
         "ci_lower": -0.25306122448979584,
         "ci_upper": -0.13877551020408163,
         "cluster_unit": "item",
@@ -347,6 +388,12 @@
         "repeat_agreement_by_arm": {
           "a": 0.9469
         },
+        "ceiling_single_arm": true,
+        "ceiling_arms_present": [
+          "a"
+        ],
+        "delta_withheld_reason": "repeat baseline collected on one prompt arm only; delta cannot separate paraphrase sensitivity from template-specific decoding noise. Re-collect with --repeat-baseline on the current runner.",
+        "delta_single_arm_ceiling": -0.1959183673469388,
         "item_loss_fraction": 0.0
       }
     },
@@ -361,18 +408,27 @@
       ],
       "cluster_unit": "item",
       "chance_corrected_jss": 0.9591,
+      "chance_corrected_jss_n": 245,
+      "jss_on_parseable_pairs": 0.9796,
       "decision_entropy_bits": 0.9992,
       "label_histogram": {
+        "NO": 253,
+        "YES": 237
+      },
+      "label_histogram_all_rows": {
         "NO": 253,
         "YES": 237
       },
       "malformed_rate": 0.0,
       "malformed_rate_arm_a": 0.0,
       "malformed_rate_arm_b": 0.0,
+      "unclear_rate_arm_a": 0.0,
+      "unclear_rate_arm_b": 0.0,
       "refusal_rate": 0.0,
       "n_refusals": 0,
       "n_metered_arms": 735,
-      "n_verdict_pairs": 245,
+      "n_pairs_both_answered": 245,
+      "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
       "refusal_discordance_ci95": [
         0.0,
@@ -386,19 +442,12 @@
         "n_malformed_arms": 0,
         "partitions": true
       },
-      "jss_bounds": {
-        "lower": 0.9796,
-        "upper": 0.9796,
-        "width": 0.0,
-        "n_unidentified_pairs": 0,
-        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
-      },
+      "jss_bounds": null,
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
       "jss_repeat_delta": {
         "jss": 0.9795918367346939,
         "jss_rep": 0.9959183673469387,
-        "delta": -0.01632653061224487,
         "ci_lower": -0.03673469387755102,
         "ci_upper": 0.0,
         "cluster_unit": "item",
@@ -412,6 +461,12 @@
         "repeat_agreement_by_arm": {
           "a": 0.9959
         },
+        "ceiling_single_arm": true,
+        "ceiling_arms_present": [
+          "a"
+        ],
+        "delta_withheld_reason": "repeat baseline collected on one prompt arm only; delta cannot separate paraphrase sensitivity from template-specific decoding noise. Re-collect with --repeat-baseline on the current runner.",
+        "delta_single_arm_ceiling": -0.01632653061224487,
         "item_loss_fraction": 0.0
       }
     },
@@ -426,19 +481,28 @@
       ],
       "cluster_unit": "item",
       "chance_corrected_jss": 0.9707,
+      "chance_corrected_jss_n": 137,
+      "jss_on_parseable_pairs": 0.9854,
       "decision_entropy_bits": 0.9969,
       "label_histogram": {
+        "B": 128,
+        "A": 146
+      },
+      "label_histogram_all_rows": {
         "B": 129,
         "A": 147,
         "UNCLEAR": 10
       },
       "malformed_rate": 0.0,
-      "malformed_rate_arm_a": 0.028,
-      "malformed_rate_arm_b": 0.042,
+      "malformed_rate_arm_a": 0.0,
+      "malformed_rate_arm_b": 0.0,
+      "unclear_rate_arm_a": 0.028,
+      "unclear_rate_arm_b": 0.042,
       "refusal_rate": 0.0336,
       "n_refusals": 12,
       "n_metered_arms": 357,
-      "n_verdict_pairs": 137,
+      "n_pairs_both_answered": 137,
+      "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.014,
       "refusal_discordance_ci95": [
         0.0,
@@ -452,13 +516,7 @@
         "n_malformed_arms": 0,
         "partitions": true
       },
-      "jss_bounds": {
-        "lower": 0.9441,
-        "upper": 0.986,
-        "width": 0.042,
-        "n_unidentified_pairs": 6,
-        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
-      },
+      "jss_bounds": null,
       "jss_strict_refusal_inclusive": 0.9441,
       "jss_support": "verdict_pairs",
       "pairwise": {
@@ -485,8 +543,17 @@
       ],
       "cluster_unit": "item",
       "chance_corrected_jss": 0.7005,
+      "chance_corrected_jss_n": 245,
+      "jss_on_parseable_pairs": 0.8122,
       "decision_entropy_bits": 1.6317,
       "label_histogram": {
+        "4": 253,
+        "2": 85,
+        "3": 136,
+        "5": 12,
+        "1": 4
+      },
+      "label_histogram_all_rows": {
         "4": 253,
         "2": 85,
         "3": 136,
@@ -496,10 +563,13 @@
       "malformed_rate": 0.0,
       "malformed_rate_arm_a": 0.0,
       "malformed_rate_arm_b": 0.0,
+      "unclear_rate_arm_a": 0.0,
+      "unclear_rate_arm_b": 0.0,
       "refusal_rate": 0.0,
       "n_refusals": 0,
       "n_metered_arms": 735,
-      "n_verdict_pairs": 245,
+      "n_pairs_both_answered": 245,
+      "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
       "refusal_discordance_ci95": [
         0.0,
@@ -513,13 +583,7 @@
         "n_malformed_arms": 0,
         "partitions": true
       },
-      "jss_bounds": {
-        "lower": 0.8122,
-        "upper": 0.8122,
-        "width": 0.0,
-        "n_unidentified_pairs": 0,
-        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
-      },
+      "jss_bounds": null,
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
       "quadratic_weighted_kappa": 0.8621,
@@ -528,7 +592,6 @@
       "jss_repeat_delta": {
         "jss": 0.8122448979591836,
         "jss_rep": 0.963265306122449,
-        "delta": -0.15102040816326534,
         "ci_lower": -0.20000000000000007,
         "ci_upper": -0.10204081632653061,
         "cluster_unit": "item",
@@ -542,6 +605,12 @@
         "repeat_agreement_by_arm": {
           "a": 0.9633
         },
+        "ceiling_single_arm": true,
+        "ceiling_arms_present": [
+          "a"
+        ],
+        "delta_withheld_reason": "repeat baseline collected on one prompt arm only; delta cannot separate paraphrase sensitivity from template-specific decoding noise. Re-collect with --repeat-baseline on the current runner.",
+        "delta_single_arm_ceiling": -0.15102040816326534,
         "item_loss_fraction": 0.0
       }
     },
@@ -556,8 +625,15 @@
       ],
       "cluster_unit": "item",
       "chance_corrected_jss": 0.9657,
+      "chance_corrected_jss_n": 239,
+      "jss_on_parseable_pairs": 0.9833,
       "decision_entropy_bits": 1.069,
       "label_histogram": {
+        "NO": 276,
+        "YES": 208,
+        "UNCLEAR": 6
+      },
+      "label_histogram_all_rows": {
         "NO": 276,
         "YES": 208,
         "UNCLEAR": 6
@@ -565,10 +641,13 @@
       "malformed_rate": 0.0122,
       "malformed_rate_arm_a": 0.0122,
       "malformed_rate_arm_b": 0.0122,
+      "unclear_rate_arm_a": 0.0122,
+      "unclear_rate_arm_b": 0.0122,
       "refusal_rate": 0.0,
       "n_refusals": 0,
       "n_metered_arms": 735,
-      "n_verdict_pairs": 245,
+      "n_pairs_both_answered": 245,
+      "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0,
       "refusal_discordance_ci95": [
         0.0,
@@ -582,19 +661,12 @@
         "n_malformed_arms": 6,
         "partitions": true
       },
-      "jss_bounds": {
-        "lower": 0.9592,
-        "upper": 0.9592,
-        "width": 0.0,
-        "n_unidentified_pairs": 0,
-        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
-      },
+      "jss_bounds": null,
       "jss_strict_refusal_inclusive": null,
       "jss_support": "verdict_pairs",
       "jss_repeat_delta": {
         "jss": 0.9591836734693877,
         "jss_rep": 0.9795918367346939,
-        "delta": -0.020408163265306145,
         "ci_lower": -0.04489795918367345,
         "ci_upper": 0.0,
         "cluster_unit": "item",
@@ -608,6 +680,12 @@
         "repeat_agreement_by_arm": {
           "a": 0.9918
         },
+        "ceiling_single_arm": true,
+        "ceiling_arms_present": [
+          "a"
+        ],
+        "delta_withheld_reason": "repeat baseline collected on one prompt arm only; delta cannot separate paraphrase sensitivity from template-specific decoding noise. Re-collect with --repeat-baseline on the current runner.",
+        "delta_single_arm_ceiling": -0.020408163265306145,
         "item_loss_fraction": 0.0
       }
     },
@@ -622,19 +700,29 @@
       ],
       "cluster_unit": "item",
       "chance_corrected_jss": 0.8232,
+      "chance_corrected_jss_n": 69,
+      "jss_on_parseable_pairs": 0.913,
       "decision_entropy_bits": 1.5786,
       "label_histogram": {
+        "UNCLEAR": 72,
+        "B": 86,
+        "A": 90
+      },
+      "label_histogram_all_rows": {
         "UNCLEAR": 180,
         "B": 89,
         "A": 91
       },
       "malformed_rate": 0.2857,
-      "malformed_rate_arm_a": 0.5722,
-      "malformed_rate_arm_b": 0.4278,
+      "malformed_rate_arm_a": 0.3889,
+      "malformed_rate_arm_b": 0.1825,
+      "unclear_rate_arm_a": 0.5722,
+      "unclear_rate_arm_b": 0.4278,
       "refusal_rate": 0.2978,
       "n_refusals": 134,
       "n_metered_arms": 450,
-      "n_verdict_pairs": 124,
+      "n_pairs_both_answered": 124,
+      "n_pairs_transport_error": 0,
       "refusal_discordance_rate": 0.0222,
       "refusal_discordance_ci95": [
         0.0,
@@ -648,13 +736,7 @@
         "n_malformed_arms": 72,
         "partitions": true
       },
-      "jss_bounds": {
-        "lower": 0.4444,
-        "upper": 0.7556,
-        "width": 0.3111,
-        "n_unidentified_pairs": 56,
-        "basis": "Manski worst case: refused pairs counted as all-disagree then all-agree; no assumption about why the judge declined"
-      },
+      "jss_bounds": null,
       "jss_strict_refusal_inclusive": 0.35,
       "jss_support": "verdict_pairs",
       "pairwise": {

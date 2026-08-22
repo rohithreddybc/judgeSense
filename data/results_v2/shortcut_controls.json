@@ -11,7 +11,9 @@
         "n": 500,
         "n_ties_excluded": 0,
         "n_rows": 500,
-        "coverage": 1.0
+        "coverage": 1.0,
+        "verdict": "clean",
+        "low_coverage": false
       },
       "preference": {
         "accuracy": 0.5,
@@ -22,7 +24,9 @@
         "n": 452,
         "n_ties_excluded": 0,
         "n_rows": 452,
-        "coverage": 1.0
+        "coverage": 1.0,
+        "verdict": "clean",
+        "low_coverage": false
       }
     }
   },
@@ -38,7 +42,9 @@
         "n": 494,
         "n_ties_excluded": 6,
         "n_rows": 500,
-        "coverage": 0.988
+        "coverage": 0.988,
+        "verdict": "inconclusive",
+        "low_coverage": false
       },
       "preference": {
         "accuracy": 0.5136,
@@ -49,7 +55,9 @@
         "n": 440,
         "n_ties_excluded": 12,
         "n_rows": 452,
-        "coverage": 0.9735
+        "coverage": 0.9735,
+        "verdict": "clean",
+        "low_coverage": false
       }
     }
   },
@@ -65,13 +73,16 @@
         "n": 248,
         "n_ties_excluded": 252,
         "n_rows": 500,
-        "coverage": 0.496
+        "coverage": 0.496,
+        "verdict": "inconclusive",
+        "low_coverage": true
       }
     }
   },
   "band": {
     "lower": 0.44,
     "upper": 0.56,
+    "rule": "EXPLOITABLE when the whole 95% interval lies outside the band; clean when it lies inside; inconclusive when it straddles an edge, which is a statement about the achievable precision at this support, not about the split",
     "note": "two-sided: a reliably-shorter or reliably-lower-overlap answer is as exploitable as the reverse"
   }
 }

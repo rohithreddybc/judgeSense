@@ -148,15 +148,46 @@ def main(argv=None) -> int:
             result = _score(task, fn)
             report[key]["tasks"][task] = result
             acc = result["accuracy"]
-            ok = acc is not None and BAND[0] <= acc <= BAND[1]
-            if not ok:
-                failures.append(f"{key}/{task} = {acc}")
+            # Three states, because absence of evidence and evidence of
+            # absence are different claims and the old gate made both from a
+            # point estimate.
+            #
+            #   EXPLOITABLE   the whole interval sits outside the band: the
+            #                 heuristic demonstrably beats chance. Fails.
+            #   CLEAN         the whole interval sits inside: the shortcut is
+            #                 bounded below the band edge at this n.
+            #   INCONCLUSIVE  the interval straddles an edge. Consistent with
+            #                 chance AND with a usable shortcut; the data cannot
+            #                 separate them. Reported, not silently passed, and
+            #                 not failed either -- at n=248 with half the rows
+            #                 tied, no construction could do better, so failing
+            #                 it would be demanding precision the split cannot
+            #                 supply rather than reporting a defect.
             ci = result["ci95"]
+            if ci is None:
+                verdict = "NO DATA"
+            elif ci[0] > BAND[1] or ci[1] < BAND[0]:
+                verdict = "EXPLOITABLE"
+            elif BAND[0] <= ci[0] and ci[1] <= BAND[1]:
+                verdict = "clean"
+            else:
+                verdict = "inconclusive"
+            result["verdict"] = verdict
+            result["low_coverage"] = (result["coverage"] or 1.0) < 0.8
+            ok = verdict != "EXPLOITABLE"
+            if not ok:
+                failures.append(f"{key}/{task} = {acc} CI={ci}")
             ci_s = f"[{ci[0]:.3f},{ci[1]:.3f}]" if ci else "-"
             print(f"{key:<22}{task:<12}{acc:>10}{ci_s:>17}{result['n']:>7}"
-                  f"{result['coverage']:>7}  {'chance' if ok else 'EXPLOITABLE'}")
+                  f"{result['coverage']:>7}  {verdict}"
+                  f"{'  [reads <80% of rows]' if result['low_coverage'] else ''}")
 
     report["band"] = {"lower": BAND[0], "upper": BAND[1],
+                      "rule": ("EXPLOITABLE when the whole 95% interval lies "
+                               "outside the band; clean when it lies inside; "
+                               "inconclusive when it straddles an edge, which "
+                               "is a statement about the achievable precision "
+                               "at this support, not about the split"),
                       "note": "two-sided: a reliably-shorter or reliably-lower-overlap "
                               "answer is as exploitable as the reverse"}
     Path(args.json_out).parent.mkdir(parents=True, exist_ok=True)

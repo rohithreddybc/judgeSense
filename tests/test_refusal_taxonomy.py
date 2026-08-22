@@ -41,7 +41,7 @@ def test_a_judge_that_refuses_everything_does_not_score_perfect_agreement():
     """The degenerate case the taxonomy exists to prevent."""
     recs = [_rec(i, "UNCLEAR", "UNCLEAR", "refusal", "refusal") for i in range(20)]
     out = _regen().metrics_for_cell(recs, "factuality")
-    assert out["n_verdict_pairs"] == 0
+    assert out["n_pairs_both_answered"] == 0
     assert out["consistent_refusal_rate"] == 1.0
     assert out["jss_strict"] != 1.0, "refusing everything must not read as perfect stability"
 
@@ -51,7 +51,7 @@ def test_jss_is_computed_over_verdict_pairs_only():
     recs = [_rec(i) for i in range(10)]
     recs += [_rec(100 + i, "YES", "UNCLEAR", "end_turn", "refusal") for i in range(10)]
     out = _regen().metrics_for_cell(recs, "factuality")
-    assert out["n_verdict_pairs"] == 10
+    assert out["n_pairs_both_answered"] == 10
     assert out["jss_support"] == "verdict_pairs"
     assert out["jss_strict"] == 1.0, "the ten answered pairs all agree"
     assert out["refusal_discordance_rate"] == 0.5
@@ -82,7 +82,7 @@ def test_malformed_output_is_not_reclassified_as_refusal():
     recs = [_rec(i, "UNCLEAR", "UNCLEAR", "end_turn", "end_turn") for i in range(10)]
     out = _regen().metrics_for_cell(recs, "factuality")
     assert out["refusal_rate"] == 0.0
-    assert out["n_verdict_pairs"] == 10
+    assert out["n_pairs_both_answered"] == 10
     assert out["malformed_rate"] == 1.0
     assert out["jss_strict_refusal_inclusive"] is None, "no refusals: no separate figure needed"
 
@@ -91,7 +91,7 @@ def test_runs_without_usage_metadata_behave_exactly_as_before():
     recs = [{"pair_id": f"p{i}", "item_id": f"i{i}", "decision_a": "YES",
              "decision_b": "YES", "ground_truth_label": "accurate"} for i in range(10)]
     out = _regen().metrics_for_cell(recs, "factuality")
-    assert out["n_verdict_pairs"] == 10
+    assert out["n_pairs_both_answered"] == 10
     assert out["refusal_rate"] is None, "absent metering is unknown, not zero refusals"
     assert out["jss_strict"] == 1.0
 
@@ -125,6 +125,6 @@ def test_openai_decline_is_not_charged_as_paraphrase_disagreement():
     recs = [_rec(i, "UNCLEAR", "UNCLEAR", "content_filter", "content_filter")
             for i in range(10)]
     out = regen.metrics_for_cell(recs, "factuality")
-    assert out["n_verdict_pairs"] == 0, "declines must not be scored as verdicts"
+    assert out["n_pairs_both_answered"] == 0, "declines must not be scored as verdicts"
     assert out["refusal_rate"] == 1.0
     assert out["consistent_refusal_rate"] == 1.0

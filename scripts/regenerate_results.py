@@ -216,18 +216,50 @@ def _arm_refused(rec: dict, arm: str) -> bool:
     return _is_refusal_reason(usage.get("finish_reason"))
 
 
+def _arm_transport_failed(rec: dict, arm: str) -> bool:
+    """The call did not complete, so the judge never had a chance to answer.
+
+    A dead call yields UNCLEAR exactly like an unparseable answer, and without
+    this it is published as the judge's malformed-output rate AND charged as
+    paraphrase disagreement. A 529 storm during a paid run would appear in the
+    paper as a format-following defect.
+    """
+    usage = rec.get(f"usage_{arm}")
+    if usage is None:
+        return False
+    return bool(usage.get("error")) or usage.get("finish_reason") is None
+
+
+def _arm_malformed_rate(recs: List[dict], arm: str) -> Optional[float]:
+    """Unparseable answers on one arm, excluding refusals and dead calls.
+
+    Those are not format failures: one is a decline, the other never reached the
+    model. Counting them here attributes a safety behaviour, or a network fault,
+    to the judge's instruction-following.
+    """
+    considered = malformed = 0
+    for rec in recs:
+        if _arm_transport_failed(rec, arm) or _arm_refused(rec, arm):
+            continue
+        considered += 1
+        malformed += rec.get(f"decision_{arm}") == UNCLEAR
+    return (malformed / considered) if considered else None
+
+
 def _pair_class(rec: dict) -> str:
     """One of: both_verdict, one_refused, both_refused.
 
     Records with no usage metadata at all (runs predating metering) cannot carry
     a refusal, so they classify as both_verdict and behave exactly as before.
     """
+    if _arm_transport_failed(rec, "a") or _arm_transport_failed(rec, "b"):
+        return "transport_error"
     a, b = _arm_refused(rec, "a"), _arm_refused(rec, "b")
     if a and b:
         return "both_refused"
     if a or b:
         return "one_refused"
-    return "both_verdict"
+    return "both_answered"
 
 
 def _malformed_rate(recs: List[dict]) -> Optional[float]:
@@ -289,15 +321,21 @@ def _refusal_taxonomy(recs: List[dict]) -> Dict:
     judged means a meaning-preserving rewording changed whether the judge was
     willing to judge at all.
     """
-    metered = any(
-        (r.get(f"usage_{arm}") or {}).get("finish_reason") is not None
-        for r in recs for arm in ("a", "b")
-    )
+    # Metering is the presence of a usage record, not the presence of a
+    # finish_reason inside it. Keyed on finish_reason, a cell whose every call
+    # DIED -- usage present, error set, finish_reason absent -- was reported as
+    # never metered, and took an early return carrying different keys from the
+    # normal path.
+    metered = any(r.get(f"usage_{arm}") is not None
+                  for r in recs for arm in ("a", "b"))
     if not metered:
         # Same rule as refusal_rate: absent metering is unknown, not zero.
         # Reporting RDR 0.0 for an unmetered cell states that no rewording
         # changed the judge's willingness to answer, which was never measured.
-        return {"n_verdict_pairs": len(recs), "refusal_discordance_rate": None,
+        return {"n_pairs_both_answered": len(recs),
+                "n_pairs_transport_error": 0,
+                "refusal_discordance_rate": None,
+                "refusal_discordance_ci95": None,
                 "consistent_refusal_rate": None}
     classes = [_pair_class(r) for r in recs]
     n = len(recs) or 1
@@ -310,7 +348,13 @@ def _refusal_taxonomy(recs: List[dict]) -> Dict:
         "item", n_bootstrap=2000,
     )
     return {
-        "n_verdict_pairs": classes.count("both_verdict"),
+        # Named for what it is. Malformed arms REMAIN in this support and are
+        # scored as disagreement -- a completed response the parser could not
+        # read is judge behaviour, unlike a refusal or a dead call. Calling it
+        # "verdict pairs" implied the preregistered both-arms-parsed support,
+        # which is a different and smaller set.
+        "n_pairs_both_answered": classes.count("both_answered"),
+        "n_pairs_transport_error": classes.count("transport_error"),
         "refusal_discordance_rate": round(classes.count("one_refused") / n, 4),
         "refusal_discordance_ci95": (
             [round(rdr_ci["ci_lower"], 4), round(rdr_ci["ci_upper"], 4)]
@@ -354,7 +398,7 @@ def metrics_for_cell(recs: List[dict], task: str) -> Dict:
     # the judge actually rendered a verdict on both phrasings. The
     # refusal-inclusive figure is reported below as a sensitivity analysis, so
     # nothing is hidden by the conditioning.
-    verdict = [r for r in recs if _pair_class(r) == "both_verdict"]
+    verdict = [r for r in recs if _pair_class(r) == "both_answered"]
     scored = verdict or recs
     strict = cluster_bootstrap_ci(scored, lambda r: jss(r, "disagree"), "item", n_bootstrap=2000)
     out = {
@@ -369,8 +413,25 @@ def metrics_for_cell(recs: List[dict], task: str) -> Dict:
         "ci95": [round(strict["ci_lower"], 4), round(strict["ci_upper"], 4)],
         "cluster_unit": "item",
         "chance_corrected_jss": _round4(_defined(chance_corrected_jss, scored, "disagree")),
+        # Cohen's kappa restricts to pairs where BOTH arms parsed, while
+        # jss(..., "disagree") keeps an unparseable arm in the denominator as a
+        # mismatch. On one shipped cell that was n=69 against n=124, and a kappa
+        # of 0.82 sat beside a JSS of 0.51 -- reading as "almost all of the
+        # agreement is non-chance", the opposite of what happened. The support
+        # is now published, and the JSS computed on kappa's own support is
+        # printed next to it so the correction has something to correct.
+        "chance_corrected_jss_n": sum(
+            1 for r in scored
+            if r["decision_a"] != UNCLEAR and r["decision_b"] != UNCLEAR
+        ),
+        "jss_on_parseable_pairs": _round4(_defined(jss, scored, "drop")),
         "decision_entropy_bits": _round4(_defined(decision_entropy, scored)),
-        "label_histogram": label_histogram(recs),
+        # Same support as decision_entropy_bits above. Computed on `recs` while
+        # the entropy used `scored`, the printed histogram did not reproduce the
+        # printed entropy (1.5000 against 1.5786 on one cell) and a reader
+        # checking the arithmetic found a discrepancy with no explanation.
+        "label_histogram": label_histogram(scored),
+        "label_histogram_all_rows": label_histogram(recs),
         # Malformed output is counted over BOTH arms: a judge can fail to parse
         # on either phrasing, and reporting one side under-states the rate that
         # the strict-mode JSS is charging for.
@@ -381,8 +442,16 @@ def metrics_for_cell(recs: List[dict], task: str) -> Dict:
         # format-following failure. Measured on one cell before the fix:
         # malformed 0.500 of which 0.298 was refusal.
         "malformed_rate": _round4(_malformed_rate(recs)),
-        "malformed_rate_arm_a": round(format_failure_rate(recs, "a")["format_failure_rate"], 4),
-        "malformed_rate_arm_b": round(format_failure_rate(recs, "b")["format_failure_rate"], 4),
+        # Refusal-excluded, like malformed_rate. format_failure_rate has no
+        # refusal awareness, so these two keys carried a different definition
+        # from the pooled key sharing their prefix: on one cell arm A read
+        # 0.5722 against a pooled 0.2857, inflating that template's apparent
+        # format-failure rate twofold. The per-arm split is exactly what a
+        # reader consults to blame one template.
+        "malformed_rate_arm_a": _round4(_arm_malformed_rate(recs, "a")),
+        "malformed_rate_arm_b": _round4(_arm_malformed_rate(recs, "b")),
+        "unclear_rate_arm_a": round(format_failure_rate(recs, "a")["format_failure_rate"], 4),
+        "unclear_rate_arm_b": round(format_failure_rate(recs, "b")["format_failure_rate"], 4),
         # A judge that DECLINES an item is not the same measurement as one whose
         # answer failed to parse, but both collapse to UNCLEAR and would be
         # reported identically. claude-sonnet refuses 30% of the TREC-COVID
@@ -416,7 +485,7 @@ def metrics_for_cell(recs: List[dict], task: str) -> Dict:
     if task not in POINTWISE:
         out["pairwise"] = _accuracy(recs, task)
     if any(r.get("decision_a_repeat") is not None for r in recs):
-        out["jss_repeat_delta"] = _repeat_delta(verdict or recs)
+        out["jss_repeat_delta"] = _repeat_delta(verdict or recs, all_recs=recs)
     return out
 
 
@@ -475,7 +544,7 @@ def _refusal_bounds(recs: List[dict]) -> Dict:
     }
 
 
-def _repeat_delta(recs: List[dict]) -> Dict:
+def _repeat_delta(recs: List[dict], all_recs: Optional[List[dict]] = None) -> Dict:
     """ΔJSS on a support both terms actually share.
 
     Two defects made the earlier call uninterpretable.
@@ -503,17 +572,35 @@ def _repeat_delta(recs: List[dict]) -> Dict:
     for r in canonical:
         for arm in ("a", "b"):
             other = r.get(f"decision_{arm}_repeat")
-            if other is not None:
-                rep.append({"decision_a": r[f"decision_{arm}"],
-                            "decision_b": other,
-                            "item_id": r["item_id"]})
+            if other is None:
+                continue
+            # The repeat arm gets the SAME refusal and transport rules as the
+            # paraphrase arm. Without this a provider-refused repeat scored as
+            # self-disagreement, deflating the ceiling and inflating the delta:
+            # a perfectly stable judge with half its repeats refused reported
+            # delta +0.50 with an interval excluding zero.
+            usage = r.get(f"usage_{arm}_repeat") or {}
+            if _is_refusal_reason(usage.get("finish_reason")):
+                continue
+            if usage and (usage.get("error") or usage.get("finish_reason") is None):
+                continue
+            rep.append({"decision_a": r[f"decision_{arm}"],
+                        "decision_b": other,
+                        "item_id": r["item_id"]})
     if not rep:
         return {"delta": None, "reason": "no repeat arm on the canonical ordering"}
 
     para_items = {r["item_id"] for r in canonical}
     rep_items = {r["item_id"] for r in rep}
     common = para_items & rep_items
-    loss = 1.0 - (len(common) / len(para_items)) if para_items else 1.0
+    # Measured against every canonical item the cell STARTED with, not against
+    # the post-refusal-filter set. Computed the old way, a judge refusing two
+    # thirds of its items reported item_loss_fraction 0.0, and the preregistered
+    # 50% ceiling was unreachable by construction.
+    base = all_recs if all_recs is not None else recs
+    all_canonical = {r["item_id"] for r in base if r.get("ab_order") in (None, "original")}
+    denom = all_canonical or para_items
+    loss = 1.0 - (len(common) / len(denom)) if denom else 1.0
     if len(common) < MIN_DELTA_CLUSTERS:
         return {"delta": None, "n_clusters": len(common),
                 "reason": f"support {len(common)} below the declared floor of "
@@ -539,6 +626,20 @@ def _repeat_delta(recs: List[dict]) -> Dict:
     out["repeat_agreement_by_arm"] = per_arm or None
     if len(per_arm) == 2:
         out["arm_ceiling_gap"] = round(abs(per_arm["a"] - per_arm["b"]), 4)
+    else:
+        # A ceiling measured under one template cannot separate "the judge is
+        # destabilised by rewording" from "template B is intrinsically noisier
+        # or harder to parse". Emitting delta anyway published that confound
+        # silently, because the pooling fix landed in code while every shipped
+        # record still carried arm A only.
+        out["ceiling_single_arm"] = True
+        out["ceiling_arms_present"] = sorted(per_arm)
+        out["delta_withheld_reason"] = (
+            "repeat baseline collected on one prompt arm only; delta cannot "
+            "separate paraphrase sensitivity from template-specific decoding "
+            "noise. Re-collect with --repeat-baseline on the current runner."
+        )
+        out["delta_single_arm_ceiling"] = out.pop("delta", None)
     out["item_loss_fraction"] = round(loss, 4)
     # At a ceiling of exactly 1.000 the percentile bootstrap reports zero
     # uncertainty for a quantity estimated from one draw per item. State the
