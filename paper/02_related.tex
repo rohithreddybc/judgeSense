@@ -7,25 +7,33 @@ practice, established at scale by MT-Bench and Chatbot Arena
 \citep{zheng2023judging} and adopted across holistic evaluation efforts
 \citep{liang2023holistic}. Validation of these judges is almost always
 \emph{correlational}: a judge is trusted when its scores agree with human ratings
-in aggregate \citep{chiang2023can, liu2023geval}. That criterion is necessary and
-not sufficient. Aggregate correlation is compatible with per-item instability,
-because errors that cancel across a corpus still make any individual verdict
-unreliable, and a researcher who reruns an evaluation with differently worded
-instructions has no guarantee of reproducing it. Our measurement is orthogonal to
-accuracy by construction: it never consults the ground-truth label, and a judge
-that is uniformly wrong scores perfectly on it.
+in aggregate \citep{chiang2023can, liu2023geval}. \citet{chiang2023can} find that
+agreement is broadly positive but \emph{task-dependent}, which prefigures a result we
+report below. That criterion is necessary and not sufficient. Aggregate
+correlation is compatible with per-item instability, because errors that cancel
+across a corpus still make any individual verdict unreliable, and a researcher who
+reruns an evaluation with differently worded instructions has no guarantee of
+reproducing it. Our measurement is orthogonal to accuracy by construction: it
+never consults the ground-truth label, and a judge that is uniformly wrong scores
+perfectly on it.
 
 \paragraph{Known judge biases.}
 A body of work documents specific, systematic ways judges fail. Position bias ---
 preferring whichever candidate is presented first --- is strong enough to require
-explicit correction \citep{wang2023fair} and has been characterised
-systematically across pairwise comparative assessment \citep{shi2024judging}.
-Length is the other well-known confound, and rather than lean on a citation we
-measure it directly in our own source data: in the MT-Bench human preference
-votes we draw from, annotators preferred the longer of the two responses in
-roughly 70\% of usable comparisons (Section~\ref{sec:shortcuts}), so a judge that
-simply picked the longer answer would score far above chance on an unfiltered
-sample of them.
+explicit correction \citep{wang2023fair}. \citet{shi2024judging} extend that
+analysis across twelve judges and more than 100{,}000 evaluation instances,
+finding position bias to be a stable, model-specific property \emph{modulated by
+the quality gap between candidates}: it bites hardest when the two options are
+close. That result directly motivates a construction choice we make in
+Section~\ref{sec:benchmark}, where the preference split is matched on annotator
+vote margin so that difficulty is not confounded with the property being measured.
+
+Length is the other well-documented confound \citep{wang2023fair}, and rather
+than lean on a citation for its magnitude we measure it in our own source data:
+in the MT-Bench human preference votes we draw from, annotators preferred the
+longer of the two responses in roughly 70\% of usable comparisons
+(Section~\ref{sec:shortcuts}), so a judge that simply picked the longer answer
+would score far above chance on an unfiltered sample.
 
 These are findings about \emph{what} judges prefer. We take them as constraints
 on benchmark construction rather than as our object of study: because position
@@ -36,37 +44,69 @@ the released files that neither heuristic beats chance.
 
 \paragraph{Prompt sensitivity in language models generally.}
 That model behaviour moves under meaning-preserving reformulation is
-well-established outside the evaluation setting. Formatting choices alone shift
-accuracy across a wide spread \citep{sclar2024quantifying}; paraphrasing task
-instructions changes measured capability enough to alter model rankings
-\citep{mizrahi2024state}; consistency under rephrasing has been treated as a
-first-class property of pretrained models \citep{elazar2021measuring}; and the
-sensitivity itself has been assessed and benchmarked as a phenomenon in its own
-right \citep{zhuo2024prosa, razavi2025benchmarking}. Systematic surveys of
-evaluation practice reach the same conclusion from the other direction
-\citep{wei2024systematic}. All of this concerns a model \emph{being tested}. Our
-contribution is to apply the same lens to the model doing the testing, where
-instability propagates silently into every downstream number.
+well-established outside the evaluation setting. Formatting choices alone ---
+delimiters, separators, whitespace --- swing accuracy by as much as 76 points on
+some benchmarks \citep{sclar2024quantifying}; paraphrasing task instructions
+changes measured capability enough to alter model rankings
+\citep{mizrahi2024state}; and consistency under rephrasing has been treated as a
+first-class property of pretrained models \citep{elazar2021measuring}. The
+sensitivity has itself been assessed and benchmarked as a phenomenon
+\citep{zhuo2024prosa, razavi2025benchmarking}, and \citet{razavi2025benchmarking}
+report that current methods struggle to \emph{anticipate} which prompts will trip
+a model up --- which is an argument for measuring sensitivity directly rather
+than predicting it. \citet{wei2024systematic} study prompt-template effects on
+LLM-judge reliability specifically, though restricted to alignment tasks and
+under a different metric framework.
+
+All of this concerns a model \emph{being tested}. Our contribution is to apply the
+same lens to the model doing the testing. The distinction is not merely one of
+subject: a judge does not generate an answer, it returns a label from a small
+finite set, so its sensitivity is not about output fluency or content quality but
+about decision stability across paraphrases. That is what makes a separate
+measurement necessary rather than a re-use of existing ones.
 
 \paragraph{Judging judges.}
-Recent work evaluates LLM judges as objects in their own right, including
-alignment with human labels \citep{thakur2024judging} and general capability
-benchmarks \citep{li2024llms}. These efforts mostly ask whether judges are
-\emph{right}.
+Recent work evaluates LLM judges as objects in their own right.
+\citet{thakur2024judging} assess thirteen judges on a clean alignment task and
+document sensitivity to prompt complexity, length and other surface features
+alongside a general tendency toward leniency; \citet{li2024llms} survey the area
+broadly. These establish that judges are biased. What they do not provide is a
+reportable, judge-level number that a practitioner can compute for a new judge
+and act on.
 
 The closest prior work to ours is \citet{arabzadeh2025human}, who study prompt
 sensitivity in LLM-based relevance judgment directly, comparing human- and
-LLM-authored prompt variants across binary, graded and pairwise formulations of
-the same relevance task. The difference is in what the measurement is referenced
-against. That work evaluates labels produced under varying prompts against human
-relevance gold, so it measures how rewording moves a judge's \emph{accuracy};
-JSS never consults the gold label and measures how rewording moves a judge's
+LLM-authored prompt variants --- 90 prompts across binary, graded and pairwise
+formulations, on three judge models --- and reporting Cohen's $\kappa$ against
+TREC labels. The difference is what the measurement is referenced against. That
+work evaluates labels produced under varying prompts against human relevance
+gold, so it measures how rewording moves a judge's \emph{accuracy}; JSS never
+consults the gold label and measures how rewording moves a judge's
 \emph{agreement with itself}. The two are complementary and can diverge: a judge
 whose accuracy is unchanged under rewording may still be flipping individual
 verdicts in compensating directions, which our measurement sees and an
-accuracy-referenced one does not. We also separate that quantity from decoding
-variance by measuring each judge against its own repeat-agreement ceiling rather
-than against an assumed noise floor of zero.
+accuracy-referenced one does not. We note also that their relevance labels and
+our relevance split both derive from TREC judgments, so the two are measuring
+related material under different referents.
+
+\paragraph{Why not simply evaluate under many prompts?}
+The natural alternative to measuring sensitivity is to average it away.
+\citet{mizrahi2024state} advocate multi-prompt evaluation as a methodological
+default, and it is good advice for the evaluation being run. It is not a
+substitute for a judge-level property. Multi-prompt evaluation must be re-run for
+every new judge, over a prompt distribution chosen for that study; a fixed,
+validated paraphrase set yields a number computed once and portable to any
+evaluation context, which is what makes it usable as a selection criterion or a
+regression test.
+
+Variance-based characterisations \citep{sclar2024quantifying, zhuo2024prosa}
+require gold labels, because they measure how accuracy moves across prompt
+variants. Ours requires none, which is what allows it to be applied to a judge on
+a corpus where no gold labels exist --- the situation a practitioner deploying a
+judge is usually in. Ensemble judging \citep{li2024llms} manages sensitivity by
+combining judges, but tells you nothing about whether any individual judge is
+stable enough to use alone, which is the question a team choosing one judge
+actually faces.
 
 \paragraph{Sources and statistical machinery.}
 The items come from existing human-labelled corpora: TruthfulQA for factual
@@ -74,10 +114,11 @@ accuracy \citep{lin2022truthfulqa}, SummEval for expert coherence ratings
 \citep{fabbri2021summeval}, BEIR's TREC-COVID split for graded relevance
 judgements \citep{thakur2021beir}, and MT-Bench's human preference votes
 \citep{zheng2023judging}. No label in this benchmark is assigned or inferred by
-us. Agreement is chance-corrected with Cohen's $\kappa$ \citep{cohen1960coefficient},
-quadratic-weighted on the ordinal task, and all intervals are cluster bootstrap
-\citep{efron1979bootstrap} resampled at the item, since the two candidate
-orderings of a pairwise item and its repeat arms are not independent
-observations. The judges evaluated are drawn from current instruction-tuned and
-reasoning-tuned families \citep{openai2023gpt4, gemini2023gemini,
-grattafiori2024llama3, qwen2024qwen25, jiang2023mistral, deepseek2025r1}.
+us. Agreement is chance-corrected with Cohen's $\kappa$
+\citep{cohen1960coefficient}, quadratic-weighted on the ordinal task, and all
+intervals are cluster bootstrap \citep{efron1979bootstrap} resampled at the item,
+since the two candidate orderings of a pairwise item and its repeat arms are not
+independent observations. The judges evaluated are drawn from current
+instruction-tuned and reasoning-tuned families \citep{openai2023gpt4,
+gemini2023gemini, grattafiori2024llama3, qwen2024qwen25, jiang2023mistral,
+deepseek2025r1}.

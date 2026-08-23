@@ -771,16 +771,17 @@ def main(argv=None) -> int:
         r"identical prompt. Intervals are 95\% item-clustered bootstrap over "
         r"2{,}000 resamples. Cells below the declared support floor of 100 "
         r"clusters report no endpoint rather than one computed from too few. "
-        r"$r$ is the provider-reported refusal rate. The JSS column is computed over "
+        r"$r$ is the provider-reported refusal rate and $m$ the malformed-output "
+        r"rate over the arms the judge attempted, so the two do not overlap. The JSS column is computed over "
         r"all rows of the cell; $\mathrm{JSS}_{\text{rep}}$ and "
         r"$\Delta\mathrm{JSS}$ are computed over the canonical ordering only, "
         r"so the two columns do not subtract to the printed delta where a cell "
         r"carries refusals or a swapped-ordering imbalance.}",
         r"\label{tab:main}",
-        r"\begin{tabular}{llrrrlr}",
+        r"\begin{tabular}{llrrrlrr}",
         r"\toprule",
         r"Judge & Task & $n$ & JSS & $\mathrm{JSS}_{\text{rep}}$ & "
-        r"$\Delta\mathrm{JSS}$ [95\% CI] & $r$ \\",
+        r"$\Delta\mathrm{JSS}$ [95\% CI] & $r$ & $m$ \\",
         r"\midrule",
     ]
     for judge in sorted(summary):
@@ -800,7 +801,8 @@ def main(argv=None) -> int:
             lines.append(
                 f"{judge if first else ''} & {task} & {cell.get('n_rows', 0)} & "
                 f"{_fmt(cell.get('jss_strict'))} & {_fmt(delta.get('jss_rep'))} & "
-                f"{d_txt} & {_fmt(cell.get('refusal_rate'))} \\\\"
+                f"{d_txt} & {_fmt(cell.get('refusal_rate'))} & "
+                f"{_fmt(cell.get('malformed_rate'))} \\\\"
             )
             first = False
         if not first:

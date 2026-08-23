@@ -113,11 +113,26 @@ phrasings yield equivalent verdicts.
 We state the direction of the resulting bias rather than leave it implicit.
 Polarity-inverted pairings are among the hardest items in the set, so excluding
 them can only push measured consistency \emph{upward}; our stability figures are
-conditioned on that exclusion and should be read accordingly. The alternative is implemented in the released code: retain the inverted
-templates, and remap each template's raw answers onto a single canonical decision
-space before comparison. We report the remapped analysis alongside the
-excluded-pairing analysis so the exclusion's effect on the reported numbers is
-visible rather than assumed.
+conditioned on that exclusion and should be read accordingly.
+
+The alternative --- retaining inverted templates and remapping each template's
+raw answers onto one canonical decision space before comparison --- is
+implemented in the released code, but we cannot report it here and we say why
+rather than deferring it. The v2 construction removes polarity inversion at
+source: all twenty shipped templates request the same answer space in the same
+direction, verified by the audit above. There is consequently nothing in this
+dataset for the remap to operate on, and no remapped analysis is possible without
+building a polarity-inclusive split we have not built. The machinery is released
+for anyone who wants to construct one; the quantification of what the exclusion
+costs is future work, not a result we are withholding.
+
+The earlier version did have that quantification, and its shape is worth
+recording even though its magnitude rested on data we have withdrawn. Including
+polarity-inverted pairings produced an apparent flip rate that was near-identical
+across every judge tested. That uniformity is the diagnostic: a rate that does
+not vary with the model is a property of the instrument rather than of the
+models, and it is what identified the template as a label-convention defect
+rather than a finding about judges. We keep the inference and discard the number.
 
 A limitation of the assignment follows from how templates are allocated. Each
 item is issued under exactly one of the ten unordered template pairs, balanced

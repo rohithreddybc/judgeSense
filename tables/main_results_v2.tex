@@ -1,25 +1,25 @@
 \begin{table}[t]
 \centering
-\caption{Paraphrase sensitivity per judge and task. $\Delta\mathrm{JSS} = \mathrm{JSS}_{\text{para}} - \mathrm{JSS}_{\text{rep}}$ is the pre-registered endpoint; a negative value means rewording costs more agreement than re-issuing the identical prompt. Intervals are 95\% item-clustered bootstrap over 2{,}000 resamples. Cells below the declared support floor of 100 clusters report no endpoint rather than one computed from too few. $r$ is the provider-reported refusal rate. The JSS column is computed over all rows of the cell; $\mathrm{JSS}_{\text{rep}}$ and $\Delta\mathrm{JSS}$ are computed over the canonical ordering only, so the two columns do not subtract to the printed delta where a cell carries refusals or a swapped-ordering imbalance.}
+\caption{Paraphrase sensitivity per judge and task. $\Delta\mathrm{JSS} = \mathrm{JSS}_{\text{para}} - \mathrm{JSS}_{\text{rep}}$ is the pre-registered endpoint; a negative value means rewording costs more agreement than re-issuing the identical prompt. Intervals are 95\% item-clustered bootstrap over 2{,}000 resamples. Cells below the declared support floor of 100 clusters report no endpoint rather than one computed from too few. $r$ is the provider-reported refusal rate and $m$ the malformed-output rate over the arms the judge attempted, so the two do not overlap. The JSS column is computed over all rows of the cell; $\mathrm{JSS}_{\text{rep}}$ and $\Delta\mathrm{JSS}$ are computed over the canonical ordering only, so the two columns do not subtract to the printed delta where a cell carries refusals or a swapped-ordering imbalance.}
 \label{tab:main}
-\begin{tabular}{llrrrlr}
+\begin{tabular}{llrrrlrr}
 \toprule
-Judge & Task & $n$ & JSS & $\mathrm{JSS}_{\text{rep}}$ & $\Delta\mathrm{JSS}$ [95\% CI] & $r$ \\
+Judge & Task & $n$ & JSS & $\mathrm{JSS}_{\text{rep}}$ & $\Delta\mathrm{JSS}$ [95\% CI] & $r$ & $m$ \\
 \midrule
-claude-haiku & factuality & 250 & 0.956 & 1.000 & $-0.044$ [-0.072, -0.020] & 0.000 \\
- & coherence & 250 & 0.792 & 0.998 & $-0.206$ [-0.258, -0.154] & 0.000 \\
- & relevance & 500 & 0.930 & 0.990 & $-0.058$ [-0.086, -0.032] & 0.000 \\
- & preference & 260 & 0.896 & 0.965 & $-0.081$ [-0.127, -0.038] & 0.000 \\
+claude-haiku & factuality & 250 & 0.956 & 1.000 & $-0.044$ [-0.072, -0.020] & 0.000 & 0.000 \\
+ & coherence & 250 & 0.792 & 0.998 & $-0.206$ [-0.258, -0.154] & 0.000 & 0.000 \\
+ & relevance & 500 & 0.930 & 0.990 & $-0.058$ [-0.086, -0.032] & 0.000 & 0.010 \\
+ & preference & 260 & 0.896 & 0.965 & $-0.081$ [-0.127, -0.038] & 0.000 & 0.031 \\
 \addlinespace
-claude-opus-4-7 & factuality & 250 & 0.960 & 0.990 & $-0.030$ [-0.056, -0.006] & 0.000 \\
- & coherence & 250 & 0.736 & 0.916 & $-0.180$ [-0.236, -0.128] & 0.000 \\
- & relevance & 500 & 0.964 & 0.998 & $-0.036$ [-0.063, -0.013] & 0.051 \\
- & preference & 170 & 0.963 & --- & \emph{support below floor} & 0.000 \\
+claude-opus-4-7 & factuality & 250 & 0.960 & 0.990 & $-0.030$ [-0.056, -0.006] & 0.000 & 0.000 \\
+ & coherence & 250 & 0.736 & 0.916 & $-0.180$ [-0.236, -0.128] & 0.000 & 0.000 \\
+ & relevance & 500 & 0.964 & 0.998 & $-0.036$ [-0.063, -0.013] & 0.051 & 0.000 \\
+ & preference & 170 & 0.963 & --- & \emph{support below floor} & 0.000 & 0.056 \\
 \addlinespace
-claude-sonnet & factuality & 250 & 0.952 & 0.990 & $-0.038$ [-0.062, -0.018] & 0.000 \\
- & coherence & 250 & 0.828 & 0.990 & $-0.162$ [-0.210, -0.118] & 0.000 \\
- & relevance & 500 & 0.584 & 0.789 & $-0.158$ [-0.206, -0.110] & 0.247 \\
- & preference & 44 & 0.559 & --- & \emph{support below floor} & 0.000 \\
+claude-sonnet & factuality & 250 & 0.952 & 0.990 & $-0.038$ [-0.062, -0.018] & 0.000 & 0.008 \\
+ & coherence & 250 & 0.828 & 0.990 & $-0.162$ [-0.210, -0.118] & 0.000 & 0.000 \\
+ & relevance & 500 & 0.584 & 0.789 & $-0.158$ [-0.206, -0.110] & 0.247 & 0.224 \\
+ & preference & 44 & 0.559 & --- & \emph{support below floor} & 0.000 & 0.432 \\
 \bottomrule
 \end{tabular}
 \end{table}
