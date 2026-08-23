@@ -16,12 +16,29 @@ and both figures depend on a cell we exclude as uninterpretable
 (Section~\ref{sec:results-sonnet-relevance}). Establishing that task dominates
 judge in general would need judges from more than one vendor.
 
-The ordinal task is the least stable of the four, and we think the mechanism is
-general rather than particular to coherence. A five-point scale gives a rewording
-more ways to move the answer, and the weighted kappa shows most of that movement
-is a single scale point. Evaluation designs that collect a graded score and then
-threshold it are absorbing this instability silently; a binary or pairwise
-formulation of the same underlying question is measurably more reproducible.
+The ordinal task is the least stable of the four, and the obvious mechanism is
+the size of the answer space. A five-point scale gives a rewording more ways to
+move the answer, and the weighted kappa shows most of that movement is a single
+scale point.
+
+We cannot separate that mechanism from the task, and we say so rather than
+generalising. Coherence is the only ordinal task in the suite; the other three
+are binary. Its position at the top of the ordering is therefore confounded with
+label cardinality, and disentangling the two would require binarising the Likert
+scale --- thresholding it at, say, $\geq 4$ --- and re-measuring. We have not run
+that control, so ``ordinal scoring is less reproducible'' and ``coherence is less
+reproducible'' are not separated by this design.
+
+The same confound cuts the other way, and it bears directly on our factuality
+null. A binary answer space quantises the judge's latent uncertainty: a judge
+that moves from ``YES'' under one phrasing to a less confident ``YES'' under the
+other is recorded as perfectly consistent, while the same magnitude of drift on a
+five-point scale crosses a category boundary and is recorded as a flip. Binary
+tasks compress the consistency signal; ordinal tasks expose it. Our factuality
+null is therefore consistent with two different readings --- that judges really
+are stable on factual verdicts, or that a two-valued answer space cannot show the
+instability that is there --- and this design does not distinguish them. A
+practitioner should not read the null as licence to trust binary judges more.
 
 \subsection{Refusal is an evaluation failure mode, not an aside}
 

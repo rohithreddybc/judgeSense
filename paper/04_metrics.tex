@@ -31,6 +31,16 @@ a judge answering ``YES'' almost always agrees with itself. We therefore report
 the chance-corrected form (Cohen's $\kappa$; quadratic-weighted for the
 ordinal coherence task) alongside every raw figure.
 
+We claim no novelty for this quantity and say so explicitly. Agreement rate under
+paraphrase is the same measurement \citet{elazar2021measuring} use for consistency
+in pretrained models, that \citet{arabzadeh2025human} compute as Cohen's $\kappa$
+against relevance labels, and that \citet{zhuo2024prosa} express as a variance;
+JSS is mathematically of that family. What is new here is the benchmark, the
+systematic application to the model doing the judging rather than the model being
+judged, and the endpoint defined next --- which references that agreement against
+the judge's own repeat ceiling, so a figure that would otherwise mix wording
+sensitivity with decoding noise separates the two.
+
 \subsection{The repeat baseline, and why it is the endpoint}
 \label{sec:repeat}
 

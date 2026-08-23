@@ -39,12 +39,26 @@ the smallest effect declared of interest rather than against zero
 The repeat ceiling ranges from $0.789$ to $1.000$. Nine of the ten cells sit at
 $0.916$ or above, which is what makes the paraphrase gap interpretable for them:
 at a matched budget and temperature zero these judges are close to deterministic
-on a fixed prompt. The tenth is treated separately in
+on a fixed prompt.
+
+The tenth is treated separately in
 Section~\ref{sec:results-sonnet-relevance}, because a ceiling of $0.789$ means
 the judge disagrees with itself on more than a fifth of byte-identical prompts.
 That is not a small caveat. In a pilot we discarded, a misconfigured decoding
 parameter produced a ceiling of $0.864$, higher than this one, and we discarded
-it precisely because a ceiling that low can absorb the effect being measured. We apply the same standard to our own shipped cell.
+it precisely because a ceiling that low can absorb the effect being measured. We
+apply the same standard to our own shipped cell.
+
+A high ceiling carries an implication we would rather state than leave a reader
+to derive. In seven of the ten cells it sits at $0.990$ or above, so the
+subtraction defining our endpoint is nearly a no-op there and
+$\Delta\mathrm{JSS} \approx \mathrm{JSS} - 1$. The repeat arm does substantial
+work in only three cells: Opus on coherence ($0.916$), Haiku on preference
+($0.965$), and the flagged Sonnet relevance cell ($0.789$). We collect it
+everywhere regardless, because which cells those will be is not knowable in
+advance, and because a judge run at a production temperature above zero has a
+lower ceiling throughout. The correction matters more in deployment than our own
+numbers make it look.
 
 \subsection{Effect magnitudes against the declared threshold}
 \label{sec:results-sesoi}
@@ -277,3 +291,20 @@ and no between-template comparison is identifiable.
 One judge is not decoding-matched. Opus 4.7 rejects an explicit temperature
 parameter and ran at the provider default while the other two ran at zero. This
 is recorded on every one of its call records rather than inferred.
+
+All measurements are at temperature zero, where a judge is closest to
+deterministic and the repeat ceiling is therefore highest. Production judges are
+often run above zero; there the ceiling falls, the noise term grows, and the
+separation this endpoint performs becomes larger rather than smaller. We have not
+measured how $\Delta\mathrm{JSS}$ behaves at $T > 0$.
+
+All prompts are in English. Every source corpus is English-only, so whether a
+judge that is stable in English remains stable under translation-equivalent
+prompts is untested and is a likely place for rankings to change.
+
+Every judge is reached through a single provider. Alias drift, replica-level
+routing or an undocumented checkpoint update on that provider's side would move
+every number in this paper at once, and we could not detect it by comparison
+against an independent host. We record the provider-reported model string on
+every call so such a change is visible after the fact, but ruling it out would
+require re-running through a second host.
