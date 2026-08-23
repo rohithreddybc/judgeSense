@@ -769,9 +769,13 @@ def main(argv=None) -> int:
         r"\mathrm{JSS}_{\text{rep}}$ is the pre-registered endpoint; a negative "
         r"value means rewording costs more agreement than re-issuing the "
         r"identical prompt. Intervals are 95\% item-clustered bootstrap over "
-        r"2{,}000 resamples. Cells below the pre-registered support floor of 100 "
+        r"2{,}000 resamples. Cells below the declared support floor of 100 "
         r"clusters report no endpoint rather than one computed from too few. "
-        r"$r$ is the provider-reported refusal rate.}",
+        r"$r$ is the provider-reported refusal rate. The JSS column is computed over "
+        r"all rows of the cell; $\mathrm{JSS}_{\text{rep}}$ and "
+        r"$\Delta\mathrm{JSS}$ are computed over the canonical ordering only, "
+        r"so the two columns do not subtract to the printed delta where a cell "
+        r"carries refusals or a swapped-ordering imbalance.}",
         r"\label{tab:main}",
         r"\begin{tabular}{llrrrlr}",
         r"\toprule",

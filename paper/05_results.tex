@@ -64,6 +64,7 @@ Judge & Task & $\Delta\mathrm{JSS}$ & Interval vs.\ the $0.02$ threshold \\
 Haiku  & coherence  & $-0.206$ & entirely beyond \\
 Opus   & coherence  & $-0.180$ & entirely beyond \\
 Sonnet & coherence  & $-0.162$ & entirely beyond \\
+Sonnet & relevance  & $-0.158$\,$^{\dagger}$ & entirely beyond \\
 Haiku  & preference & $-0.081$ & entirely beyond \\
 Haiku  & relevance  & $-0.058$ & entirely beyond \\
 \midrule
@@ -75,11 +76,16 @@ Opus   & factuality & $-0.030$ & upper edge inside \\
 \end{tabular}
 \end{center}
 
-Five cells are unambiguously beyond the threshold. Four are consistent with an
-effect we declared to be practically meaningless: on factuality the
-data do not distinguish a real cost from a negligible one for any judge. We
-report factuality as a null on that reading. Our pre-registration does commit us
-to treating a null as a result, and this is one.
+\noindent{\footnotesize $^{\dagger}$ Clears the threshold arithmetically but is
+not interpretable as evidence about wording
+(Section~\ref{sec:results-sonnet-relevance}).}
+
+All ten supported cells appear here. Six clear the threshold unambiguously,
+though one of those six is the flagged cell and we do not count it as support.
+Four are consistent with an effect we declared to be practically meaningless: on
+factuality the data do not distinguish a real cost from a negligible one for any
+judge. We report factuality as a null on that reading. Our pre-registration does
+commit us to treating a null as a result, and this is one.
 
 \subsection{Sensitivity is larger on the ordinal task than on the others}
 
@@ -197,9 +203,17 @@ The true malformed rate, computed over the arms the judge actually attempted, is
 $22.4\%$ --- still a substantial and genuine instruction-following failure, and
 one we report rather than let the refusal finding obscure.
 
-Because a rewording can itself change whether a judge answers, refusal is an
-outcome of the manipulation rather than a nuisance, and conditioning on the
-answered subset is selection on a post-treatment variable. We therefore report
+Conditioning on the answered subset raises the fair objection that the three
+judges are then scored on different items. We answer it by recomputing on the
+common support, the 187 of 250 relevance items every judge answered under both
+phrasings. The point estimates barely move: $-0.008$ for Haiku, $-0.001$ for
+Opus and $+0.003$ for Sonnet. The conditioning is not what produces the
+difference between these judges.
+
+The deeper problem is not shared support. Because a rewording can itself change
+whether a judge answers, refusal is an outcome of the manipulation rather than a
+nuisance, and conditioning on the answered subset is selection on a
+post-treatment variable. We therefore report
 worst-case bounds. For this cell the conditioned JSS is identified only within
 $[0.486, 0.746]$, a width of $0.26$ over $130$ unidentified pairs. That is a wide
 region, and we prefer showing it to reporting a point estimate that depends on an
@@ -232,7 +246,7 @@ count of intervals excluding zero, flagged, rather than deleted.
 
 Three judges, one vendor. Every result here is within the Claude family, so any
 consistency across judges is a within-family observation. The harness supports
-fourteen judges across seven providers and eleven are unrun.
+fourteen judges across eight providers and eleven are unrun.
 
 The preference split is complete for Haiku only. Sonnet and Opus stopped at $44$
 and $170$ of $260$ rows when the API balance was exhausted mid-run; the pipeline
@@ -243,11 +257,15 @@ exclusion costs the paper support rather than protecting it.
 
 Intervals cluster at the item, which is the correct unit for the arms and repeats
 nested inside an item --- but items are themselves nested in source records: the
-$250$ relevance items come from $50$ TREC-COVID topics and the $250$ factuality
-items from $125$ TruthfulQA questions (Section~\ref{sec:sources}). Items sharing
-a topic share the query text the instruction wraps, so the reported intervals do
-not absorb topic-level correlation and are narrower than a source-clustered
-analysis would give. The cells nearest the threshold --- Opus on relevance and on
+$250$ relevance items come from $50$ TREC-COVID topics, the $250$ coherence items
+from $92$ SummEval documents, the $250$ factuality items from $125$ TruthfulQA
+questions, and the $130$ preference items from $68$ MT-Bench source records
+(Section~\ref{sec:sources}). Items sharing a source share the text the
+instruction wraps, so the reported intervals do not absorb source-level
+correlation and are narrower than a source-clustered analysis would give. This
+applies to coherence too, which carries our largest effect: its $250$ items rest
+on $92$ documents, so the effective sample there is smaller than the item count
+suggests. The cells nearest the threshold --- Opus on relevance and on
 factuality --- are the ones this could move.
 
 The five templates are a fixed set, not a sample. All intervals condition on

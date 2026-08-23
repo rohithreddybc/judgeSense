@@ -15,6 +15,12 @@ it is scored over is exactly what a reviewer would want flagged.
 Usage:
     python scripts/common_support.py
     python scripts/common_support.py --judges claude-haiku claude-sonnet
+
+The pair-class comparison uses the module constant rather than a string
+literal. This script compared against "both_verdict" after that class was
+renamed to "both_answered", so the intersection was empty and every
+common-support figure came back null -- the same defect that silently voided
+the Manski bounds, in a second file.
 """
 
 from __future__ import annotations
@@ -65,7 +71,7 @@ def main(argv=None) -> int:
         if len(per_judge) < 2:
             continue  # a common support needs at least two judges to be common
         answered = {
-            judge: {r["item_id"] for r in recs if regen._pair_class(r) == "both_verdict"}
+            judge: {r["item_id"] for r in recs if regen._pair_class(r) == regen.PAIR_BOTH_ANSWERED}
             for judge, recs in per_judge.items()
         }
         common = set.intersection(*answered.values())

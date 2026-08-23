@@ -82,9 +82,10 @@ full responsibility for the content, the analysis and any remaining errors.
 \subsubsection*{Reproducibility statement}
 The dataset, loaders, analysis pipeline, analysis plan with its full commit
 history, and every raw judge output behind the reported numbers are released at
-\url{https://github.com/rohithreddybc/judgeSense}. Each table is regenerated from
-the committed raw outputs by a single script; no number in this paper is
-transcribed by hand. Each split is content-hashed, and a 28-check audit gate runs
+\url{https://github.com/rohithreddybc/judgeSense}. Every table and every figure in Section~ef{sec:results} is regenerated from the
+committed raw outputs by a single script. Descriptive counts about the
+construction, such as how many source comparisons each filter removed, are
+reported from the loader's own logged output. Each split is content-hashed, and a 32-check audit gate runs
 in continuous integration. Judge model identifiers, resolved decoding parameters
 and the provider-reported model string are recorded on every call record, so
 configuration drift is detectable after the fact rather than assumed absent.

@@ -186,5 +186,5 @@ If modern judges turn out to be as stable under paraphrase as under resampling,
 that is the paper's finding and it is reported as such. The benchmark's value
 does not depend on the sign of the effect: the shortcut controls establish that
 the tasks cannot be passed by position, length, or lexical overlap
-(0.482–0.514 for each heuristic judge), so a null result is informative about
+(0.482-0.540 for each heuristic judge, the weakest with an interval reaching 0.600), so a null result is informative about
 judges rather than about the instrument.

@@ -138,7 +138,7 @@ per task loaded from the real upstream benchmarks with per-item provenance
 records, an A/B–B/A swap design so position-following cannot score as
 consistency, cluster-aware and chance-corrected statistics, a strict parser, and
 a CI data-audit gate that fails the build on every defect class listed above.
-The v1 data fails that gate on 23 of 32 checks. (The v1 config runs 32 checks: 28 dataset checks plus 4 annotation-timing checks. 28 is the v2 total, where the gate reports 0 of 28 checks failed.)
+The v1 data fails that gate on 23 of 36 checks. (The two configs run different check sets: v1 emits 36, v2 emits 32 -- eight checks over each of four splits -- and reports 0 of 32 failed.)
 
 The paper reports a completed three-judge sweep (claude-haiku, claude-sonnet, claude-opus-4-7) over the v2 dataset, held in data/results_v2/raw and regenerated into every reported figure by scripts/regenerate_results.py. Factuality, coherence and relevance are complete for all three judges; the preference split is complete for claude-haiku only, the other two having stopped mid-run when the API balance was exhausted. An earlier partial sweep made under a decoding configuration since corrected was discarded and does not enter the results. No human validation has been performed on v2
 

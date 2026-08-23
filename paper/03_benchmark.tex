@@ -242,7 +242,7 @@ exploited exactly as cheaply as one biased the other way.
 The dataset is released with Croissant metadata, per-item provenance, and a
 content hash for each split that excludes retrieval timestamps, so a rebuild can
 be verified as identical in content without being byte-identical in metadata. A
-28-check audit gate runs in continuous integration and fails the build on
+32-check audit gate (eight checks over each of four splits) runs in continuous integration and fails the build on
 duplicate content, unbacked provenance claims, label degeneracy, insufficient
 clustering support, contradictory ground truth, or a length shortcut exceeding
 its bound. Checks that cannot read the data they are meant to inspect fail
