@@ -178,7 +178,7 @@ therefore nested inside item identity, and no estimator on this data separates a
 template effect from an item-set effect. The within-item comparison the benchmark
 is built for is unaffected; between-template claims are not identifiable.
 
-Relevance draws on 50 TREC-COVID topics and preference on 62 MT-Bench questions,
+Relevance draws on 50 TREC-COVID topics and preference on 68 MT-Bench questions,
 so items within a task are not independent. Cluster your intervals at the source
 record, not the item, if you need conservative uncertainty.
 

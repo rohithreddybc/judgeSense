@@ -22,17 +22,30 @@
 
 \title{JudgeSense: Measuring the Prompt Sensitivity of LLM-as-a-Judge}
 
-% TMLR review copies are anonymous; the kit's \author block handles this, so
-% this block is for the camera-ready and for local builds. Author order follows
-% the superseded preprint (arXiv:2604.23478).
-\author{
-  Rohith Reddy Bellibatlu\thanks{Corresponding author.}\,$^{1}$ \quad
-  Edward Raff$^{2,3}$ \quad
-  Wenbin Zhang$^{1}$ \\[0.6em]
-  {\normalsize $^{1}$Florida International University, Miami, FL, USA} \\
-  {\normalsize $^{2}$CrowdStrike, New York, NY, USA} \\
-  {\normalsize $^{3}$University of Maryland, Baltimore County, Baltimore, MD, USA}
-}
+% ANONYMITY SWITCH. TMLR review copies are anonymous, and a named review upload
+% is a procedural rejection independent of content. This defaults to BLINDED so
+% that the file cannot be submitted de-anonymised by forgetting a step; comment
+% the line out (or build with \def\camera{}) for the camera-ready.
+%
+% Author order follows the superseded preprint (arXiv:2604.23478).
+\newif\ifblind
+\blindtrue                              % default: blinded, so a forgotten step
+                                        % yields an anonymous file, never a
+                                        % de-anonymised one
+\ifdefined\camera\blindfalse\fi         % camera-ready: pdflatex "\def\camera{}\input{main}"
+
+\ifblind
+  \author{Anonymous authors\\Paper under double-blind review}
+\else
+  \author{
+    Rohith Reddy Bellibatlu\thanks{Corresponding author.}\,$^{1}$ \quad
+    Edward Raff$^{2,3}$ \quad
+    Wenbin Zhang$^{1}$ \\[0.6em]
+    {\normalsize $^{1}$Florida International University, Miami, FL, USA} \\
+    {\normalsize $^{2}$CrowdStrike, New York, NY, USA} \\
+    {\normalsize $^{3}$University of Maryland, Baltimore County, Baltimore, MD, USA}
+  }
+\fi
 \date{}
 
 \begin{document}
@@ -82,7 +95,10 @@ full responsibility for the content, the analysis and any remaining errors.
 \subsubsection*{Reproducibility statement}
 The dataset, loaders, analysis pipeline, analysis plan with its full commit
 history, and every raw judge output behind the reported numbers are released at
-\url{https://github.com/rohithreddybc/judgeSense}. Every table and every figure in Section~\ref{sec:results} is regenerated from the
+\ifblind
+\texttt{[repository URL withheld for review; the anonymised artifact accompanies
+the submission]}\else\url{https://github.com/rohithreddybc/judgeSense}\fi.
+Every table and every figure in Section~\ref{sec:results} is regenerated from the
 committed raw outputs by a single script. Descriptive counts about the
 construction, such as how many source comparisons each filter removed, are
 reported from the loader's own logged output. Each split is content-hashed, and a 32-check audit gate runs

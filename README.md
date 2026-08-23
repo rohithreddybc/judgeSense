@@ -142,8 +142,14 @@ mean); relevance and preference add `ab_order`, `candidate_map`, and
 
 ## Results
 
-A judge sweep against the v2 dataset has not yet been run, so no results are
-reported here. When it is, results will be published with cluster-aware
+A three-judge sweep against the v2 dataset is complete and committed:
+claude-haiku-4-5, claude-sonnet-4-5 and claude-opus-4-7 over all four
+tasks. Factuality, coherence and relevance are complete for all three; the
+preference split is complete for claude-haiku only, the other two having
+stopped mid-run when the API balance was exhausted. Raw outputs are in
+`data/results_v2/raw/`, and every reported figure is regenerated from them
+by `scripts/regenerate_results.py`. Eleven of the fourteen registered judges
+are unrun.
 confidence intervals at a declared unit of analysis, chance-corrected scores
 alongside raw JSS, and malformed-output rates reported rather than dropped.
 
@@ -196,7 +202,7 @@ judgesense/
 │   └── generate_figures.py        # Publication-ready PDF figures
 ├── outputs/               # CSV results + publication-ready PDF figures
 ├── figures/               # Paper-ready PDF/PNG figures
-├── tests/                 # Unit tests for metrics and dataset (376 tests)
+├── tests/                 # Unit tests for metrics and dataset (443 test cases)
 ├── requirements.txt
 ├── .env.example
 └── README.md
