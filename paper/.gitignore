@@ -1,8 +1,7 @@
-main.aux
-main.log
-main.out
-main.bbl
-main.blg
-main.pdf
-main_camera.*
-main_blinded.pdf
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.pdf
+_pdfflat.txt

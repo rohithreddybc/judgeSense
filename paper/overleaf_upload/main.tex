@@ -92,7 +92,7 @@ failure, and the construction defects we found in our own benchmark, with the
 measurements that exposed them.
 \end{abstract}
 
-% ---- begin 01_introduction.tex (inlined; edit here, this is the single source) ----
+% ===== 01_introduction =============================================
 \section{Introduction}
 \label{sec:intro}
 
@@ -200,8 +200,8 @@ look for it.
     across tasks within a judge. All three judges come from one vendor family, so
     this is a within-family observation and we do not claim it generalises.
 \end{enumerate}
-% ---- end 01_introduction.tex ----
-% ---- begin 02_related.tex (inlined; edit here, this is the single source) ----
+% ===== end 01_introduction =====
+% ===== 02_related ==================================================
 \section{Related work}
 \label{sec:related}
 
@@ -326,8 +326,8 @@ independent observations. The judges evaluated are drawn from current
 instruction-tuned and reasoning-tuned families \citep{openai2023gpt4,
 gemini2023gemini, grattafiori2024llama3, qwen2024qwen25, jiang2023mistral,
 deepseek2025r1}.
-% ---- end 02_related.tex ----
-% ---- begin 03_benchmark.tex (inlined; edit here, this is the single source) ----
+% ===== end 02_related =====
+% ===== 03_benchmark ================================================
 % ---------------------------------------------------------------------------
 % Benchmark construction. Number-independent: everything here is a property of
 % the artifact, not of any judge's behaviour, so it is stable across runs.
@@ -593,8 +593,8 @@ clustering support, contradictory ground truth, or a length shortcut exceeding
 its bound. Checks that cannot read the data they are meant to inspect fail
 rather than pass, so a check that silently measures nothing cannot be mistaken
 for a check that found nothing wrong.
-% ---- end 03_benchmark.tex ----
-% ---- begin 04_metrics.tex (inlined; edit here, this is the single source) ----
+% ===== end 03_benchmark =====
+% ===== 04_metrics ==================================================
 % ---------------------------------------------------------------------------
 % Metric definitions and the analysis plan. Number-independent.
 % ---------------------------------------------------------------------------
@@ -796,8 +796,8 @@ have not quantified the budget's effect. Doing so would require a subsample run
 under the class-dependent configuration, reporting the difference in
 $\Delta\mathrm{JSS}$ and the cap-termination rate under each policy with their
 denominators. We did not run it, and we make no claim about the effect's size.
-% ---- end 04_metrics.tex ----
-% ---- begin 05_results.tex (inlined; edit here, this is the single source) ----
+% ===== end 04_metrics =====
+% ===== 05_results ==================================================
 \section{Results}
 \label{sec:results}
 
@@ -1134,8 +1134,8 @@ every number in this paper at once, and we could not detect it by comparison
 against an independent host. We record the provider-reported model string on
 every call so such a change is visible after the fact, but ruling it out would
 require re-running through a second host.
-% ---- end 05_results.tex ----
-% ---- begin 06_discussion.tex (inlined; edit here, this is the single source) ----
+% ===== end 05_results =====
+% ===== 06_discussion ===============================================
 \section{Discussion}
 \label{sec:discussion}
 
@@ -1258,7 +1258,7 @@ The benchmark, the analysis plan with its commit history, the raw judge outputs,
 and the heuristic baselines that would beat the tasks are all released. So are
 the defects we found in our own construction, and the measurements that exposed
 them.
-% ---- end 06_discussion.tex ----
+% ===== end 06_discussion =====
 
 \subsubsection*{Use of AI assistance}
 An AI coding assistant was used throughout this work: to implement the dataset
