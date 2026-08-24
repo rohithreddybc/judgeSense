@@ -32,7 +32,7 @@
 \blindtrue                              % default: blinded, so a forgotten step
                                         % yields an anonymous file, never a
                                         % de-anonymised one
-\ifdefined\camera\blindfalse\fi         % camera-ready: pdflatex "\def\camera{}\input{main}"
+\ifdefined\camera\blindfalse\fi         % camera-ready: define \camera at build time
 
 \ifblind
   \author{Anonymous authors\\Paper under double-blind review}
