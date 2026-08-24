@@ -186,7 +186,7 @@ record, not the item, if you need conservative uncertainty.
 
 ```bibtex
 @misc{bellibatlu2026judgesense,
-  title         = {JudgeSense: Measuring the Prompt Sensitivity of LLM-as-a-Judge},
+  title         = {JudgeSense: A Benchmark for Prompt Sensitivity in LLM-as-a-Judge Systems},
   author        = {Bellibatlu, Rohith Reddy and Raff, Edward and Zhang, Wenbin},
   year          = {2026},
   eprint        = {2604.23478},
