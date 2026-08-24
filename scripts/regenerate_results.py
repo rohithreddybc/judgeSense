@@ -719,6 +719,38 @@ def _repeat_delta(recs: List[dict], all_recs: Optional[List[dict]] = None) -> Di
     return out
 
 
+# The manuscript is a single self-contained file, so the generated table is
+# spliced INTO it between sentinels rather than \input from ../tables/. An
+# \input makes paper/main.tex unbuildable anywhere the tables directory is
+# absent -- Overleaf, an arXiv upload, a coauthor's copy -- and the workaround
+# was a second main.tex plus a comment telling people not to use the first,
+# which is a trap rather than a design.
+#
+# Splicing keeps the property that matters: regenerating the results rewrites
+# the paper's table, so the two cannot drift. tables/main_results_v2.tex is
+# still written, for anything that consumes it directly.
+MANUSCRIPT = _REPO / "paper" / "main.tex"
+TABLE_BEGIN = "% <<< GENERATED TABLE: regenerate_results.py -- do not edit by hand"
+TABLE_END = "% >>> END GENERATED TABLE"
+
+
+def _splice_into_manuscript(table_tex: str) -> None:
+    if not MANUSCRIPT.exists():
+        return
+    text = MANUSCRIPT.read_text(encoding="utf-8")
+    start, end = text.find(TABLE_BEGIN), text.find(TABLE_END)
+    if start == -1 or end == -1:
+        print(f"  [warn] {MANUSCRIPT.name} has no generated-table sentinels; "
+              f"the table was not spliced and the paper may now disagree with "
+              f"the data. Restore the sentinels around the table to re-link it.")
+        return
+    block = f"{TABLE_BEGIN}\n{table_tex.rstrip()}\n{TABLE_END}"
+    updated = text[:start] + block + text[end + len(TABLE_END):]
+    if updated != text:
+        MANUSCRIPT.write_text(updated, encoding="utf-8")
+        print(f"  spliced the results table into paper/{MANUSCRIPT.name}")
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Regenerate v2 results from raw outputs.")
     ap.add_argument("--raw", default=str(RAW))
@@ -811,7 +843,9 @@ def main(argv=None) -> int:
         lines.pop()
     lines += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
     OUT_TEX.parent.mkdir(parents=True, exist_ok=True)
-    OUT_TEX.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    table_tex = "\n".join(lines) + "\n"
+    OUT_TEX.write_text(table_tex, encoding="utf-8")
+    _splice_into_manuscript(table_tex)
 
     print(f"Wrote {OUT_JSON} ({len(summary)} judges) and {OUT_TEX}")
     print("Every reported number is now derived from committed raw outputs.")
