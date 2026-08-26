@@ -48,10 +48,16 @@ def test_unknown_judge_or_policy_raises():
 # ── same-family ladders (WjHn W5/Q4) ─────────────────────────────────────────
 
 def test_ladders_are_within_family_and_size_ordered():
+    # The ladder was llama-3.1 (8B/70B) until 2026-08-25, when the Groq key
+    # started returning 403 on every request and llama3-70b was demoted to
+    # unverified, taking the 70B rung with it. qwen-3 (8B/14B/32B, dense, all on
+    # HuggingFace) replaces it and is a stronger ladder: three rungs rather than
+    # two, one family, parameter count the only difference between them.
+    # Restore the llama-3.1 assertion if that key is reissued.
     ladders = family_ladders()
     assert ladders, "no within-family ladder available; scale claims unsupportable"
-    assert "llama-3.1" in ladders
-    assert ladders["llama-3.1"] == ["llama3-8b", "llama3-70b"]
+    assert "qwen-3" in ladders
+    assert ladders["qwen-3"] == ["qwen3-8b", "qwen3-14b", "qwen3-32b"]
     for members in ladders.values():
         families = {JUDGES[m]["family"] for m in members}
         assert len(families) == 1
@@ -69,9 +75,18 @@ def test_ladders_exclude_judges_without_a_declared_size():
 def test_multiple_reasoning_judges_are_available():
     # The v1 claim rested on DeepSeek-R1 alone; that was a scoping failure, not
     # a shortage of models.
+    #
+    # The assertion is on the FAMILY, not on the "deepseek" alias. That alias was
+    # demoted to unverified on 2026-08-25: it emits an unterminated <think> trace
+    # and never reaches a label inside the matched budget, so every call parses
+    # to UNCLEAR. Pinning the test to one alias would either force a known-broken
+    # judge back into selection or fail for the wrong reason.
     judges = reasoning_judges()
     assert len(judges) >= 3
-    assert "deepseek" in judges
+    families = {JUDGES[j]["family"] for j in judges}
+    assert any(f.startswith("deepseek") for f in families), (
+        f"no DeepSeek-family reasoning judge is selectable; families={families}"
+    )
 
 
 # ── purpose-built judges (xmQT Limitations) ──────────────────────────────────

@@ -61,6 +61,26 @@ SUPPORTED_MODELS = {
     "claude-opus-4-7":    {"provider": "anthropic", "model_id": "claude-opus-4-7",                "key": "ANTHROPIC_API_KEY", "max_tokens": 1024},
     "qwen-3.6-flash":     {"provider": "dashscope", "model_id": "qwen3.6-35b-a3b",                "key": "DASHSCOPE_API_KEY", "max_tokens": 1024},
     "deepseek-v4-flash":  {"provider": "novita",    "model_id": "deepseek/deepseek-v4-flash",     "key": "NOVITA_API_KEY",    "max_tokens": 1024},
+
+    # ── multi-vendor expansion (2026-08-25) ──
+    "qwen3-8b":            {"provider": "huggingface", "model_id": "Qwen/Qwen3-8B",                                     "key": "HF_TOKEN",          "max_tokens": 1024},
+    "qwen3-14b":           {"provider": "huggingface", "model_id": "Qwen/Qwen3-14B",                                    "key": "HF_TOKEN",          "max_tokens": 1024},
+    "qwen3-32b":           {"provider": "huggingface", "model_id": "Qwen/Qwen3-32B",                                    "key": "HF_TOKEN",          "max_tokens": 1024},
+    # These MUST mirror judge_registry.JUDGES: run_v2 selects judges from the
+    # registry but resolves clients through this dict, so a name present in one
+    # and absent from the other fails at client-build time, mid-sweep.
+    # tests/test_registry_parity.py enforces the correspondence.
+    "llama-3.3-70b":       {"provider": "huggingface", "model_id": "meta-llama/Llama-3.3-70B-Instruct",                  "key": "HF_TOKEN",          "max_tokens": 1024},
+    "llama-4-scout":       {"provider": "huggingface", "model_id": "meta-llama/Llama-4-Scout-17B-16E-Instruct",          "key": "HF_TOKEN",          "max_tokens": 1024},
+    "llama-4-maverick":    {"provider": "huggingface", "model_id": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",  "key": "HF_TOKEN",          "max_tokens": 1024},
+    "gemma-4-31b":         {"provider": "huggingface", "model_id": "google/gemma-4-31B-it",                              "key": "HF_TOKEN",          "max_tokens": 1024},
+    "gemini-3.7-flash":    {"provider": "google",      "model_id": "gemini-3.7-flash",                                   "key": "GOOGLE_API_KEY",    "max_tokens": 1024},
+    "qwen3.7-flash":       {"provider": "dashscope",   "model_id": "qwen3.7-flash-2026-07-15",                           "key": "DASHSCOPE_API_KEY", "max_tokens": 1024},
+    "deepseek-r1-0528":    {"provider": "huggingface", "model_id": "deepseek-ai/DeepSeek-R1-0528",                       "key": "HF_TOKEN",          "max_tokens": 1024},
+    "qwen3-235b-thinking": {"provider": "huggingface", "model_id": "Qwen/Qwen3-235B-A22B-Thinking-2507",                 "key": "HF_TOKEN",          "max_tokens": 1024},
+    "deepseek-v4-flash-ds":{"provider": "dashscope",   "model_id": "deepseek-v4-flash-0731",                             "key": "DASHSCOPE_API_KEY", "max_tokens": 1024},
+    "glm-5.2":             {"provider": "dashscope",   "model_id": "glm-5.2",                                            "key": "DASHSCOPE_API_KEY", "max_tokens": 1024},
+    "magistral-small":     {"provider": "mistral",     "model_id": "magistral-small-latest",                             "key": "MISTRAL_API_KEY",   "max_tokens": 1024},
 }
 
 

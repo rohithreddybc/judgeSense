@@ -264,7 +264,9 @@ def _build_client(model_name: str):
             from huggingface_hub import InferenceClient
         except ImportError:
             raise ImportError("pip install huggingface-hub")
-        return InferenceClient(api_key=api_key), model_id, provider
+        # timeout belongs on the client here (chat_completion takes none), so a
+        # hung HuggingFace endpoint cannot stall the sweep indefinitely.
+        return InferenceClient(api_key=api_key, timeout=_TIMEOUT), model_id, provider
 
     elif provider == "mistral":
         try:

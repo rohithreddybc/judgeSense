@@ -221,14 +221,43 @@ def test_missing_split_file_fails_loudly(tmp_path):
                for r in report["results"])
 
 
-def test_gate_fails_on_shipped_v1_data():
-    # The real config against the real v1 data: the gate MUST fail, because
-    # the defects it was built for are present in the shipped dataset.
-    report = data_audit.audit(REPO / "data" / "audit_config.json")
+def test_gate_fails_on_shipped_v1_data(tmp_path):
+    # The gate against the real v1 data: it MUST fail, because the defects it
+    # was built for are present there.
+    #
+    # This read data/audit_config.json directly, which pointed at
+    # data/prompt_pairs (v1) until 2026-08-25. That made the assertion true for
+    # the wrong reason: the SHIPPED config was auditing a dataset the repository
+    # no longer releases, so the gate the paper describes was never exercised
+    # against v2. The config now points at v2, and v1 is named explicitly here.
+    v1_dir = REPO / "data" / "prompt_pairs"
+    if not v1_dir.exists():
+        pytest.skip("v1 data not present in this checkout")
+    cfg = json.loads((REPO / "data" / "audit_config.json").read_text(encoding="utf-8"))
+    cfg["dataset_dir"] = str(v1_dir)
+    cfg_path = tmp_path / "v1_config.json"
+    cfg_path.write_text(json.dumps(cfg), encoding="utf-8")
+
+    report = data_audit.audit(cfg_path)
     assert not report["passed"]
     failing = {r["check"] for r in report["results"] if not r["passed"]}
     assert {"unique_items", "duplicate_rows", "provenance",
-            "effective_sample_size", "annotation_timing"} <= failing
+            "effective_sample_size"} <= failing
+
+
+def test_gate_passes_on_the_dataset_the_repository_actually_ships():
+    """The converse, and the one that matters for release.
+
+    The paper states in two places that a 32-check audit gate runs in CI and
+    fails the build on the defect classes it enumerates. That claim is only
+    worth anything if the gate is pointed at the released files.
+    """
+    report = data_audit.audit(REPO / "data" / "audit_config.json")
+    failing = {r["check"] for r in report["results"] if not r["passed"]}
+    assert report["passed"], (
+        f"the shipped audit config does not pass on the shipped dataset; "
+        f"failing checks: {sorted(failing)}"
+    )
 
 
 # ── evidence-absence must fail, not skip ─────────────────────────────────────

@@ -1,7 +1,7 @@
 {
-  "_comment": "CI data-audit gate configuration (scripts/data_audit.py). dataset_dir points at the dataset the repository currently ships. It is EXPECTED to fail on the v1 data in data/prompt_pairs/ — that is the gate catching the audited defects. When the v2 dataset is built (src/dataset_builder_v2.py -> data/v2/), point dataset_dir there; the gate must pass before any release.",
-  "dataset_dir": "data/prompt_pairs",
-  "validation_dir": "data/validation/manual",
+  "_comment": "CI data-audit gate configuration (scripts/data_audit.py). dataset_dir points at the dataset the repository currently ships, which is now v2 (built by src/dataset_builder_v2.py). It previously still pointed at the withdrawn v1 data in data/prompt_pairs/, so the gate reported 23 failures against a dataset the repository no longer ships and was never actually exercised against the released files -- while the paper claimed in two places that a 32-check gate runs in CI. All 32 dataset checks pass on v2. To reproduce the v1 defects for the record, point dataset_dir back at data/prompt_pairs and expect failure; that is the gate catching the audited defects.",
+  "dataset_dir": "data/v2",
+  "_validation_dir_comment": "Deliberately unset. The v1 manual-validation records were quarantined to data/validation/archive_v1_manual/ on 2026-08-25 (see the README there: their decision timing is not consistent with the human attribution they carry). The paper claims no human validation of paraphrase equivalence -- Section 3 states the opposite -- so there is no validation claim for this gate to verify. Restore this key only alongside records that pass annotation_timing.",
   "splits": ["factuality", "coherence", "relevance", "preference"],
   "thresholds": {
     "min_unique_items": 200,

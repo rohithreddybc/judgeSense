@@ -84,8 +84,12 @@ def extract_usage(provider: str, response: Any) -> Tuple[Optional[int], Optional
             return None, None
         out = getattr(um, "candidates_token_count", None)
         thoughts = getattr(um, "thoughts_token_count", None)
-        if out is not None and thoughts:
-            out = out + thoughts  # reasoning tokens are billed output
+        # Reasoning tokens are billed output. Summing them only when BOTH were
+        # present discarded the count whenever the provider reported thoughts
+        # and no candidate tokens, which reported the call as usage-less and
+        # understated the spend. Either field alone is now enough.
+        if out is not None or thoughts is not None:
+            out = (out or 0) + (thoughts or 0)
         return getattr(um, "prompt_token_count", None), out
     # openai and every OpenAI-compatible gateway (novita, dashscope, groq),
     # plus mistral and huggingface chat.completions
@@ -175,6 +179,39 @@ def accepts_temperature(model_id: str) -> bool:
     return not model_id.lower().startswith(_NO_TEMPERATURE_PREFIXES)
 
 
+# Reasoning suppression, per provider, VERIFIED against the live API rather than
+# assumed -- because whether it works decides whether the matched budget holds.
+#
+#   dashscope Qwen3.x  enable_thinking=False  -> honoured. Left on, the thinking
+#       trace rides INSIDE completion_tokens and overruns max_tokens (measured
+#       944/938 and 1552/1546 against a 1024 cap, and 2129 on one call). That
+#       silently breaks the matched-budget control, so it is switched off.
+#   google gemini-2.x  thinking_budget=0      -> honoured (thoughts_token_count None).
+#   google gemini-3.x  thinking_budget=0      -> IGNORED: 98 thought tokens were
+#       still billed. The request is still sent, but the record must not claim
+#       reasoning was disabled when the provider demonstrably kept it on.
+_QWEN_DASHSCOPE_PREFIXES = ("qwen",)
+_GOOGLE_THINKING_OFF_IGNORED = ("gemini-3", "gemini-4")
+
+
+def suppresses_thinking(provider: str, model_id: str) -> bool:
+    """Whether this call ASKS the provider to turn reasoning off."""
+    m = (model_id or "").lower()
+    if provider == "dashscope" and m.startswith(_QWEN_DASHSCOPE_PREFIXES):
+        return True
+    return provider == "google"
+
+
+def thinking_suppression_honoured(provider: str, model_id: str) -> bool:
+    """Whether the provider actually obeys that request."""
+    if not suppresses_thinking(provider, model_id):
+        return False
+    m = (model_id or "").lower()
+    if provider == "google":
+        return not m.startswith(_GOOGLE_THINKING_OFF_IGNORED)
+    return True
+
+
 def decoding_config(model_id: str, max_tokens: int, provider: str = "") -> Dict[str, Any]:
     """What was actually requested, for the record. Never re-derived later."""
     return {
@@ -182,12 +219,17 @@ def decoding_config(model_id: str, max_tokens: int, provider: str = "") -> Dict[
         "temperature_omitted_provider_default": not accepts_temperature(model_id),
         "max_tokens": max_tokens,
         "system_prompt_sent": True,
-        # Reasoning is disabled on Google and left at the provider default
-        # everywhere else. That is a real decoding divergence between judge
-        # classes -- the exact thing the matched temperature exists to remove --
-        # so it is recorded rather than buried in one provider branch.
-        "thinking_budget": 0 if provider == "google" else None,
-        "reasoning_disabled_explicitly": provider == "google",
+        # Reasoning suppression is requested where the provider supports it and
+        # left at the provider default elsewhere. That is a real decoding
+        # divergence between judge classes -- the exact thing the matched
+        # temperature exists to remove -- so it is recorded per call.
+        #
+        # `requested` and `explicitly` are kept apart on purpose: gemini-3.x
+        # accepts thinking_budget=0 and bills thought tokens anyway, so a single
+        # flag would assert a suppression the provider did not perform.
+        "thinking_budget": 0 if suppresses_thinking(provider, model_id) else None,
+        "reasoning_disabled_requested": suppresses_thinking(provider, model_id),
+        "reasoning_disabled_explicitly": thinking_suppression_honoured(provider, model_id),
         "system_prompt_sha": hashlib.sha256(_SYSTEM_PROMPT.encode()).hexdigest()[:12],
     }
 
@@ -213,6 +255,12 @@ def _request(provider: str, client, model_id: str, prompt: str, max_tokens: int)
         }
         if accepts_temperature(model_id):
             kwargs["temperature"] = TEMPERATURE
+        if suppresses_thinking(provider, model_id):
+            # DashScope bills the Qwen thinking trace inside completion_tokens
+            # and does not bound it by max_tokens, so leaving it on overruns the
+            # matched budget. Sent via extra_body: it is a vendor extension, not
+            # an OpenAI parameter.
+            kwargs["extra_body"] = {"enable_thinking": False}
         r = client.chat.completions.create(**kwargs)
         if not getattr(r, "choices", None):
             return "", r
@@ -236,9 +284,14 @@ def _request(provider: str, client, model_id: str, prompt: str, max_tokens: int)
         r = client.messages.create(**kwargs)
         return _first_text(getattr(r, "content", None)), r
     if provider == "huggingface":
+        # huggingface_hub takes the timeout on the CLIENT, not the call:
+        # InferenceClient.chat_completion has no `timeout` parameter, so passing
+        # it here raised TypeError on every HuggingFace call and the retry
+        # wrapper reported it as an API error. The deadline is set in
+        # evaluate._build_client instead.
         r = client.chat.completions.create(
             model=model_id, messages=messages,
-            max_tokens=max_tokens, temperature=TEMPERATURE, timeout=_TIMEOUT,
+            max_tokens=max_tokens, temperature=TEMPERATURE,
         )
         if not getattr(r, "choices", None):
             return "", r

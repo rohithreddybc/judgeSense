@@ -69,9 +69,13 @@ JUDGES: Dict[str, dict] = {
     "llama3-8b": dict(provider="huggingface", model_id="meta-llama/Llama-3.1-8B-Instruct",
                       key="HF_TOKEN", kind=INSTRUCT, family="llama-3.1",
                       size_b=8, native_max_tokens=20, verified=True, pinned=False),
+    # 2026-08-25: the Groq key returns HTTP 403 (Cloudflare 1010) on every
+    # request, including the model listing, so this judge cannot be reached at
+    # all. Demoted to unverified so selection refuses it up front rather than
+    # failing partway through a paid sweep. Restore once the key is reissued.
     "llama3-70b": dict(provider="groq", model_id="llama-3.1-70b-versatile",
                        key="GROQ_API_KEY", kind=INSTRUCT, family="llama-3.1",
-                       size_b=70, native_max_tokens=20, verified=True, pinned=False),
+                       size_b=70, native_max_tokens=20, verified=False, pinned=False),
     # NOT a 7B model. "mistral-small-latest" is a floating alias that does not
     # resolve to a 7B checkpoint, and size_b feeds family_ladders, so a scale
     # claim would have been built on a parameter count the name asserted and the
@@ -84,11 +88,39 @@ JUDGES: Dict[str, dict] = {
     "qwen": dict(provider="novita", model_id="qwen/qwen-2.5-72b-instruct",
                  key="NOVITA_API_KEY", kind=INSTRUCT, family="qwen-2.5",
                  size_b=72, native_max_tokens=20, verified=True, pinned=False),
+    # ── qwen-3 size ladder (8B / 14B / 32B, all dense, all on HuggingFace) ───
+    # Added 2026-08-25. The only previous within-family ladder was llama-3.1
+    # (8B/70B) and it lost its 70B rung when the Groq key died, which would have
+    # left no ladder at all and no basis for any scale comparison.
+    #
+    # Novita's qwen2.5-7b-instruct was tried first and is listed by that
+    # provider's own /models endpoint, but every request returns
+    # 500 MODEL_NOT_AVAILABLE -- a listing is not an availability guarantee, so
+    # each rung below was confirmed with a live call that parsed to a label.
+    #
+    # These are dense checkpoints of one family differing only in parameter
+    # count, which is what makes a scale comparison meaningful. They are hybrid
+    # models and do emit a reasoning trace, but it terminates well inside the
+    # matched budget (196/223/6 tokens observed against 1024).
+    "qwen3-8b": dict(provider="huggingface", model_id="Qwen/Qwen3-8B",
+                     key="HF_TOKEN", kind=REASONING, family="qwen-3",
+                     size_b=8, native_max_tokens=1024, verified=True, pinned=False),
+    "qwen3-14b": dict(provider="huggingface", model_id="Qwen/Qwen3-14B",
+                      key="HF_TOKEN", kind=REASONING, family="qwen-3",
+                      size_b=14, native_max_tokens=1024, verified=True, pinned=False),
+    "qwen3-32b": dict(provider="huggingface", model_id="Qwen/Qwen3-32B",
+                      key="HF_TOKEN", kind=REASONING, family="qwen-3",
+                      size_b=32, native_max_tokens=1024, verified=True, pinned=False),
 
     # ── reasoning-tuned ─────────────────────────────────────────────────────
+    # 2026-08-25: this alias emits an unterminated <think> trace and spends the
+    # whole 1024-token budget without ever reaching a label, so the strict
+    # parser returns UNCLEAR on every call and the cell would be 100% malformed.
+    # Demoted to unverified. Use "deepseek-r1-0528" (HuggingFace), which is the
+    # same family at a dated snapshot and closes its reasoning inside budget.
     "deepseek": dict(provider="novita", model_id="deepseek/deepseek-r1",
                      key="NOVITA_API_KEY", kind=REASONING, family="deepseek-r1",
-                     size_b=None, native_max_tokens=1024, verified=True, pinned=False),
+                     size_b=None, native_max_tokens=1024, verified=False, pinned=False),
     "deepseek-v4-flash": dict(provider="novita", model_id="deepseek/deepseek-v4-flash",
                               key="NOVITA_API_KEY", kind=REASONING, family="deepseek-v4",
                               size_b=None, native_max_tokens=1024, verified=True, pinned=False),
@@ -102,10 +134,84 @@ JUDGES: Dict[str, dict] = {
                            key="DASHSCOPE_API_KEY", kind=REASONING, family="qwen-3.6",
                            size_b=35, native_max_tokens=1024, verified=True, pinned=False),
 
+    # ── multi-vendor expansion (2026-08-25) ─────────────────────────────────
+    # Every entry below was exercised against the live provider before being
+    # added: one real judge call through usage_meter, parsed to a label, with
+    # temperature, budget, usage and the echoed model string all confirmed
+    # present. Nothing here is transcribed from a model card.
+    #
+    # The Claude-only evidence base is the paper's headline limitation; these
+    # five vendors are what removes it.
+    "llama-3.3-70b": dict(provider="huggingface", model_id="meta-llama/Llama-3.3-70B-Instruct",
+                          key="HF_TOKEN", kind=INSTRUCT, family="llama-3.3",
+                          size_b=70, native_max_tokens=20, verified=True, pinned=False),
+    # size_b is None for both Llama-4 entries: they are MoE and share 17B ACTIVE
+    # parameters while differing in total (109B Scout vs 400B Maverick), so any
+    # single number would either equate two different models or assert a count
+    # the checkpoint does not have. An equal-size pair would also form a
+    # degenerate "ladder" that a scale claim could rest on. Same reasoning as
+    # mistral-small above.
+    "llama-4-scout": dict(provider="huggingface", model_id="meta-llama/Llama-4-Scout-17B-16E-Instruct",
+                          key="HF_TOKEN", kind=INSTRUCT, family="llama-4",
+                          size_b=None, native_max_tokens=20, verified=True, pinned=False),
+    "llama-4-maverick": dict(provider="huggingface", model_id="meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+                             key="HF_TOKEN", kind=INSTRUCT, family="llama-4",
+                             size_b=None, native_max_tokens=20, verified=True, pinned=False),
+    "gemma-4-31b": dict(provider="huggingface", model_id="google/gemma-4-31B-it",
+                        key="HF_TOKEN", kind=INSTRUCT, family="gemma-4",
+                        size_b=31, native_max_tokens=20, verified=True, pinned=False),
+    "gemini-3.7-flash": dict(provider="google", model_id="gemini-3.7-flash",
+                             key="GOOGLE_API_KEY", kind=INSTRUCT, family="gemini-3.7",
+                             size_b=None, native_max_tokens=20, verified=True, pinned=False),
+    # Qwen on DashScope is a hybrid: reasoning is SUPPRESSED at request time
+    # (enable_thinking=False), because left on, the thinking trace is billed
+    # inside completion_tokens and is not bounded by max_tokens -- it overran
+    # the 1024 matched budget on every probe. Suppression is recorded per call,
+    # so the effective class is instruction-tuned and the record says why.
+    "qwen3.7-flash": dict(provider="dashscope", model_id="qwen3.7-flash-2026-07-15",
+                          key="DASHSCOPE_API_KEY", kind=INSTRUCT, family="qwen-3.7",
+                          size_b=None, native_max_tokens=20, verified=True, pinned=True,
+                          thinking_suppressed=True),
+    # ── reasoning judges whose thinking stays inside the matched budget ──────
+    # Same failure as the Novita R1 alias, and it is a property of the R1 family
+    # rather than of one host: on a benchmark prompt it closed its reasoning in
+    # 284 tokens and parsed cleanly, but on the trivial pre-flight probe ("is the
+    # sky blue") it opened <think> and never reached a label. Whether a judge
+    # answers at all therefore depends on the item, which is indistinguishable
+    # from the effect this benchmark measures. Excluded rather than reported as
+    # a 100%-malformed cell.
+    "deepseek-r1-0528": dict(provider="huggingface", model_id="deepseek-ai/DeepSeek-R1-0528",
+                             key="HF_TOKEN", kind=REASONING, family="deepseek-r1",
+                             size_b=671, native_max_tokens=1024, verified=False, pinned=False),
+    # Unstable under the matched budget: two probes of the same prompt returned
+    # 2 tokens and a clean label once, and 1024 tokens of unterminated reasoning
+    # with no label the next. A judge whose malformed rate depends on routing
+    # cannot be read as prompt sensitivity, so it stays out of selection.
+    # deepseek-r1-0528 covers the same reasoning class and terminates in budget.
+    "qwen3-235b-thinking": dict(provider="huggingface", model_id="Qwen/Qwen3-235B-A22B-Thinking-2507",
+                                key="HF_TOKEN", kind=REASONING, family="qwen-3",
+                                size_b=235, native_max_tokens=1024, verified=False, pinned=False),
+    "deepseek-v4-flash-ds": dict(provider="dashscope", model_id="deepseek-v4-flash-0731",
+                                 key="DASHSCOPE_API_KEY", kind=REASONING, family="deepseek-v4",
+                                 size_b=None, native_max_tokens=1024, verified=True, pinned=False),
+    "glm-5.2": dict(provider="dashscope", model_id="glm-5.2",
+                    key="DASHSCOPE_API_KEY", kind=REASONING, family="glm-5",
+                    size_b=None, native_max_tokens=1024, verified=True, pinned=False),
+    "magistral-small": dict(provider="mistral", model_id="magistral-small-latest",
+                            key="MISTRAL_API_KEY", kind=REASONING, family="magistral",
+                            size_b=None, native_max_tokens=1024, verified=True, pinned=False),
+
     # ── purpose-built judges (xmQT Limitations) ─────────────────────────────
     # Model identifiers taken from published model cards and NOT yet exercised
     # against the provider, so they are marked unverified and are excluded from
     # selection until confirmed. Verify before spending a run on them.
+    #
+    # 2026-08-25: re-checked against every provider we hold a key for. The
+    # repositories still exist on the Hub, but NO serverless provider serves
+    # them -- Prometheus 2, JudgeLM, Skywork-Critic and OffsetBias are all
+    # unavailable through an API. Evaluating a purpose-built judge would now
+    # require a dedicated GPU endpoint, so this gap is a hosting fact and not
+    # an omission we can close by spending more on inference.
     "prometheus-2-7b": dict(provider="huggingface", model_id="prometheus-eval/prometheus-7b-v2.0",
                             key="HF_TOKEN", kind=PURPOSE_BUILT, family="prometheus-2",
                             size_b=7, native_max_tokens=1024, verified=False, pinned=False),

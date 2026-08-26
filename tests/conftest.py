@@ -52,3 +52,74 @@ def pytest_collection_modifyitems(config, items):
             # artifacts forces someone to remove the marker rather than letting
             # a stale exemption sit here forever.
             item.add_marker(pytest.mark.xfail(reason=_REASON, strict=True))
+
+
+# ── tracked-artifact guard ───────────────────────────────────────────────────
+# The suite must not write into files the paper ships.
+#
+# A test that called regenerate_results.main() redirected RAW and OUT_JSON but
+# not OUT_TEX, so every run overwrote tables/main_results_v2.tex with its
+# synthetic fixture. The table that reached the repository read
+# "goodjudge & factuality & 10 & 1.000" while the Results prose discussed the
+# real measurements. Every test passed and the paper compiled.
+#
+# This was previously a test that spawned a NESTED pytest run once per tracked
+# file -- eight full suites, each paying the network-bound loader cost. It
+# stopped terminating (killed at 600s against a 36s suite), so the guard that
+# exists to protect Table 1 never reached a verdict.
+#
+# Session hooks need no subprocess, cost one hash per file, and are strictly
+# stronger: they observe the whole session, including writes from teardown and
+# from tests that run after any particular test would have.
+
+import hashlib as _hashlib
+from pathlib import Path as _Path
+
+_ROOT = _Path(__file__).resolve().parent.parent
+
+TRACKED_ARTIFACTS = [
+    "tables/main_results_v2.tex",
+    "data/results_v2/metrics_summary.json",
+    "data/results_v2/shortcut_controls.json",
+    "data/v2/factuality.jsonl",
+    "data/v2/coherence.jsonl",
+    "data/v2/relevance.jsonl",
+    "data/v2/preference.jsonl",
+    "data/v2/FROZEN.json",
+]
+
+_artifact_digests_at_start = {}
+
+
+def _artifact_digest(relpath):
+    path = _ROOT / relpath
+    if not path.exists():
+        return None
+    return _hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def pytest_sessionstart(session):
+    for rel in TRACKED_ARTIFACTS:
+        _artifact_digests_at_start[rel] = _artifact_digest(rel)
+
+
+def pytest_sessionfinish(session, exitstatus):
+    changed = [
+        rel for rel in TRACKED_ARTIFACTS
+        if _artifact_digest(rel) != _artifact_digests_at_start.get(rel)
+    ]
+    if not changed:
+        return
+    # Fail the run even when every individual test passed: a green suite that
+    # rewrote the paper's table is the exact failure this guards against.
+    session.exitstatus = 1
+    reporter = session.config.pluginmanager.get_plugin("terminalreporter")
+    if reporter is not None:
+        reporter.write_sep("=", "TRACKED ARTIFACT MODIFIED BY THE TEST SUITE", red=True)
+        for rel in changed:
+            reporter.write_line(f"  {rel}")
+        reporter.write_line(
+            "A test wrote to a file the paper ships. Redirect the module-level "
+            "output path with monkeypatch, as tests/test_undefined_metrics.py "
+            "does for OUT_JSON and OUT_TEX."
+        )
