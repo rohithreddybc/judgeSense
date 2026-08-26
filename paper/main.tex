@@ -1255,6 +1255,42 @@ released. So are the defects we found in our own construction, and the
 measurements that exposed them.
 % ===== end 06_discussion =====
 
+\subsubsection*{Broader impact statement}
+The work is a measurement instrument for evaluation infrastructure, and its
+risks are mostly the risks of being believed too readily.
+
+A benchmark that reports stability invites the reading that a stable judge is a
+good one. It is not: JSS never consults the ground-truth label, and a judge that
+is wrong on every item but wrong identically scores perfectly. Selecting a judge
+on stability alone would optimise for a model that is confidently and
+reproducibly incorrect. Stability is necessary for an instrument and nowhere
+near sufficient, and we would rather say so here than have the number quoted
+without it.
+
+The refusal result has a distributional edge. One judge declined a quarter of
+the relevance items, drawn from a medical corpus, while another on identical
+prompts declined none. Where an evaluation harness silently drops declines, the
+items lost are not lost at random, and the topics most likely to be dropped are
+the sensitive ones. A pipeline that scores refusals as format failures will
+report a clean evaluation over a corpus it partly refused to read. That failure
+is quiet, and it gets quieter as the corpus gets more sensitive.
+
+The benchmark is built from four existing English corpora and inherits whatever
+they carry. Coherence gold is a rounded three-annotator mean, preference gold is
+a human majority vote, and both encode the judgements of particular annotator
+pools. Nothing here supports a claim about judge behaviour outside English, and
+we have not measured it.
+
+We see no dual-use concern specific to this artifact. It measures agreement
+between two paraphrases of the same request; it does not generate content,
+elicit capabilities, or make a model easier to misuse.
+
+\ifblind\else
+\subsubsection*{Acknowledgements}
+Acknowledgements are omitted from the review copy and will be added for the
+camera-ready.
+\fi
+
 \subsubsection*{Use of AI assistance}
 An AI coding assistant was used throughout this work: to implement the dataset
 loaders, the metric and bootstrap code, the analysis pipeline and the test
@@ -1280,6 +1316,142 @@ and a 32-check audit gate runs in continuous integration. Judge model
 identifiers, resolved decoding parameters and the provider-reported model
 string are recorded on every call record, so configuration drift is detectable
 after the fact rather than assumed absent.
+
+% <<< GENERATED APPENDIX: generate_template_appendix.py -- do not edit by hand
+\appendix
+\section{The twenty instruction templates}
+\label{app:templates}
+
+Every template shipped with the benchmark is printed below, exactly as
+the builder emits it. Placeholders in braces are filled per item; the
+payload is otherwise unchanged between the two arms of a pair.
+
+Each item is issued under exactly two of the five templates for its
+task, assigned by a label-stratified seeded permutation over the ten
+unordered pairs (Section~\ref{sec:benchmark}). No item appears under
+more than one pair, so template identity is nested inside item identity
+and no between-template contrast is identifiable from this design.
+
+The audit described in Section~\ref{sec:benchmark} is run against these
+strings: it checks that the requested answer set is identical within
+each pair, that no template inverts polarity, that each names its own
+task's construct, and that no pair is a near-duplicate. What it cannot
+establish is that a competent reader maps two wordings onto the same
+question, which is why the equivalence claim is stated as an assumption
+and not as a result.
+
+\subsection{Factuality (TruthfulQA)}
+Requested answer set: \{YES, NO\} for all five templates.
+
+\paragraph{T1.}
+{\ttfamily\small\raggedright\sloppy
+  Is this statement factually correct? Answer YES or NO only. \{text\}
+\par}
+
+\paragraph{T2.}
+{\ttfamily\small\raggedright\sloppy
+  Fact-check the statement below. Reply YES (correct) or NO (incorrect). \{text\}
+\par}
+
+\paragraph{T3.}
+{\ttfamily\small\raggedright\sloppy
+  Is the following statement accurate? Answer with one word: YES or NO. \{text\}
+\par}
+
+\paragraph{T4.}
+{\ttfamily\small\raggedright\sloppy
+  Evaluate the factual accuracy of this statement. Respond YES if it is correct, NO if it is not. \{text\}
+\par}
+
+\paragraph{T5.}
+{\ttfamily\small\raggedright\sloppy
+  Judge whether the statement is factually correct. Your entire answer must be YES or NO. \{text\}
+\par}
+
+\subsection{Coherence (SummEval)}
+Requested answer set: $\{1,\dots,5\}$ for all five templates.
+
+\paragraph{T1.}
+{\ttfamily\small\raggedright\sloppy
+  Rate the coherence of this text from 1 (incoherent) to 5 (very coherent). Reply with one number only. \{text\}
+\par}
+
+\paragraph{T2.}
+{\ttfamily\small\raggedright\sloppy
+  How coherent is the following text? Score it 1-5 (1 = incoherent, 5 = very coherent). Number only. \{text\}
+\par}
+
+\paragraph{T3.}
+{\ttfamily\small\raggedright\sloppy
+  Assign a coherence rating from 1 to 5, where 1 means incoherent and 5 means very coherent. Answer with a single digit. \{text\}
+\par}
+
+\paragraph{T4.}
+{\ttfamily\small\raggedright\sloppy
+  On a 1-5 coherence scale (1 = incoherent, 5 = very coherent), what score does this text deserve? Respond with the number only. \{text\}
+\par}
+
+\paragraph{T5.}
+{\ttfamily\small\raggedright\sloppy
+  Score this text's coherence: 1 (incoherent) through 5 (very coherent). Give only the number. \{text\}
+\par}
+
+\subsection{Relevance (BEIR TREC-COVID)}
+Requested answer set: \{A, B\} for all five templates.
+
+\paragraph{T1.}
+{\ttfamily\small\raggedright\sloppy
+  Which passage is more relevant to the query "\{query\}"? Answer A or B only. A: \{first\} B: \{second\}
+\par}
+
+\paragraph{T2.}
+{\ttfamily\small\raggedright\sloppy
+  For the query "\{query\}", which passage is more relevant? Reply with A or B. A: \{first\} B: \{second\}
+\par}
+
+\paragraph{T3.}
+{\ttfamily\small\raggedright\sloppy
+  Query: "\{query\}". Choose the more relevant passage. Answer A or B. A: \{first\} B: \{second\}
+\par}
+
+\paragraph{T4.}
+{\ttfamily\small\raggedright\sloppy
+  Considering the query "\{query\}", decide which passage is more relevant. Respond A or B only. A: \{first\} B: \{second\}
+\par}
+
+\paragraph{T5.}
+{\ttfamily\small\raggedright\sloppy
+  Given the query "\{query\}", pick the passage with higher relevance. Your answer must be A or B. A: \{first\} B: \{second\}
+\par}
+
+\subsection{Preference (MT-Bench human judgments)}
+Requested answer set: \{A, B\} for all five templates.
+
+\paragraph{T1.}
+{\ttfamily\small\raggedright\sloppy
+  Which response to "\{query\}" is better? Answer A or B only. A: \{first\} B: \{second\}
+\par}
+
+\paragraph{T2.}
+{\ttfamily\small\raggedright\sloppy
+  For the question "\{query\}", which response is of higher quality? Reply with A or B. A: \{first\} B: \{second\}
+\par}
+
+\paragraph{T3.}
+{\ttfamily\small\raggedright\sloppy
+  Question: "\{query\}". Choose the better response. Answer A or B. A: \{first\} B: \{second\}
+\par}
+
+\paragraph{T4.}
+{\ttfamily\small\raggedright\sloppy
+  Considering the question "\{query\}", decide which response is better. Respond A or B only. A: \{first\} B: \{second\}
+\par}
+
+\paragraph{T5.}
+{\ttfamily\small\raggedright\sloppy
+  Given the question "\{query\}", pick the stronger response. Your answer must be A or B. A: \{first\} B: \{second\}
+\par}
+% >>> END GENERATED APPENDIX
 
 \bibliographystyle{plainnat}          % TMLR: \bibliographystyle{tmlr}
 \bibliography{references}
