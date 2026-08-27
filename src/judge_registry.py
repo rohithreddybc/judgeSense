@@ -69,13 +69,31 @@ JUDGES: Dict[str, dict] = {
     "llama3-8b": dict(provider="huggingface", model_id="meta-llama/Llama-3.1-8B-Instruct",
                       key="HF_TOKEN", kind=INSTRUCT, family="llama-3.1",
                       size_b=8, native_max_tokens=20, verified=True, pinned=False),
-    # 2026-08-25: the Groq key returns HTTP 403 (Cloudflare 1010) on every
-    # request, including the model listing, so this judge cannot be reached at
-    # all. Demoted to unverified so selection refuses it up front rather than
-    # failing partway through a paid sweep. Restore once the key is reissued.
+    # 2026-08-25: the key was NOT dead. Groq sits behind Cloudflare, which
+    # rejected the SDK's default User-Agent with 403 "error code: 1010"; any
+    # ordinary UA restores access (fixed in evaluate._build_client). Groq itself
+    # has since retired llama-3.1-70b-versatile, so this particular checkpoint
+    # is genuinely gone and stays unverified -- but the provider is live again,
+    # and it is the one free high-volume tier here (14.4k requests/day).
     "llama3-70b": dict(provider="groq", model_id="llama-3.1-70b-versatile",
                        key="GROQ_API_KEY", kind=INSTRUCT, family="llama-3.1",
                        size_b=70, native_max_tokens=20, verified=False, pinned=False),
+    # ── Groq, free tier (2026-08-25) ────────────────────────────────────────
+    # gpt-oss is OpenAI's open-weight release, so it reaches the GPT lineage
+    # without touching the paid OpenAI API. 20B and 120B are one family at two
+    # sizes: a second within-family size ladder, at no cost.
+    "gpt-oss-20b": dict(provider="groq", model_id="openai/gpt-oss-20b",
+                        key="GROQ_API_KEY", kind=REASONING, family="gpt-oss",
+                        size_b=20, native_max_tokens=1024, verified=True, pinned=False),
+    "gpt-oss-120b": dict(provider="groq", model_id="openai/gpt-oss-120b",
+                         key="GROQ_API_KEY", kind=REASONING, family="gpt-oss",
+                         size_b=120, native_max_tokens=1024, verified=True, pinned=False),
+    # qwen3.6-27b on Groq was probed alongside these and is NOT registered: it
+    # opens <think> and never reaches a label inside the budget, the same
+    # failure as the DeepSeek R1 aliases.
+    "qwen3.8-27b": dict(provider="groq", model_id="qwen/qwen3.8-27b",
+                        key="GROQ_API_KEY", kind=INSTRUCT, family="qwen-3.8",
+                        size_b=27, native_max_tokens=20, verified=True, pinned=False),
     # NOT a 7B model. "mistral-small-latest" is a floating alias that does not
     # resolve to a 7B checkpoint, and size_b feeds family_ladders, so a scale
     # claim would have been built on a parameter count the name asserted and the

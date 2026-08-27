@@ -52,15 +52,25 @@ except ImportError:
 _ALL_MODELS = list(SUPPORTED_MODELS.keys())  # 9 models
 
 # Rate limits in seconds per API call (between calls, not per minute)
+# Seconds to pause after each ROW, not each call -- and a row is four calls
+# (two arms plus two repeats), so the effective per-call spacing is roughly a
+# quarter of these numbers.
+#
+# Retuned 2026-08-25 from measured 429 rates over a live sweep. mistral at 0.5s
+# returned 118 rate-limit errors, novita at 1.5s returned 92, and groq 12; every
+# one of those is an errored arm a later resume pass has to pay for again, so
+# pacing that looks "safe" but is not is more expensive than pacing that is slow.
+# google, huggingface and dashscope produced zero 429s and are unchanged.
 _RATE_LIMIT = {
     "openai":       0.5,
     "anthropic":    0.5,
-    "google":       1.0,
-    "huggingface":  1.0,
-    "mistral":      0.5,
-    "novita":       1.5,   # 45 req/min limit → 1 req per 1.33s; use 1.5s for safety
-    "dashscope":    1.5,   # rate limit safety margin matching Novita
-    "groq":         2.0,   # ~30 req/min for Llama 3.1 70B free tier; 2s is safe
+    "google":       1.0,   # 0 rate-limit errors observed
+    "huggingface":  1.0,   # 0 rate-limit errors observed
+    "mistral":      3.0,   # was 0.5 -> 118 errors on a partial sweep
+    "novita":       3.0,   # was 1.5 -> 92 errors; documented 45 req/min
+    "dashscope":    1.5,   # 0 rate-limit errors observed
+    "groq":         4.0,   # was 2.0 -> 12 errors; free tier is ~30 req/min, and
+                           # a row costs four of them
 }
 
 _TIMEOUT          = 60   # seconds per API call (raised from 30 to accommodate reasoning models)
@@ -305,9 +315,15 @@ def _build_client(model_name: str):
             from openai import OpenAI
         except ImportError:
             raise ImportError("pip install openai")
+        # Groq sits behind Cloudflare, which rejects the SDK's default
+        # User-Agent with HTTP 403 "error code: 1010" -- a client-signature
+        # block, not an auth failure. The key was read as revoked and the whole
+        # provider written off; any ordinary User-Agent restores it, and Groq is
+        # the one genuinely free high-volume tier available here.
         return OpenAI(
             api_key=api_key,
             base_url="https://api.groq.com/openai/v1",
+            default_headers={"User-Agent": "judgesense/2.1"},
         ), model_id, provider
 
     else:

@@ -81,10 +81,45 @@ def test_failed_call_still_records_spend(monkeypatch):
     out = um.metered_call("openai", None, "m", "p", 20)
     assert out.startswith("ERROR:")
     meta = um.take_last_meta()
-    # two attempts were made and paid for in wall-clock; tokens are unknowable
-    assert meta["attempts"] == 2 and calls["n"] == 2
+    # every attempt was made and paid for in wall-clock; tokens are unknowable
+    assert meta["attempts"] == um._MAX_ATTEMPTS and calls["n"] == um._MAX_ATTEMPTS
     assert meta["input_tokens"] is None and meta["output_tokens"] is None
     assert "rate limit" in meta["error"]
+
+
+def test_rate_limits_back_off_further_each_time_and_others_do_not():
+    """A 429 is a request to wait, not a failure.
+
+    Retrying it on the same flat timer as a transport error burns the row: a
+    single live sweep recorded 118 rate-limit errors from Mistral and 92 from
+    Novita, each an errored arm a later resume pass had to pay for again. The
+    wait has to actually grow, and only for quota rejections.
+    """
+    limit = RuntimeError("Error code: 429 - rate limit reached")
+    other = RuntimeError("Connection reset by peer")
+
+    assert um._is_rate_limit(limit)
+    assert not um._is_rate_limit(other)
+
+    waits = [um._backoff_seconds(limit, i) for i in range(um._MAX_ATTEMPTS)]
+    assert waits == sorted(waits), f"rate-limit back-off must not shrink: {waits}"
+    assert waits[0] < waits[-1], f"back-off never grows: {waits}"
+
+    flat = {um._backoff_seconds(other, i) for i in range(um._MAX_ATTEMPTS)}
+    assert len(flat) == 1, f"transport retry should stay flat, got {flat}"
+
+
+def test_rate_limit_detection_spans_provider_spellings():
+    """Each SDK words it differently; missing one silently reverts that
+    provider to the flat retry."""
+    for msg in ("Error code: 429 - rate limit reached",
+                'API error occurred: Status 429. Body: {"message":"Rate limit exceeded"}',
+                "RATE_LIMIT_EXCEEDED",
+                "Too Many Requests"):
+        assert um._is_rate_limit(RuntimeError(msg)), msg
+    for msg in ("500 MODEL_NOT_AVAILABLE", "Connection reset by peer",
+                "invalid_request_error"):
+        assert not um._is_rate_limit(RuntimeError(msg)), msg
 
 
 def test_take_consumes_so_meta_cannot_be_reused(monkeypatch):

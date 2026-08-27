@@ -134,6 +134,38 @@ def extract_finish_reason(provider: str, response: Any) -> Optional[str]:
     return getattr(choices[0], "finish_reason", None) if choices else None
 
 
+# Attempts per call, and how long to wait between them. Rate limits are the
+# common failure on free and low-tier keys, and they are transient by
+# definition, so they are worth more than one retry -- but only if the wait
+# actually grows. A flat 5s retry against a per-minute quota fails twice and
+# records an errored arm that the next resume pass has to pay for again.
+_MAX_ATTEMPTS = 4
+_RATE_LIMIT_BACKOFF = (15, 45, 90)   # seconds, per successive 429
+_TRANSPORT_BACKOFF = 5               # flat, for everything else
+
+
+def _is_rate_limit(exc: BaseException) -> bool:
+    """True for a provider quota rejection, across SDKs that spell it
+    differently: OpenAI-compatible gateways raise with 'Error code: 429',
+    Mistral with 'Status 429', and several include only the reason string."""
+    status = getattr(exc, "status_code", None) or getattr(exc, "status", None)
+    if status == 429:
+        return True
+    text = str(exc).lower()
+    return ("429" in text
+            or "rate limit" in text
+            or "rate_limit" in text
+            or "too many requests" in text
+            or "quota" in text)
+
+
+def _backoff_seconds(exc: BaseException, attempt: int) -> float:
+    if _is_rate_limit(exc):
+        idx = min(attempt, len(_RATE_LIMIT_BACKOFF) - 1)
+        return _RATE_LIMIT_BACKOFF[idx]
+    return _TRANSPORT_BACKOFF
+
+
 def _first_text(parts) -> str:
     """Text of the first content block, or "" when the provider returned none.
 
@@ -331,7 +363,7 @@ def metered_call(provider: str, client, model_id: str, prompt: str, max_tokens: 
     t0 = time.time()
     attempts = 0
     last_exc: Optional[BaseException] = None
-    for attempt in range(2):
+    for attempt in range(_MAX_ATTEMPTS):
         attempts += 1
         try:
             text, response = _request(provider, client, model_id, prompt, max_tokens)
@@ -353,8 +385,14 @@ def metered_call(provider: str, client, model_id: str, prompt: str, max_tokens: 
             return text
         except Exception as exc:  # noqa: BLE001 - provider SDKs raise many types
             last_exc = exc
-            if attempt == 0:
-                time.sleep(5)
+            if attempt < _MAX_ATTEMPTS - 1:
+                # A 429 is not a failure, it is a request to wait, and retrying
+                # it on the same 5s timer as a transport error just burns the
+                # row: Mistral returned 118 rate-limit errors and Novita 92 in a
+                # single sweep, each recorded as an errored arm that then had to
+                # be re-run. Rate limits get an escalating back-off; everything
+                # else keeps the flat retry.
+                time.sleep(_backoff_seconds(exc, attempt))
     LAST_CALL_META = {
         # Tokens burned by an attempt that raised before returning a response are
         # unrecoverable; they are represented by `attempts`, never fabricated.
