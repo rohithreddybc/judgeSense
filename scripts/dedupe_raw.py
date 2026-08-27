@@ -1,19 +1,22 @@
-"""Remove duplicate pair_ids from raw judge output.
+"""Compact raw judge output by collapsing repeated pair_ids.
 
-Raw files are append-only and unlocked. Two processes over the same
-(judge, task) each read the completed set once at cell start, so both work the
-same backlog and both append -- the runner warns about this and nothing
-enforced it. Restarting a provider's process while its predecessor was still
-draining produced 73 duplicated rows across four cells.
+This is HOUSEKEEPING, not a correctness fix, and the distinction matters.
 
-Duplicates are not merely wasteful: metrics resample at the item, so an item
-present twice is weighted twice, and a cell whose duplicates are concentrated in
-one arm would shift the endpoint.
+Repeated pair_ids are normal and expected: the runner appends and never
+rewrites, so an errored row that is later retried leaves both records behind.
+regenerate_results._records already collapses them last-write-wins before any
+metric is computed, and run_v2._completed_pair_ids decides resume the same way.
+The reported numbers are therefore unaffected by duplicates, and running this
+script is optional.
 
-Resolution keeps ONE record per pair_id, preferring the one that actually
-carries evidence: most arms answered, then fewest errored arms, then the later
-timestamp. A successful retry therefore beats the errored attempt it replaced,
-which is the outcome resume was trying to produce.
+What duplicates do cost is calls and wall-clock, when they come from two
+processes over one (judge, task) rather than from retries. Raw files are
+append-only and unlocked, and the completed set is read once at cell start, so
+two writers each work the whole backlog and both pay. That is what
+run_v2._acquire_cell now prevents.
+
+Use this to shrink files and make row counts read as item counts. It applies the
+same last-write-wins rule as the reader, so it can never change a result.
 
 Run:  python scripts/dedupe_raw.py [--apply]     (default is a dry run)
 """
@@ -29,35 +32,29 @@ RAW = REPO / "data" / "results_v2" / "raw"
 ARMS = ("usage_a", "usage_b", "usage_a_repeat", "usage_b_repeat")
 
 
-def _quality(rec: dict) -> tuple:
-    answered = errored = 0
-    for a in ARMS:
-        u = rec.get(a)
-        if isinstance(u, dict):
-            if u.get("error"):
-                errored += 1
-            elif u.get("output_tokens") is not None:
-                answered += 1
-    decided = sum(1 for k in ("decision_a", "decision_b")
-                  if rec.get(k) not in (None, "UNCLEAR"))
-    return (answered, decided, -errored, str(rec.get("ts") or ""))
-
-
 def dedupe_file(path: Path, apply: bool) -> tuple[int, int]:
+    """Collapse repeated pair_ids, KEEPING THE LAST record written.
+
+    Last-write-wins is not a choice made here; it is the rule the rest of the
+    pipeline already applies. regenerate_results._records reads the same way,
+    and run_v2._completed_pair_ids decides resume on the final record per
+    pair_id. Anything else -- "keep the best-looking record", say -- would mark a
+    row done that the runner still intends to retry, and would make this script
+    disagree with the reader about which attempt counts.
+    """
     rows = []
     for line in io.open(path, encoding="utf-8"):
         line = line.strip()
         if line:
             rows.append(json.loads(line))
-    best: dict[str, dict] = {}
+    last: dict[str, dict] = {}
     order: list[str] = []
     for rec in rows:
         pid = rec.get("pair_id")
-        if pid not in best:
-            best[pid] = rec
+        if pid not in last:
             order.append(pid)
-        elif _quality(rec) > _quality(best[pid]):
-            best[pid] = rec
+        last[pid] = rec              # later record supersedes earlier
+    best = last
     removed = len(rows) - len(order)
     if removed and apply:
         tmp = path.with_suffix(".jsonl.tmp")
