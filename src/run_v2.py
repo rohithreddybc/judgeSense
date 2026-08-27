@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from datetime import datetime, timezone
@@ -195,9 +196,62 @@ def preflight(judges: List[str], budget_policy: str = "native") -> bool:
     return ok
 
 
+class CellBusy(RuntimeError):
+    """Another process is already writing this (judge, task)."""
+
+
+_LOCK_STALE_SECONDS = 600
+
+
+def _lock_path(judge: str, task: str) -> Path:
+    d = _OUT_DIR / ".locks"
+    d.mkdir(parents=True, exist_ok=True)
+    return d / f"{judge}_{task}.lock"
+
+
+def _acquire_cell(judge: str, task: str) -> Optional[Path]:
+    """Claim a cell, or raise CellBusy.
+
+    The output file is append-only with no lock, and completed rows are read
+    ONCE at cell start. Two processes over the same cell therefore each work the
+    whole remaining backlog and both append: restarting a provider's process
+    while its predecessor was still draining duplicated 77 rows across four
+    cells. Metrics resample at the item, so a duplicated item is weighted twice.
+    A printed warning did not prevent it; this does.
+
+    The holder refreshes the lock's mtime as it writes, so a lock left behind by
+    a killed process goes stale and is reclaimed rather than blocking forever.
+    """
+    path = _lock_path(judge, task)
+    if path.exists():
+        age = time.time() - path.stat().st_mtime
+        if age < _LOCK_STALE_SECONDS:
+            raise CellBusy(
+                f"{judge}/{task} is locked by pid {path.read_text().strip()} "
+                f"(touched {age:.0f}s ago). Another process is writing this "
+                f"cell; running both would duplicate rows. Split by --judges or "
+                f"--tasks into disjoint sets."
+            )
+        print(f"  [{judge}/{task}] reclaiming stale lock ({age:.0f}s old)")
+    path.write_text(str(os.getpid()), encoding="utf-8")
+    return path
+
+
 def run_cell(judge: str, task: str, budget_policy: str, repeat_baseline: bool,
              limit: Optional[int]) -> Dict[str, int]:
     """Run one (judge, task). Resumable; writes one record per row."""
+    lock = _acquire_cell(judge, task)
+    try:
+        return _run_cell_locked(judge, task, budget_policy, repeat_baseline,
+                                limit, lock)
+    finally:
+        if lock is not None:
+            lock.unlink(missing_ok=True)
+
+
+def _run_cell_locked(judge: str, task: str, budget_policy: str,
+                     repeat_baseline: bool, limit: Optional[int],
+                     lock: Optional[Path]) -> Dict[str, int]:
     rows = _load_jsonl(_DATA_DIR / f"{task}.jsonl")
     if limit:
         rows = rows[:limit]
@@ -290,6 +344,11 @@ def run_cell(judge: str, task: str, budget_policy: str, repeat_baseline: bool,
                 )
         else:
             consecutive_errors = 0
+        # Keep the cell lock warm. A holder that stops touching it for
+        # _LOCK_STALE_SECONDS is treated as dead and its cell is reclaimed, so a
+        # long, slow cell must say it is still alive.
+        if lock is not None:
+            lock.touch()
         if pace:
             time.sleep(pace)
     return {"resumed": n_done, "new": n_new, "errors": n_err, "total": len(rows)}
