@@ -23,8 +23,9 @@ stated rather than implied.
   implemented and tested before any run. The quantity, estimator, clustering
   unit and decision rule are unchanged, and the committed output has always
   reported `jss`, `jss_rep` and `delta` side by side.
-- Items marked NOT YET IMPLEMENTED below are commitments about the write-up, not
-  behaviour currently enforced by code. Where this file says "enforced", that is
+- As of 2026-08-26 every item below is enforced by code; see the implementation
+  note at the end. Historically several were marked NOT YET IMPLEMENTED, meaning
+  commitments about the write-up rather than behaviour enforced by code. Where this file says "enforced", that is
   a claim about code and is verifiable; where it does not, it is a rule the
   authors are binding themselves to.
 
@@ -66,22 +67,23 @@ rule applied to all of them yields roughly three spurious findings under a globa
 null, and whichever cells clear will inevitably be the ones the narrative
 foregrounds. So the rule is stated in three parts, before the data exist:
 
-1. **One primary contrast.** *(NOT YET IMPLEMENTED in code; applied at write-up.)* The confirmatory claim is the ΔJSS pooled across
+1. **One primary contrast.** *(IMPLEMENTED: `src/multiplicity.pooled_delta_by_task` + `holm`, tested in `tests/test_multiplicity.py`.)* The confirmatory claim is the ΔJSS pooled across
    judges within each task, not any individual judge–task cell. Four intervals,
    one per task, Holm-corrected across the four.
-2. **Everything per-cell is exploratory.** *(NOT YET IMPLEMENTED in code; applied at write-up.)* The 56 cell-level intervals are
+2. **Everything per-cell is exploratory.** *(IMPLEMENTED: `src/multiplicity.benjamini_hochberg` at q=0.10.)* The 56 cell-level intervals are
    reported in full with Benjamini–Hochberg adjusted values at a 10% false
    discovery rate, and are described as exploratory in the text. No individual
    judge is named as unstable on the basis of an unadjusted cell.
-3. **A smallest effect of interest.** *(NOT YET IMPLEMENTED in code; applied at write-up.)* |ΔJSS| < 0.02 is declared not practically
+3. **A smallest effect of interest.** *(IMPLEMENTED: `src/multiplicity.practically_meaningful`.)* |ΔJSS| < 0.02 is declared not practically
    meaningful in advance, whatever its interval does. A judge that loses two
    points of agreement under rewording is not thereby unusable, and an interval
    that excludes zero at that magnitude is a statement about sample size rather
    than about judges.
 
 The minimum detectable effect at the shipped cluster counts is reported with the
-results, so a null is distinguishable from an underpowered test. *(NOT YET
-IMPLEMENTED: no MDE is currently emitted by the pipeline.)*
+results, so a null is distinguishable from an underpowered test.
+*(IMPLEMENTED: `src/multiplicity.minimum_detectable_effect`, reported per cell
+and per pooled contrast.)*
 
 The direction of an effect is read from the sign, never chosen after the fact.
 
@@ -106,9 +108,11 @@ the task to be reported as discriminating:
 | preference | 0.65 | 0.50 |
 
 A task whose best judge falls below its threshold is reported as
-non-discriminating, and no judge ranking is drawn from it. *(NOT YET IMPLEMENTED
-in code: these thresholds are not constants anywhere and no verdict is emitted;
-this is a rule binding the write-up.)* This is declared here
+non-discriminating, and no judge ranking is drawn from it.
+*(IMPLEMENTED: `src/multiplicity.DISCRIMINATION_THRESHOLDS` holds these numbers
+as constants and `discrimination_verdict` emits the verdict and the
+`ranking_permitted` flag; `tests/test_multiplicity.py` pins the thresholds
+against this table.)* This is declared here
 so that it constrains the write-up rather than being chosen once the numbers are
 visible; the thresholds are deliberately modest, since the claim they support is
 only that the task carries signal a judge can find.
@@ -188,3 +192,27 @@ does not depend on the sign of the effect: the shortcut controls establish that
 the tasks cannot be passed by position, length, or lexical overlap
 (0.482-0.540 for each heuristic judge, the weakest with an interval reaching 0.600), so a null result is informative about
 judges rather than about the instrument.
+
+
+---
+
+## Implementation note (2026-08-26)
+
+Every item in "Multiplicity and the decision rule" above was marked NOT YET
+IMPLEMENTED and applied by hand at write-up. That is an intention, not a
+pre-registration, and the manuscript had to say so in the Results: "The
+multiplicity plan added at 82ea522 is not applied in this paper."
+
+It is now implemented in `src/multiplicity.py` and exercised by
+`tests/test_multiplicity.py`, which checks the guarantees by simulation rather
+than asserting them: family-wise error under a global null for Holm, and the
+realised false discovery rate for Benjamini-Hochberg.
+
+The wording of the commitments above is unchanged. Only the status markers are,
+and this note records when and where.
+
+The trigger was scale. Twelve judge-task cells made an unadjusted per-cell rule
+defensible as descriptive. The multi-vendor sweep takes the design to 25 judges
+across four tasks -- one hundred cells -- where an unadjusted 0.05 rule yields
+about five spurious findings under a global null, and the cells that clear are
+precisely the ones a narrative foregrounds.

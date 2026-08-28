@@ -219,6 +219,43 @@ JUDGES: Dict[str, dict] = {
                             key="MISTRAL_API_KEY", kind=REASONING, family="magistral",
                             size_b=None, native_max_tokens=1024, verified=True, pinned=False),
 
+    # ── latest-model pass (2026-08-26) ──────────────────────────────────────
+    # Each of these returned a parseable label on a live probe through the
+    # production path before being registered.
+    #
+    # Chosen for what they ADD rather than for being new: Moonshot is a lab with
+    # no representation at all in the slate, and DeepSeek and Mistral were
+    # present only at their cheapest tier, so neither had a within-family
+    # quality contrast.
+    #
+    # Three further candidates were probed and deliberately NOT registered.
+    # qwen3.8-max, mistral-large-2512 and magistral-medium-latest all price at
+    # $2/1M input and would have cost $10.73 of a $19.21 sweep -- 56% of the
+    # budget for 11% of the judges -- while adding no contrast a stability
+    # benchmark can measure that the cheaper tiers do not already provide.
+    "kimi-k3": dict(provider="dashscope", model_id="kimi-k3",
+                    key="DASHSCOPE_API_KEY", kind=REASONING, family="kimi",
+                    size_b=None, native_max_tokens=1024, verified=True, pinned=False),
+    "deepseek-v4-pro": dict(provider="dashscope", model_id="deepseek-v4-pro-0813",
+                            key="DASHSCOPE_API_KEY", kind=REASONING, family="deepseek-v4",
+                            size_b=None, native_max_tokens=1024, verified=True, pinned=False),
+    "mistral-medium": dict(provider="mistral", model_id="mistral-medium-2604",
+                           key="MISTRAL_API_KEY", kind=INSTRUCT, family="mistral",
+                           size_b=None, native_max_tokens=20, verified=True, pinned=False),
+    # Distinct name from the Groq "qwen3.8-27b": same weights, different host,
+    # and the raw filename is keyed on the judge name, so a collision would put
+    # two providers' output in one file.
+    "qwen3.8-27b-hf": dict(provider="huggingface", model_id="Qwen/Qwen3.8-27B",
+                           key="HF_TOKEN", kind=REASONING, family="qwen-3.8",
+                           size_b=27, native_max_tokens=1024, verified=True, pinned=False),
+    # Reachable only since thinking_budget=0 stopped being sent to models that
+    # reject it (Gemini Pro answers 400 "Budget 0 is invalid"). The fix is in,
+    # but this checkpoint has not been probed since, so it stays unverified
+    # until it is -- an unverified id must fail at selection, not mid-run.
+    "gemini-3.1-pro": dict(provider="google", model_id="gemini-3.1-pro-preview",
+                           key="GOOGLE_API_KEY", kind=REASONING, family="gemini-3.1",
+                           size_b=None, native_max_tokens=1024, verified=False, pinned=False),
+
     # ── purpose-built judges (xmQT Limitations) ─────────────────────────────
     # Model identifiers taken from published model cards and NOT yet exercised
     # against the provider, so they are marked unverified and are excluded from
@@ -275,6 +312,13 @@ def family_ladders(min_rungs: int = 2, verified_only: bool = True) -> Dict[str, 
     another confounds size with architecture and training data, which is what
     WjHn W5 objected to. Only families with a declared `size_b` on at least
     `min_rungs` members qualify.
+
+    Rungs must be DISTINCT sizes. Two entries of equal size are not a ladder --
+    qwen3.8-27b and qwen3.8-27b-hf are the same 27B weights served by Groq and
+    HuggingFace, which is a useful provider contrast and no kind of scale
+    contrast at all. Admitting them would let a scale claim rest on a pair that
+    varies only in who hosts it, the same degenerate case that the two 17B-active
+    Llama-4 MoE entries would have created.
     """
     grouped: Dict[str, List[str]] = {}
     for name, spec in JUDGES.items():
@@ -283,11 +327,13 @@ def family_ladders(min_rungs: int = 2, verified_only: bool = True) -> Dict[str, 
         if spec["size_b"] is None:
             continue
         grouped.setdefault(spec["family"], []).append(name)
-    return {
-        family: sorted(members, key=lambda n: JUDGES[n]["size_b"])
-        for family, members in grouped.items()
-        if len(members) >= min_rungs
-    }
+    ladders = {}
+    for family, members in grouped.items():
+        members = sorted(members, key=lambda n: JUDGES[n]["size_b"])
+        distinct = {JUDGES[n]["size_b"] for n in members}
+        if len(members) >= min_rungs and len(distinct) >= min_rungs:
+            ladders[family] = members
+    return ladders
 
 
 def reasoning_judges(verified_only: bool = True) -> List[str]:

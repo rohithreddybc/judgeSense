@@ -190,3 +190,13 @@ def test_main_axis_run_plan_scales_across_default_verified_judges():
     assert plan["total_calls"] == 2520 * n
     assert plan["total_calls_with_repeat"] == 4280 * n
     assert plan["total_calls_with_repeat"] - plan["total_calls"] == 1760 * n
+
+
+def test_equal_sized_entries_do_not_form_a_ladder():
+    """qwen3.8-27b (Groq) and qwen3.8-27b-hf (HuggingFace) are the same 27B
+    weights on two hosts. That is a provider contrast, not a scale contrast, and
+    a scale claim must not be able to rest on it."""
+    for family, members in family_ladders().items():
+        sizes = [JUDGES[m]["size_b"] for m in members]
+        assert len(set(sizes)) >= 2, (
+            f"{family} is a degenerate ladder: sizes={sizes}, members={members}")

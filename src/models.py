@@ -63,6 +63,11 @@ SUPPORTED_MODELS = {
     "deepseek-v4-flash":  {"provider": "novita",    "model_id": "deepseek/deepseek-v4-flash",     "key": "NOVITA_API_KEY",    "max_tokens": 1024},
 
     # ── multi-vendor expansion (2026-08-25) ──
+    "kimi-k3":             {"provider": "dashscope",   "model_id": "kimi-k3",                                           "key": "DASHSCOPE_API_KEY", "max_tokens": 1024},
+    "deepseek-v4-pro":     {"provider": "dashscope",   "model_id": "deepseek-v4-pro-0813",                              "key": "DASHSCOPE_API_KEY", "max_tokens": 1024},
+    "mistral-medium":      {"provider": "mistral",     "model_id": "mistral-medium-2604",                               "key": "MISTRAL_API_KEY",   "max_tokens": 1024},
+    "qwen3.8-27b-hf":      {"provider": "huggingface", "model_id": "Qwen/Qwen3.8-27B",                                  "key": "HF_TOKEN",          "max_tokens": 1024},
+    "gemini-3.1-pro":      {"provider": "google",      "model_id": "gemini-3.1-pro-preview",                            "key": "GOOGLE_API_KEY",    "max_tokens": 1024},
     "gpt-oss-20b":         {"provider": "groq",        "model_id": "openai/gpt-oss-20b",                                "key": "GROQ_API_KEY",      "max_tokens": 1024},
     "gpt-oss-120b":        {"provider": "groq",        "model_id": "openai/gpt-oss-120b",                               "key": "GROQ_API_KEY",      "max_tokens": 1024},
     "qwen3.8-27b":         {"provider": "groq",        "model_id": "qwen/qwen3.8-27b",                                  "key": "GROQ_API_KEY",      "max_tokens": 1024},
