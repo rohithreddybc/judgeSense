@@ -225,13 +225,29 @@ def accepts_temperature(model_id: str) -> bool:
 _QWEN_DASHSCOPE_PREFIXES = ("qwen",)
 _GOOGLE_THINKING_OFF_IGNORED = ("gemini-3", "gemini-4")
 
+# Google models that reject thinking_budget=0 OUTRIGHT rather than ignoring it.
+# Gemini Pro returns 400 "Budget 0 is invalid. This model only ...", so the
+# parameter must not be sent at all -- distinct from the 3.x-flash case, which
+# accepts the field and then bills thought tokens anyway.
+_GOOGLE_REJECTS_ZERO_THINKING = ("gemini-3.1-pro", "gemini-pro", "gemini-2.5-pro")
+
+
+def _accepts_zero_thinking(model_id: str) -> bool:
+    return not (model_id or "").lower().startswith(_GOOGLE_REJECTS_ZERO_THINKING)
+
 
 def suppresses_thinking(provider: str, model_id: str) -> bool:
-    """Whether this call ASKS the provider to turn reasoning off."""
+    """Whether this call ASKS the provider to turn reasoning off.
+
+    False for a model that refuses the parameter outright: we cannot ask it,
+    so the record must not say we did.
+    """
     m = (model_id or "").lower()
     if provider == "dashscope" and m.startswith(_QWEN_DASHSCOPE_PREFIXES):
         return True
-    return provider == "google"
+    if provider == "google":
+        return _accepts_zero_thinking(model_id)
+    return False
 
 
 def thinking_suppression_honoured(provider: str, model_id: str) -> bool:
@@ -330,13 +346,22 @@ def _request(provider: str, client, model_id: str, prompt: str, max_tokens: int)
         return (r.choices[0].message.content or "").strip(), r
     if provider == "google":
         from google.genai import types
+        cfg = dict(max_output_tokens=max_tokens, temperature=TEMPERATURE,
+                   system_instruction=_SYSTEM_PROMPT)
+        # thinking_budget=0 is sent only where the model accepts it. Gemini Pro
+        # rejects the whole request with
+        #   400 INVALID_ARGUMENT "Budget 0 is invalid. This model only ..."
+        # because reasoning cannot be switched off there at all. Sending it
+        # unconditionally made every Pro-tier Google judge unreachable, which
+        # read as "the model is unavailable" rather than "we asked for something
+        # it does not offer". Where suppression is refused, the run proceeds at
+        # the provider default and decoding_config records that it was not
+        # honoured, exactly as it does for gemini-3.x.
+        if suppresses_thinking(provider, model_id) and _accepts_zero_thinking(model_id):
+            cfg["thinking_config"] = types.ThinkingConfig(thinking_budget=0)
         r = client.models.generate_content(
             model=model_id, contents=prompt,
-            config=types.GenerateContentConfig(
-                max_output_tokens=max_tokens, temperature=TEMPERATURE,
-                system_instruction=_SYSTEM_PROMPT,
-                thinking_config=types.ThinkingConfig(thinking_budget=0),
-            ),
+            config=types.GenerateContentConfig(**cfg),
         )
         return (getattr(r, "text", None) or "").strip(), r
     if provider == "mistral":

@@ -140,3 +140,36 @@ def test_every_exempt_model_is_recorded_as_running_at_provider_default():
         assert cfg["temperature"] is None
         assert cfg["temperature_omitted_provider_default"] is True, (
             f"{model_id} runs unmatched; that must be visible in the record")
+
+
+# ── thinking suppression must never be claimed unless it was asked for ───────
+
+def test_a_model_that_refuses_the_parameter_is_not_recorded_as_suppressed():
+    """Gemini Pro rejects thinking_budget=0 outright with
+    400 "Budget 0 is invalid", so the parameter is not sent. A record saying
+    reasoning was disabled would then assert something we never requested --
+    the same false-provenance failure as claiming gemini-3.x honoured it.
+    """
+    from usage_meter import (decoding_config, suppresses_thinking,
+                             thinking_suppression_honoured)
+
+    for model in ("gemini-3.1-pro-preview", "gemini-pro-latest"):
+        assert not suppresses_thinking("google", model), model
+        assert not thinking_suppression_honoured("google", model), model
+        cfg = decoding_config(model, 1024, "google")
+        assert cfg["reasoning_disabled_requested"] is False
+        assert cfg["reasoning_disabled_explicitly"] is False
+        assert cfg["thinking_budget"] is None, (
+            "a budget must not be recorded for a model that refuses it")
+
+
+def test_honoured_is_never_true_without_requested():
+    """The two flags cannot disagree in that direction for any judge."""
+    from judge_registry import JUDGES
+    from usage_meter import suppresses_thinking, thinking_suppression_honoured
+
+    for name, spec in JUDGES.items():
+        p, m = spec["provider"], spec["model_id"]
+        if thinking_suppression_honoured(p, m):
+            assert suppresses_thinking(p, m), (
+                f"{name}: honoured=True but the request is never sent")
