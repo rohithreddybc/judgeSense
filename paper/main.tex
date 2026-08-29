@@ -1070,6 +1070,65 @@ report it as what it is: a judge whose behaviour on this corpus is dominated
 by refusal and parse failure. It stays in Table~\ref{tab:main} and in the
 count of intervals excluding zero, flagged rather than deleted.
 
+\subsection{The same judge, run inside an agent harness}
+\label{sec:results-harness}
+
+Every measurement above is a direct API call at temperature zero under a fixed
+system prompt. Judges are increasingly not deployed that way: they are called
+from inside agent frameworks that own the system prompt, batch work for
+efficiency, and expose no decoding controls to the caller. That is a different
+measurement, and we can say how different, because we ran one judge both ways.
+
+Haiku was re-run on factuality and coherence through an agent harness that
+issues the same items in batches of fifty and does not expose temperature. The
+model, the items, the templates and the repeat design are identical to the API
+run; only the transport differs.
+
+\begin{center}
+\begin{tabular}{llrrr}
+\toprule
+Task & Transport & JSS & $\mathrm{JSS}_{\text{rep}}$ & $\Delta\mathrm{JSS}$ \\
+\midrule
+factuality & direct API      & $0.956$ & $1.000$ & $-0.044$ \\
+           & agent harness   & $0.900$ & $0.910$ & $-0.010$ \\
+\addlinespace
+coherence  & direct API      & $0.792$ & $0.998$ & $-0.206$ \\
+           & agent harness   & $0.560$ & $0.684$ & $-0.124$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The repeat ceiling is the part to read first. Inside the harness the judge
+disagrees with itself on $9\%$ of byte-identical factuality prompts and on
+$32\%$ of coherence prompts, against $0\%$ and $0.2\%$ through the API. By the
+standard we apply to our own cells in
+Section~\ref{sec:results-sonnet-relevance}, a ceiling of $0.684$ is not
+interpretable as evidence about wording at all.
+
+The consequence runs the opposite way to intuition, and to what we ourselves
+expected. Both terms fall, but the ceiling falls faster than the paraphrase
+agreement --- $0.314$ against $0.232$ on coherence --- so $\Delta\mathrm{JSS}$
+\emph{shrinks}, by $77\%$ on factuality and $40\%$ on coherence. Added decoding
+noise does not expose wording sensitivity more clearly. It buries it, because
+the subtraction that defines the endpoint charges that noise to the ceiling and
+leaves less of the gap behind.
+
+This has a practical reading we would rather state than leave implicit. A team
+measuring judge stability from inside an agent framework will obtain a smaller
+$\Delta\mathrm{JSS}$ than the same judge deserves, and may conclude a judge is
+insensitive to wording when the harness has simply drowned the signal. The
+measurement is only as stable as the least controlled part of the stack.
+
+We report this as a second condition rather than as a judge. The harness cells
+are excluded from Table~\ref{tab:main} and from every claim above: they carry no
+declared decoding configuration, so they are comparable to themselves across
+arms and not to the API judges. Three alternative explanations were ruled out
+before drawing the conclusion --- every batch returned its full complement of
+labelled items, no answer failed to parse, and the repeat prompts were verified
+byte-identical to the arms they baseline --- so what moved is the transport.
+Because only one model is available under both transports, this is a
+single-judge result and we do not claim a rate that generalises across judges.
+
 \subsection{What this evidence does not cover}
 \label{sec:results-limits}
 
@@ -1108,11 +1167,17 @@ One judge is not decoding-matched. Opus 4.7 rejects an explicit temperature
 parameter and ran at the provider default while the other two ran at zero.
 This is recorded on every one of its call records, never inferred.
 
-All measurements are at temperature zero, where a judge is closest to
-deterministic and the repeat ceiling is therefore highest. Production judges
-are often run above zero; there the ceiling falls, the noise term grows, and
-the separation this endpoint performs becomes larger rather than smaller. We
-have not measured how $\Delta\mathrm{JSS}$ behaves at $T > 0$.
+All reported measurements are at temperature zero, where a judge is closest to
+deterministic and the repeat ceiling is therefore highest. Production judges are
+often run above zero, or from inside a harness that fixes decoding on the
+caller's behalf. We previously expected the endpoint's separation to grow under
+that noise; the one uncontrolled-decoding condition we have measured
+(Section~\ref{sec:results-harness}) does the reverse. The ceiling falls faster
+than the paraphrase agreement, so $\Delta\mathrm{JSS}$ contracts rather than
+expands, and a real effect becomes harder to detect rather than easier. That
+condition varies the whole transport at once and cannot isolate temperature, so
+the behaviour of $\Delta\mathrm{JSS}$ as a function of $T$ alone remains
+unmeasured.
 
 All prompts are in English. Every source corpus is English-only, so whether a
 judge that is stable in English remains stable under translation-equivalent
