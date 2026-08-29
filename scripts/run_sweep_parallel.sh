@@ -1,46 +1,39 @@
 #!/usr/bin/env bash
-# Launch the v2 multi-vendor sweep as one detached process per PROVIDER.
+# Launch the v2 multi-vendor sweep as detached processes, split so that no two
+# processes ever share a (judge, task) and each talks to one provider.
 #
-# run_v2 is sequential within a process and warns that two processes over the
-# SAME (judge, task) would each work the whole backlog and both pay for it.
-# Splitting by provider keeps the sets disjoint AND avoids rate-limit
-# contention, since each process talks to a different vendor.
+# Splitting by PROVIDER avoids rate-limit contention. The larger providers are
+# split further for throughput; run_cell takes a lock per cell, so an accidental
+# overlap is refused rather than silently duplicating paid work.
 #
 # Every process is resumable: raw output is append-only and completed rows are
-# skipped on restart, so an interrupted run costs nothing but time.
-#
-# Usage:  bash scripts/run_sweep_parallel.sh [extra run_v2 args...]
-#   e.g.  bash scripts/run_sweep_parallel.sh --limit 5      (smoke)
-#         bash scripts/run_sweep_parallel.sh                (full)
-
+# skipped on restart, so an interruption costs time and nothing else.
 set -u
 cd "$(dirname "$0")/.."
-LOG_DIR="logs/sweep"
-mkdir -p "$LOG_DIR"
-
+mkdir -p logs/sweep
 COMMON="--budget-policy matched --repeat-baseline --skip-preflight --yes"
-
-launch () {                       # launch <provider-tag> <judges...>
-  local tag="$1"; shift
-  local log="$LOG_DIR/${tag}.log"
-  echo "  [$tag] $* -> $log"
-  nohup python -m src.run_v2 --judges "$@" $COMMON "${EXTRA[@]}" \
-        > "$log" 2>&1 &
-  echo "$!" > "$LOG_DIR/${tag}.pid"
-}
-
 EXTRA=("$@")
 
-echo "launching one process per provider:"
-launch google      gemini-flash gemini-3.7-flash
-launch huggingface llama3-8b llama-3.3-70b llama-4-scout llama-4-maverick \
-                   gemma-4-31b qwen3-8b qwen3-14b qwen3-32b
-launch mistral     mistral-small magistral-small
-launch novita      qwen deepseek-v4-flash
-launch dashscope   qwen-3.6-flash qwen3.7-flash deepseek-v4-flash-ds glm-5.2
-launch groq        gpt-oss-20b gpt-oss-120b qwen3.8-27b
+launch () {
+  local tag="$1"; shift
+  echo "  [$tag] $*"
+  nohup python -m src.run_v2 --judges "$@" $COMMON "${EXTRA[@]}" \
+        > "logs/sweep/${tag}.log" 2>&1 &
+  echo "$!" > "logs/sweep/${tag}.pid"
+}
 
+echo "launching 26 judges across 6 providers:"
+launch google     gemini-flash gemini-3.7-flash gemini-3.1-pro
+launch hf1        llama3-8b llama-3.3-70b
+launch hf2        llama-4-scout llama-4-maverick
+launch hf3        gemma-4-31b qwen3-8b
+launch hf4        qwen3-14b qwen3-32b
+launch hf5        qwen3.8-27b-hf
+launch mistral    mistral-small magistral-small mistral-medium
+launch novita     qwen deepseek-v4-flash
+launch ds1        qwen-3.6-flash qwen3.7-flash
+launch ds2        deepseek-v4-flash-ds glm-5.2
+launch ds3        kimi-k3 deepseek-v4-pro
+launch groq       gpt-oss-20b gpt-oss-120b qwen3.8-27b
 echo
-echo "launched. monitor with:"
-echo "  tail -f $LOG_DIR/*.log"
-echo "  bash scripts/sweep_status.sh"
+echo "monitor: bash scripts/sweep_status.sh"

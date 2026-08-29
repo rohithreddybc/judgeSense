@@ -1,56 +1,85 @@
-# Claude Code transport control — evidence, NOT judges for the main table
+# Claude Code harness cells — evidence, NOT judges for the main table
 
-These two cells were produced through Claude Code subagents rather than the
+These cells were produced through Claude Code subagents rather than the
 Anthropic API, because the API key has no credit. They are deliberately staged
 rather than published into `data/results_v2/raw/`.
 
-**They must not enter the main results table.** They are the evidence behind a
-negative result about the transport itself.
+**They must not enter the main results table.** They carry no declared decoding
+configuration, so they are comparable to themselves across arms and not to the
+API judges. They are the evidence behind a negative result about the transport
+itself.
 
-## What was measured
+## Part 1 — the transport control
 
-The same model, `claude-haiku-4-5`, run two ways. Everything about the model is
-held fixed; only the transport differs.
+The same model, `claude-haiku-4-5`, run two ways on all four tasks. Everything
+about the model, the items, the templates and the repeat design is held fixed;
+only the transport differs.
 
-| | API (matched budget) | Claude Code (batch 50) |
-|---|---|---|
-| factuality JSS_para | 0.9560 | 0.9000 |
-| factuality **ceiling** | **1.0000** | **0.9100** |
-| factuality dJSS | −0.0440 | −0.0100 |
-| coherence JSS_para | 0.7920 | 0.5600 |
-| coherence **ceiling** | **0.9980** | **0.6840** |
-| coherence dJSS | −0.2060 | −0.1240 |
+| task | | API (matched budget) | Claude Code (batch 50) |
+|---|---|---|---|
+| factuality | JSS_para | 0.9560 | 0.9000 |
+| | **ceiling** | **1.0000** | **0.9100** |
+| | dJSS | −0.0440 | −0.0100 |
+| coherence | JSS_para | 0.7920 | 0.5600 |
+| | **ceiling** | **0.9980** | **0.6840** |
+| | dJSS | −0.2060 | −0.1240 |
+| relevance | JSS_para | 0.9300 | 0.8000 |
+| | **ceiling** | **0.9900** | **0.8290** |
+| | dJSS | −0.0580 | −0.0290 |
+| preference | JSS_para | 0.8960 | 0.8690 |
+| | **ceiling** | **0.9650** | **0.8810** |
+| | dJSS | −0.0810 | −0.0120 |
 
-Transport shift: **+0.034** on factuality (1.7× SESOI), **+0.082** on coherence
-(4.1× SESOI). Both outside the declared smallest effect of interest.
+Transport shift in dJSS: **+0.034**, **+0.082**, **+0.029**, **+0.069** — all
+four outside the declared smallest effect of interest (0.02). The ceiling falls
+faster than the paraphrase agreement on every task, so dJSS *shrinks* rather
+than grows.
+
+## Part 2 — is the collapse the model or the transport?
+
+Two further judges, coherence only (the task where the collapse is largest).
+Neither has an API counterpart, so neither supports a paired contrast. They
+answer a narrower question.
+
+| judge (harness, coherence) | JSS_para | **ceiling** | dJSS |
+|---|---|---|---|
+| cc-haiku-4-5 | 0.560 | **0.684** | −0.124 |
+| cc-sonnet-5 | 0.520 | **0.616** | −0.096 |
+| cc-opus-5 | 0.696 | **0.848** | −0.152 |
+
+A more capable model narrows the collapse without arresting it. All three
+ceilings sit below the level at which any cell in this paper is read, and the
+strongest of the three is still below the 0.864 pilot that was discarded
+outright.
 
 ## Why this disqualifies the transport
 
 The repeat ceiling is the judge's agreement with itself on byte-identical
-prompts. Through the harness it falls to 0.910 and then to **0.684** — the judge
-disagreeing with itself on nearly a third of identical inputs.
+prompts. Through the harness it falls as low as **0.616** — the judge
+disagreeing with itself on well over a third of identical inputs.
 
 The paper's own standard rules this out. A pilot at ceiling 0.864 was discarded
 because "a ceiling that low can absorb the effect being measured", and the
-Sonnet relevance cell at 0.789 is reported as uninterpretable. 0.684 is worse
-than both. Nine of the ten reported cells sit at 0.916 or above.
-
-The consequence is visible in the numbers: dJSS shrinks toward zero in both
-tasks, because harness noise is eating the effect the endpoint exists to isolate.
+Sonnet relevance cell at 0.789 is reported as uninterpretable. Nine of the ten
+reported cells sit at 0.916 or above.
 
 ## Ruled out as causes
 
-- **Not a batching-alignment bug.** All 40 batches across both tasks returned
-  50/50 ids, none missing, none extra.
+- **Not a batching-alignment bug.** Every batch across all cells returned 50/50
+  ids, none missing, none extra. The 40 cross-model batches aligned on first
+  dispatch with no re-issues.
 - **Not a parsing failure.** Zero malformed answers; the 1–5 coherence scale
   parsed cleanly.
 - **Not a mirroring bug.** The repeat prompts were verified byte-identical to
-  the arm prompts they baseline (50/50 on the checked batch).
+  the arm prompts they baseline.
+- **Not a truncated batch accepted in silence.** One Haiku preference batch came
+  back eight items short; it was rejected and re-issued rather than accepted,
+  because a silently shortened batch would shift every later label within it.
 
 The transport is what moved.
 
 ## Status
 
-`cc-opus-5`, `cc-sonnet-5` and `cc-fable-5` were NOT run. Doing so would have
-cost roughly 12M further tokens to produce judges whose ceilings cannot support
-the endpoint.
+`cc-fable-5` was not run, and `cc-opus-5` / `cc-sonnet-5` were not run beyond
+coherence. Those runs would have cost roughly 13M further tokens to produce
+cells whose ceilings cannot support the endpoint in any case.

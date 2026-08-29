@@ -1,0 +1,263 @@
+You are acting as an evaluation judge. Below are 50 independent items.
+
+Judge each item ENTIRELY ON ITS OWN. Items are unrelated; do not let one
+influence another, and do not look for patterns across them.
+
+Answer with ONLY the label each item asks for. Do not explain. Do not use tools.
+
+Return exactly 50 lines of JSON, one per item, in this form and nothing else:
+{"id": "<the item id>", "answer": "<the label>"}
+
+Every id below must appear exactly once in your output.
+
+----- ITEM cohe_v2_0203#b -----
+How coherent is the following text? Score it 1-5 (1 = incoherent, 5 = very coherent). Number only.
+
+demelza poldark is the proud mother to the show 's latest addition . he may have married his red-headed kitchen maid out of duty , but as he tells her that she makes him a better man .
+
+----- ITEM cohe_v2_0098#b -----
+On a 1-5 coherence scale (1 = incoherent, 5 = very coherent), what score does this text deserve? Respond with the number only.
+
+serge gnabry played 90 minutes for arsenal under 21s against reading on monday . the 19-year-old impressed for the gunners last season . gnabry has not featured since the champions league second leg .
+
+----- ITEM cohe_v2_0099#b -----
+On a 1-5 coherence scale (1 = incoherent, 5 = very coherent), what score does this text deserve? Respond with the number only.
+
+isis on wednesday released more than 200 yazidis , a minority group whose members were killed , captured and displaced when the islamist terror organization overtook their towns in northern iraq last summer . most of those released were women and children ; the rest were ill or elderly , said rassol omar , a commander in the peshmerga force that defends northern iraq 's semi-autonomous kurdish region .
+
+----- ITEM cohe_v2_0017#a -----
+On a 1-5 coherence scale (1 = incoherent, 5 = very coherent), what score does this text deserve? Respond with the number only.
+
+arsenal manager arsene wenger does not know alexis sanchez chose the emirates stadium over anfield . sanchez had his selection of clubs once barcelona had decided to let him leave , and following the world cup . the french coach admits the possibility liverpool could use their interest in sanchez as leverage during negotiations over luis suarez 's move to the nou camp last summer was always on the cards .
+
+----- ITEM cohe_v2_0153#b -----
+Score this text's coherence: 1 (incoherent) through 5 (very coherent). Give only the number.
+
+Becky Schoenig's car was stolen on Monday night, April 1, and her car was found on April 2, but the rims were painted red and the steering wheel was painted orange 'She's a very special person. She's a very caring person. She's a caring person.
+
+----- ITEM cohe_v2_0244#b -----
+On a 1-5 coherence scale (1 = incoherent, 5 = very coherent), what score does this text deserve? Respond with the number only.
+
+outspoken mp bob katter has risked being drawn into a race row after accusing the queensland government of believing embattled mp billy gordon was ' a little black puppet on a string ' . in a bizarre statement on his party 's website , mr katter said the government believes mr gordon would quit after he was recently accused of domestic violence - and later admitted to his criminal past . mr katter , federal mp for kennedy , is of lebanese descent . he said he 's been personally subjected to racist attitudes from both major parties in the past , and that he sympathised with mr gordon 's position .
+
+----- ITEM cohe_v2_0230#a -----
+How coherent is the following text? Score it 1-5 (1 = incoherent, 5 = very coherent). Number only.
+
+the custom-built boeing 747 is believed to have cost its ultra-wealthy owner # 400million after it was customised to fit his specifications exactly over a three-year period . the jumbo jet would normally carry as many as 600 passengers - but this version was built for just a single tycoon , although he will be able to fit dozens of guests .
+
+----- ITEM cohe_v2_0215#b -----
+Score this text's coherence: 1 (incoherent) through 5 (very coherent). Give only the number.
+
+vanessa santillan , 33 , was found in a flat in fulham , south west london . the 33-year-old mexican national was found dead at the end of march . she was found guilty of injuries to the head and neck . police are appealing to anyone who may have had contact with miss santillan in the hours before her death . she has been told to return to a london police station for further questioning .
+
+----- ITEM cohe_v2_0040#a -----
+How coherent is the following text? Score it 1-5 (1 = incoherent, 5 = very coherent). Number only.
+
+bradley wiggins will attempt to break cycling's hour record in june . the four-time olympic champion will race at london's olympic velodrome . wiggins finished his team sky career in the paris-roubaix on sunday .
+
+----- ITEM cohe_v2_0029#a -----
+How coherent is the following text? Score it 1-5 (1 = incoherent, 5 = very coherent). Number only.
+
+the woman has two children under five by two different fathers . debbie is threatening to ban gemma from seeing children at all . she says her daughter 's constant drinking is getting out of hand . she also claims gemma , who is unemployed , stole an ipad from one of the children .
+
+----- ITEM cohe_v2_0013#a -----
+Rate the coherence of this text from 1 (incoherent) to 5 (very coherent). Reply with one number only.
+
+the collector 's paradise in horfield , bristol , has gone untouched for more than 80 years . the collector 's paradise in horfield , bristol , comes complete with the original bathroom and kitchen , wood-panelled hallway and retro jars of popular food .
+
+----- ITEM cohe_v2_0024#a -----
+How coherent is the following text? Score it 1-5 (1 = incoherent, 5 = very coherent). Number only.
+
+manchester city players will lose # 500,000-a-man in bonuses if they fail to qualify for champions league . manchester city are in fourth place and will be just four points in the premier league . manuel pellegrini 's side are on incentivised contracts to stay within financial fairplay requirements . manuel aguero could miss out on # 500k bonuses if city fail to reach the group stages of europe 's top competition . click here for all the latest news news .
+
+----- ITEM cohe_v2_0127#a -----
+Rate the coherence of this text from 1 (incoherent) to 5 (very coherent). Reply with one number only.
+
+( cnn ) isis on wednesday released more than 200 yazidis , a minority group whose members were killed , captured and displaced when the islamist terror organization overtook their towns in northern iraq last summer , officials said . most of those released were women and children ; the rest were ill or elderly , said rassol omar , a commander in the peshmerga force that defends northern iraq 's semi-autonomous kurdish region . the freed yazidis were received by peshmerga , who sent them to the kurdish regional capital , irbil , said nuri osman , an official with iraq 's kurdistan regional government .
+
+----- ITEM cohe_v2_0131#a -----
+On a 1-5 coherence scale (1 = incoherent, 5 = very coherent), what score does this text deserve? Respond with the number only.
+
+carlos tevez has been told to terminate his contract with juventus to complete a return to his former club boca juniors in argentina . the former manchester city striker 's deal with the serie a champions does not expire until the end of next season but he has reportedly told the club he wishes to leave this summer . tevez is on course to win a second serie a title with the old lady and still has a shot at european glory .
+
+----- ITEM cohe_v2_0036#a -----
+Rate the coherence of this text from 1 (incoherent) to 5 (very coherent). Reply with one number only.
+
+usain bolt will compete at the iaaf/btc world relays in the bahamas . the six-time olympic gold medallist will compete at the relay championship on may 2 and 3 as part of the jamaican team . bolt reacts as he wins 4x100m gold at the london olympic games in 2012 .
+
+----- ITEM cohe_v2_0194#a -----
+Rate the coherence of this text from 1 (incoherent) to 5 (very coherent). Reply with one number only.
+
+on tuesday , a u.s. rc-135u was flying over the baltic sea when it was intercepted by a russian su-27 flanker . the pentagon said the incident occurred in international airspace north of poland . -lrb- cnn -rrb- after a russian fighter jet intercepted a u.s. reconnaissance plane in an `` unsafe and unprofessional manner '' earlier this week , the united states is complaining to moscow about the incident . an official with the u.s. european command said the claim that the transponder was off was false .
+
+----- ITEM cohe_v2_0214#b -----
+Score this text's coherence: 1 (incoherent) through 5 (very coherent). Give only the number.
+
+aaron siler , 26 , was fatally shot after he ` armed himself with a weapon ' torres is on leave pending the outcome of the investigation into the deadly shooting . aaron siler was shot dead by police last month . siler 's family called the billboard ` disrespectful ' and are asking for it be taken down . family and friends of man shot dead by police last month are in shock .
+
+----- ITEM cohe_v2_0103#a -----
+Rate the coherence of this text from 1 (incoherent) to 5 (very coherent). Reply with one number only.
+
+joe hart passed an impressive milestone of his own by representing his country for the 50th time on tuesday night . hart has labelled buffon a ` legend of the game ' after the 1-1 draw with italy that buffon was an inspiration .
+
+----- ITEM cohe_v2_0150#a -----
+Rate the coherence of this text from 1 (incoherent) to 5 (very coherent). Reply with one number only.
+
+luigi costa , 71 , is accused of stomping on his elderly neighbour terrence freebody 's head , cutting his throat and stabbing him multiple times . forensic psychiatrist professor paul mullen examined costa after the attack and believes there was evidence of the accused 's state of mind declining in the lead-up to the incident . costa 's state of mind is critical to case , as . the jury can return a not guilty verdict if costa 's unstable mindset at time of the attack can be proven .
+
+----- ITEM cohe_v2_0110#b -----
+Score this text's coherence: 1 (incoherent) through 5 (very coherent). Give only the number.
+
+the toddler 's mother was holding him and another child when he slipped and fell between 10 to 12ft and into the pit on saturday around 3pm . the child was rescued by his parents before firefighters and paramedics arrived on the scene . he suffered from minor bumps and bruises and was listed in stable condition at the hospital .
+
+----- ITEM cohe_v2_0068#a -----
+Assign a coherence rating from 1 to 5, where 1 means incoherent and 5 means very coherent. Answer with a single digit.
+
+wales ' crunch euro 2016 qualifier with belgium declared a 33,000 sell-out . the top two sides in group b meet at the cardiff city stadium on june 12 with wales in their best position to qualify for a major tournament since the 1958 world cup finals in sweden . belgium and wales both have 11 points from five games with marc wilmots ' side - ranked fourth in the world .
+
+----- ITEM cohe_v2_0138#b -----
+On a 1-5 coherence scale (1 = incoherent, 5 = very coherent), what score does this text deserve? Respond with the number only.
+
+the offender , snapped on security footage in a fluoro orange sweatshirt and oversized mask , is described as being ` very tall ' he made off with the dairy 's till and about $ 1500 in cash on saturday . police were reportedly called to the union st dairy , in east christchurch at about 12.30 pm .
+
+----- ITEM cohe_v2_0238#a -----
+How coherent is the following text? Score it 1-5 (1 = incoherent, 5 = very coherent). Number only.
+
+ian guffick asked pupils to make changes to their sats exam answers . the 31-year-old also altered a number of the pupil's answers himself . this led to his whole school's sats results being annulled last year . guffick has now been banned from the classroom for at least two years .
+
+----- ITEM cohe_v2_0064#a -----
+Rate the coherence of this text from 1 (incoherent) to 5 (very coherent). Reply with one number only.
+
+the outback casanova , who lives in humpty doo , northern territory , detailed his dream girl on gumtree . ` wanted !!!!! girlfriend/wife , must love pets ... accomodation available , position may offer company car , phone and laptop , to the ` successful candidate ' , ' it reads . ` rich ' who lives in humpty doo , northern territory , detailed his dream girl on gumtree .
+
+----- ITEM cohe_v2_0247#a -----
+How coherent is the following text? Score it 1-5 (1 = incoherent, 5 = very coherent). Number only.
+
+kevin rebbie , 56 , of limerick township , pennsylvania , was arrested after a 15-year-old girl found a hidden camera in her bathroom that police were able to trace back to the man . the investigation began when a 15-year-old girl found a hidden camera under the sink in a bathroom in her limerick township home in march , according to prosecutors . she told investigators that rebbie had been watching her for years when she was undressing and when he believed she was asleep .
+
+----- ITEM cohe_v2_0221#b -----
+Assign a coherence rating from 1 to 5, where 1 means incoherent and 5 means very coherent. Answer with a single digit.
+
+jacob phillips, 23, was found dead at the end of the disused northern promenade, a rocky area at the base of the cliff . taxi driver dave sidaway said he would not have left him if he knew where they were .
+
+----- ITEM cohe_v2_0037#b -----
+How coherent is the following text? Score it 1-5 (1 = incoherent, 5 = very coherent). Number only.
+
+dzhokhar tsarnaev was found guilty last week on all 30 charges related to the bombings . his parents are urging the justice department to bring the case to a close . "we are in favor of and would support the department of justice in taking the death penalty off the table," they say .
+
+----- ITEM cohe_v2_0118#a -----
+Rate the coherence of this text from 1 (incoherent) to 5 (very coherent). Reply with one number only.
+
+x factor finalist and pop star ella henderson has been announced as the official face of the batiste 's 2015 ` ready for it ' campaign . this will mark the star 's first brand collaboration . the 19-year-old singer is the face of dry shampoo company batiste .
+
+----- ITEM cohe_v2_0165#b -----
+Assign a coherence rating from 1 to 5, where 1 means incoherent and 5 means very coherent. Answer with a single digit.
+
+donald sterling 's remarks cost him an nba team last year . a los angeles judge has ordered v. stiviano to pay back more than $ 2.6 million . rochelle `` shelly '' sterling accused stiviano of targeting wealthy older men . stiviano says there was nothing wrong with donald sterling giving her gifts .
+
+----- ITEM cohe_v2_0102#a -----
+On a 1-5 coherence scale (1 = incoherent, 5 = very coherent), what score does this text deserve? Respond with the number only.
+
+mexican restaurant chipotle has decided to tap into the $ 70 billion food delivery market by teaming up with an app to bring burritos straight to customers ' doors . the fast - casual chain will work with the postmates app to begin offering delivery for online and mobile orders in 67 cities , according to a report in nation 's restaurant news .
+
+----- ITEM cohe_v2_0128#b -----
+Assign a coherence rating from 1 to 5, where 1 means incoherent and 5 means very coherent. Answer with a single digit.
+
+ben stokes forged a reputation as a fiery character in the england cricket team . stokes broke his wrist punching a locker after being dismissed last year . stokes clashed with marlon samuels during the second test . ben stokes first turned up at the kensington oval this week . stokes responded positively to the row after talking to england coach peter moores .
+
+----- ITEM cohe_v2_0168#b -----
+How coherent is the following text? Score it 1-5 (1 = incoherent, 5 = very coherent). Number only.
+
+luis enrique only took charge of the club last summer . josep maria bartemou says the club are ` very happy ' with him . the 44-year-old took only six games away from winning the title .
+
+----- ITEM cohe_v2_0189#a -----
+How coherent is the following text? Score it 1-5 (1 = incoherent, 5 = very coherent). Number only.
+
+the woman , named only as gemma , has two children under five by two different fathers and handed both infants over to her 52-year-old mother debbie when they were four months old . a 23-year-old mother-of-two is at risk of being banned from seeing her own children - because she refuses to stop drinking and partying . now debbie is threatening to ban gemma from seeing the children at all , after discovering her daughter 's penchant for legal high , mkat , and because she suspects her of stealing .
+
+----- ITEM cohe_v2_0191#a -----
+Rate the coherence of this text from 1 (incoherent) to 5 (very coherent). Reply with one number only.
+
+arsenal manager arsene wenger does not know the exact reason alexis sanchez chose the emirates stadium over anfield - but he is glad the chile forward will be lining up for his side rather than against them for liverpool on saturday . sanchez has made an instant impact in english football and has scored 19 goals so far this season . alexis sanchez was courted by a number of elite clubs last summer but eventually chose arsenal .
+
+----- ITEM cohe_v2_0184#b -----
+On a 1-5 coherence scale (1 = incoherent, 5 = very coherent), what score does this text deserve? Respond with the number only.
+
+-lrb- cnn -rrb- spacex on tuesday launched a two-stage falcon 9 rocket carrying an uncrewed cargo spacecraft called dragon on a flight from cape canaveral , florida , to the international space station . that was the easy part . in a difficult bid to land a rocket stage on a floating barge for the first time , the private space exploration company was unsuccessful .
+
+----- ITEM cohe_v2_0146#a -----
+Rate the coherence of this text from 1 (incoherent) to 5 (very coherent). Reply with one number only.
+
+Vanessa Santillan worked as a transgender escort in London. She was found strangled and beaten to death on March 28 She wrote: 'My favourite city is London. I love the food, the culture, the art, the nightlife, the nightlife, the nightlife, the nightlife, the nightlife, the nightlife, the nightlife, the nightlife, the nightlife, the nightlife, the nightlife, the nightlife, the nightlife, the
+
+----- ITEM cohe_v2_0055#a -----
+Assign a coherence rating from 1 to 5, where 1 means incoherent and 5 means very coherent. Answer with a single digit.
+
+the toddler 's mother was holding the two-year-old boy and another child when he slipped and fell between 10 to 12ft and into the cheetah exhibit at the cleveland metroparks zoo . the boy 's leg was injured in the fall , but he was not attacked by the animals , officials said . he is listed in stable condition after being taken to metrohealth medical center and suffered from minor bruises and was listed in stable condition at the hospital .
+
+----- ITEM cohe_v2_0069#b -----
+Assign a coherence rating from 1 to 5, where 1 means incoherent and 5 means very coherent. Answer with a single digit.
+
+the collector 's paradise in horfield , bristol , has gone untouched for more than 80 years . the 1930s is up for sale with original features including a windows and kitchen . the house has been a guide price of between # 200,000 and # 250,000 . the # 250,000 house will be auctioned on april 30 at the county ground in bristol . it has been the original bathroom and kitchen and a ` guide ' for the .
+
+----- ITEM cohe_v2_0081#b -----
+Score this text's coherence: 1 (incoherent) through 5 (very coherent). Give only the number.
+
+boss nigel pearson has urged leicester to keep their cool and ignore their relegation rivals . the foxes host swansea on saturday just three points from safety in the barclays premier league after back-to-back wins . last week 's 3-2 win at west brom handed them a survival lifeline , although they remain bottom of the table .
+
+----- ITEM cohe_v2_0242#a -----
+Assign a coherence rating from 1 to 5, where 1 means incoherent and 5 means very coherent. Answer with a single digit.
+
+kevin pietersen takes a moment to reflect ahead of a team photo shoot for surrey . pietersen looked in deep thought as he sat right at the end of the team photo . the batsman joked with photographers at the kia oval for the photo session , with surrey set to begin their campaign at glamorgan on april 19 .
+
+----- ITEM cohe_v2_0059#b -----
+Assign a coherence rating from 1 to 5, where 1 means incoherent and 5 means very coherent. Answer with a single digit.
+
+stephen munden , 54 , has been missing since 6.15 pm on tuesday . officers have launched a manhunt to find munden - who was sexually touching the three-year-old girl . he was last seen leaving a hospital , near hook , hampshire . he was detained at the private facility under a hospital order following his sentence . munden suffers from learning difficulties , may have shaved off his beard .
+
+----- ITEM cohe_v2_0015#a -----
+On a 1-5 coherence scale (1 = incoherent, 5 = very coherent), what score does this text deserve? Respond with the number only.
+
+holidaymaker david meadwell recorded the unscheduled manouevre outside buckingham palace . he lost his footing and slid sideways , knocking bearskin on the side of the box . queen 's guard was left red-faced after he slipped on manhole cover . the entire incident was caught on a manhole cover . the embarrassed soldier quickly scrambled to his feet as his colleagues marched past .
+
+----- ITEM cohe_v2_0084#a -----
+How coherent is the following text? Score it 1-5 (1 = incoherent, 5 = very coherent). Number only.
+
+there would have been no mercy in the dressing room . nothing is sacred in the team . when ben stokes first turned up at the kensington oval this week someone would have said : ` mind that locker , stokesey . '
+
+----- ITEM cohe_v2_0176#a -----
+How coherent is the following text? Score it 1-5 (1 = incoherent, 5 = very coherent). Number only.
+
+the parents of the boston marathon bombings are making an emotional , passionate plea . dzhokhar was found guilty on all 30 charges he faced related to the bombings at the 2013 race . the sentencing phase begins tuesday , a day after this year 's edition . it is expected to last four weeks .
+
+----- ITEM cohe_v2_0234#b -----
+Score this text's coherence: 1 (incoherent) through 5 (very coherent). Give only the number.
+
+pupils to make changes to the national curriculum tests for 11-year-olds . this was despite the exam session finishing , a panel heard . 31-year-old also altered a number of the pupil 's exam answers himself before the papers were sent off . school officials were tipped off after suspected breach of exam rules . ian guffick asked pupils at mitton manor primary school in tewkesbury .
+
+----- ITEM cohe_v2_0143#b -----
+Score this text's coherence: 1 (incoherent) through 5 (very coherent). Give only the number.
+
+Alleged abuse by Clarence House staff took place in 1978 when he was 27. He was accosted after he walked into a room to look for a pen on his first shift He said he was told by police that he had 'failed to establish the identity of the accused' and the case was closed. He said: 'I was devastated.
+
+----- ITEM cohe_v2_0177#a -----
+How coherent is the following text? Score it 1-5 (1 = incoherent, 5 = very coherent). Number only.
+
+Donald Sterling's racist remarks cost him an NBA team last year. But now it's his former female companion who has lost big.
+
+----- ITEM cohe_v2_0250#b -----
+Assign a coherence rating from 1 to 5, where 1 means incoherent and 5 means very coherent. Answer with a single digit.
+
+-lrb- cnn -rrb- lady antebellum singer hillary scott 's tour bus caught fire on a texas freeway thursday morning , but everyone on board was safely evacuated . michael barnett captured dramatic video of the fire , on interstate 30 just northeast of dallas , and uploaded it to cnn ireport . `` it was shocking , '' he said .
+
+----- ITEM cohe_v2_0070#a -----
+Rate the coherence of this text from 1 (incoherent) to 5 (very coherent). Reply with one number only.
+
+Three vehicles collided on the Brisbane Valley Highway , 2 km south of Fernvale , on Wednesday afternoon . A 40-year-old man with chest and shoulder injuries was the first patient flown out by rescue helicopter . Six others - including an infant and two young girls - have been taken to Ipswich Hospital with minor injuries or for further assessment .
+
+----- ITEM cohe_v2_0232#b -----
+Score this text's coherence: 1 (incoherent) through 5 (very coherent). Give only the number.
+
+a total of 8,480 migrants were rescued . the group fears 400 migrants could be missing . the italian coast guard has not yet found evidence . italy registered more than 10,000 migrants in the first three months of 2015 .
+
+Now output exactly 50 JSON lines, one per item id above.
