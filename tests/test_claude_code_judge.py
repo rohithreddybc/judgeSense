@@ -129,3 +129,63 @@ def test_provenance_declares_itself_incomparable_to_api_judges():
     assert pr["temperature"] is None
     assert pr["system_prompt_sha"] is None
     assert pr["system_prompt_sent"] is False
+
+
+# ── the bug that would have deleted the endpoint ─────────────────────────────
+
+def test_base_arm_strips_a_suffix_not_a_character_set():
+    """str.rstrip('_repeat') removes any of {_,r,e,p,a,t} from the right, so
+    'a_repeat' becomes '' and 'a' becomes ''. The prompt lookup then read
+    row['prompt_'], every repeat unit was silently dropped, and the run would
+    have produced no ceiling and therefore no dJSS at all."""
+    from claude_code_judge import base_arm
+    assert base_arm("a") == "a"
+    assert base_arm("b") == "b"
+    assert base_arm("a_repeat") == "a"
+    assert base_arm("b_repeat") == "b"
+    assert "a_repeat".rstrip("_repeat") == "", "the original bug, pinned"
+
+
+def test_repeat_units_actually_get_built():
+    units = units_for_task(_rows(5), arms=("a", "b", "a_repeat", "b_repeat"))
+    assert len(units) == 20, f"expected 4 arms x 5 rows, got {len(units)}"
+    assert sum(1 for u in units if u["arm"].endswith("_repeat")) == 10
+
+
+def test_a_repeat_unit_carries_the_identical_prompt():
+    """A repeat that re-issues a DIFFERENT string is not a repeat; the ceiling
+    would then measure wording sensitivity too, and dJSS would understate."""
+    units = {u["id"]: u for u in
+             units_for_task(_rows(3), arms=("a", "a_repeat"))}
+    for pid in ("p0000", "p0001", "p0002"):
+        assert units[f"{pid}#a"]["prompt"] == units[f"{pid}#a_repeat"]["prompt"]
+
+
+# ── the cancellation claim, made true ────────────────────────────────────────
+
+def test_repeat_batches_mirror_arm_batches_exactly():
+    """dJSS subtracts JSS_rep from JSS_para, so batch context cancels ONLY if a
+    repeat sits among the same neighbours, in the same position, as the unit it
+    baselines. Independently shuffled repeats would leave that difference inside
+    the endpoint -- the very confound the repeat arm exists to remove."""
+    from claude_code_judge import mirror_repeat_batches
+    arm_batches = make_batches(units_for_task(_rows(40)), batch_size=10, seed=4)
+    rep_batches = mirror_repeat_batches(arm_batches)
+
+    assert len(rep_batches) == len(arm_batches)
+    for arm_b, rep_b in zip(arm_batches, rep_batches):
+        assert len(arm_b) == len(rep_b)
+        for a, r in zip(arm_b, rep_b):
+            assert r["pair_id"] == a["pair_id"]
+            assert r["batch_position"] == a["batch_position"]
+            assert r["batch_index"] == a["batch_index"]
+            assert r["prompt"] == a["prompt"]
+            assert r["mirrors"] == a["id"]
+
+
+def test_repeat_batches_inherit_the_no_both_arms_invariant():
+    from claude_code_judge import mirror_repeat_batches
+    for batch in mirror_repeat_batches(
+            make_batches(units_for_task(_rows(50)), batch_size=12, seed=9)):
+        pids = [u["pair_id"] for u in batch]
+        assert len(pids) == len(set(pids))

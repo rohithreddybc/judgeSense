@@ -184,13 +184,26 @@ def provenance(model_alias: str, batch_size: int, seed: int) -> dict:
     }
 
 
-def units_for_task(rows: Sequence[dict], arms: Sequence[str] = ("a", "b")) -> List[dict]:
+def base_arm(arm: str) -> str:
+    """'a' -> 'a', 'a_repeat' -> 'a'. The prompt a repeat arm re-issues is the
+    SAME string as its base arm; that is what makes it a repeat.
+
+    Written as an explicit suffix strip because str.rstrip removes CHARACTERS,
+    not a suffix: 'a_repeat'.rstrip('_repeat') is '' -- every character of it is
+    in that set -- so the lookup became row['prompt_'], every repeat unit was
+    dropped, and the run would have produced no ceiling and therefore no dJSS at
+    all. Plain arms survived by luck, which is exactly why it went unnoticed.
+    """
+    return arm[:-len("_repeat")] if arm.endswith("_repeat") else arm
+
+
+def units_for_task(rows: Sequence[dict],
+                   arms: Sequence[str] = ("a", "b")) -> List[dict]:
     """Flatten benchmark rows into one judging unit per (row, arm)."""
     out: List[dict] = []
     for row in rows:
         for arm in arms:
-            prompt = row.get(f"prompt_{arm.rstrip('_repeat')}") if arm.endswith("_repeat") \
-                else row.get(f"prompt_{arm}")
+            prompt = row.get(f"prompt_{base_arm(arm)}")
             if not prompt:
                 continue
             out.append({
@@ -199,6 +212,38 @@ def units_for_task(rows: Sequence[dict], arms: Sequence[str] = ("a", "b")) -> Li
                 "arm": arm,
                 "prompt": prompt,
             })
+    return out
+
+
+def mirror_repeat_batches(arm_batches: Sequence[Sequence[dict]],
+                          repeat_arms: Sequence[str] = ("a", "b")) -> List[List[dict]]:
+    """Repeat batches with the SAME composition and positions as the arm batches.
+
+    This is what makes the cancellation claim true rather than merely asserted.
+    dJSS = JSS_para - JSS_rep, so any nuisance that enters both terms equally
+    drops out. Batch context is such a nuisance -- but only if the repeat of a
+    unit sits among the same neighbours, in the same position, as the unit it
+    baselines. Shuffling the repeat units independently would give them
+    different context and leave that difference inside the endpoint, which is
+    precisely the confound the repeat arm exists to remove.
+    """
+    out: List[List[dict]] = []
+    for i, batch in enumerate(arm_batches):
+        mirrored: List[dict] = []
+        for j, unit in enumerate(batch):
+            if unit["arm"] not in repeat_arms:
+                continue
+            mirrored.append({
+                "id": f"{unit['pair_id']}#{unit['arm']}_repeat",
+                "pair_id": unit["pair_id"],
+                "arm": f"{unit['arm']}_repeat",
+                "prompt": unit["prompt"],      # byte-identical: that is the point
+                "batch_index": i,
+                "batch_position": j,
+                "mirrors": unit["id"],
+            })
+        if mirrored:
+            out.append(mirrored)
     return out
 
 
