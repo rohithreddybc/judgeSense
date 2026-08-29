@@ -1079,10 +1079,10 @@ from inside agent frameworks that own the system prompt, batch work for
 efficiency, and expose no decoding controls to the caller. That is a different
 measurement, and we can say how different, because we ran one judge both ways.
 
-Haiku was re-run on factuality and coherence through an agent harness that
-issues the same items in batches of fifty and does not expose temperature. The
-model, the items, the templates and the repeat design are identical to the API
-run; only the transport differs.
+Haiku was re-run on all four tasks through an agent harness that issues the same
+items in batches of fifty and does not expose temperature. The model, the items,
+the templates and the repeat design are identical to the API run; only the
+transport differs.
 
 \begin{center}
 \begin{tabular}{llrrr}
@@ -1094,6 +1094,12 @@ factuality & direct API      & $0.956$ & $1.000$ & $-0.044$ \\
 \addlinespace
 coherence  & direct API      & $0.792$ & $0.998$ & $-0.206$ \\
            & agent harness   & $0.560$ & $0.684$ & $-0.124$ \\
+\addlinespace
+relevance  & direct API      & $0.930$ & $0.990$ & $-0.058$ \\
+           & agent harness   & $0.800$ & $0.829$ & $-0.029$ \\
+\addlinespace
+preference & direct API      & $0.896$ & $0.965$ & $-0.081$ \\
+           & agent harness   & $0.869$ & $0.881$ & $-0.012$ \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -1106,12 +1112,14 @@ Section~\ref{sec:results-sonnet-relevance}, a ceiling of $0.684$ is not
 interpretable as evidence about wording at all.
 
 The consequence runs the opposite way to intuition, and to what we ourselves
-expected. Both terms fall, but the ceiling falls faster than the paraphrase
-agreement --- $0.314$ against $0.232$ on coherence --- so $\Delta\mathrm{JSS}$
-\emph{shrinks}, by $77\%$ on factuality and $40\%$ on coherence. Added decoding
-noise does not expose wording sensitivity more clearly. It buries it, because
-the subtraction that defines the endpoint charges that noise to the ceiling and
-leaves less of the gap behind.
+expected. Both terms fall on every task, but the ceiling falls faster than the
+paraphrase agreement in all four --- by $0.314$ against $0.232$ on coherence,
+and by $0.084$ against $0.027$ on preference --- so $\Delta\mathrm{JSS}$
+\emph{shrinks} everywhere: by $77\%$, $40\%$, $50\%$ and $86\%$ respectively.
+Added decoding noise does not expose wording sensitivity more clearly. It buries
+it, because the subtraction that defines the endpoint charges that noise to the
+ceiling and leaves less of the gap behind. The transport shift exceeds the
+smallest effect we declared of interest on all four tasks.
 
 This has a practical reading we would rather state than leave implicit. A team
 measuring judge stability from inside an agent framework will obtain a smaller
@@ -1123,11 +1131,18 @@ We report this as a second condition rather than as a judge. The harness cells
 are excluded from Table~\ref{tab:main} and from every claim above: they carry no
 declared decoding configuration, so they are comparable to themselves across
 arms and not to the API judges. Three alternative explanations were ruled out
-before drawing the conclusion --- every batch returned its full complement of
-labelled items, no answer failed to parse, and the repeat prompts were verified
-byte-identical to the arms they baseline --- so what moved is the transport.
-Because only one model is available under both transports, this is a
-single-judge result and we do not claim a rate that generalises across judges.
+before drawing the conclusion --- all 102 batches returned their full complement
+of labelled items, no answer failed to parse, and the repeat prompts were
+verified byte-identical to the arms they baseline --- so what moved is the
+transport. One batch did come back eight items short; it was rejected and
+re-issued rather than accepted, since a silently shortened batch would shift
+every later label within it.
+
+The scope is one model on four tasks. Only Haiku is reachable under both
+transports --- the harness resolves its Sonnet and Opus aliases to a later
+generation than the ones evaluated here --- so this is a single-judge result and
+we claim no rate that generalises across judges. What the four tasks do
+establish is that the direction is not an artefact of any one of them.
 
 \subsection{What this evidence does not cover}
 \label{sec:results-limits}
