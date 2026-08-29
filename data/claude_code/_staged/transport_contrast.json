@@ -1,0 +1,42 @@
+[
+  {
+    "task": "factuality",
+    "api_jss": 0.956,
+    "cc_jss": 0.9,
+    "api_ceiling": 1.0,
+    "cc_ceiling": 0.91,
+    "api_delta": -0.04400000000000004,
+    "cc_delta": -0.010000000000000009,
+    "shift": 0.03400000000000003
+  },
+  {
+    "task": "coherence",
+    "api_jss": 0.792,
+    "cc_jss": 0.56,
+    "api_ceiling": 0.998,
+    "cc_ceiling": 0.684,
+    "api_delta": -0.20599999999999996,
+    "cc_delta": -0.124,
+    "shift": 0.08199999999999996
+  },
+  {
+    "task": "relevance",
+    "api_jss": 0.93,
+    "cc_jss": 0.8,
+    "api_ceiling": 0.99,
+    "cc_ceiling": 0.829,
+    "api_delta": -0.05799999999999994,
+    "cc_delta": -0.028999999999999915,
+    "shift": 0.029000000000000026
+  },
+  {
+    "task": "preference",
+    "api_jss": 0.8962,
+    "cc_jss": 0.8692307692307693,
+    "api_ceiling": 0.9653846153846154,
+    "cc_ceiling": 0.8807692307692307,
+    "api_delta": -0.08076923076923082,
+    "cc_delta": -0.011538461538461497,
+    "shift": 0.06923076923076932
+  }
+]
