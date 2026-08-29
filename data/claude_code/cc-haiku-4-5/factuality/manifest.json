@@ -15,7 +15,9 @@
     "system_prompt_sha": null,
     "harness_system_prompt": "claude_code_default",
     "comparable_to_api_judges": false,
-    "notes": "temperature is not exposed by the harness and the system prompt is Claude Code's, so this judge is comparable to itself across arms but not to API-run judges"
+    "refusal_distinguishable": false,
+    "unmappable_answers_counted_as": "malformed",
+    "notes": "temperature is not exposed by the harness and the system prompt is Claude Code's, so this judge is comparable to itself across arms but not to API-run judges; refusal and malformed output cannot be separated on this transport"
   },
   "n_rows": 250,
   "batches": [
