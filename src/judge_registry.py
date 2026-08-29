@@ -249,17 +249,24 @@ JUDGES: Dict[str, dict] = {
                            key="HF_TOKEN", kind=REASONING, family="qwen-3.8",
                            size_b=27, native_max_tokens=1024, verified=True, pinned=False),
     # Reachable only since thinking_budget=0 stopped being sent to models that
-    # reject it (Gemini Pro answers 400 "Budget 0 is invalid"). The fix is in,
-    # but this checkpoint has not been probed since, so it stays unverified
-    # until it is -- an unverified id must fail at selection, not mid-run.
+    # reject it (Gemini Pro answers 400 "Budget 0 is invalid"). Probed after that
+    # fix: returns a clean label in 420 output tokens, inside the matched budget,
+    # and records reasoning suppression as neither requested nor honoured, which
+    # is the truth for a model that cannot switch it off.
+    #
+    # The only Pro-tier judge in the slate; every other Google entry is a Flash.
     "gemini-3.1-pro": dict(provider="google", model_id="gemini-3.1-pro-preview",
                            key="GOOGLE_API_KEY", kind=REASONING, family="gemini-3.1",
-                           size_b=None, native_max_tokens=1024, verified=False, pinned=False),
+                           size_b=None, native_max_tokens=1024, verified=True, pinned=False),
 
     # ── purpose-built judges (xmQT Limitations) ─────────────────────────────
     # Model identifiers taken from published model cards and NOT yet exercised
     # against the provider, so they are marked unverified and are excluded from
     # selection until confirmed. Verify before spending a run on them.
+    #
+    # GLM-5.3 was probed on 2026-08-29 and is NOT registered: DashScope answers
+    # 400 "The product is not activated", which is an account entitlement rather
+    # than anything the code can fix. Re-probe if that is enabled.
     #
     # 2026-08-25: re-checked against every provider we hold a key for. The
     # repositories still exist on the Hub, but NO serverless provider serves
