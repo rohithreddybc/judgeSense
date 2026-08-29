@@ -1,0 +1,72 @@
+{
+  "factuality": {
+    "remaining": [],
+    "misaligned": [],
+    "total": 20
+  },
+  "coherence": {
+    "remaining": [],
+    "misaligned": [],
+    "total": 20
+  },
+  "preference": {
+    "remaining": [
+      "rep_0014",
+      "rep_0015",
+      "rep_0016",
+      "rep_0017",
+      "rep_0018",
+      "rep_0019",
+      "rep_0020",
+      "rep_0021"
+    ],
+    "misaligned": [],
+    "total": 22
+  },
+  "relevance": {
+    "remaining": [
+      "arm_0000",
+      "arm_0001",
+      "arm_0002",
+      "arm_0003",
+      "arm_0004",
+      "arm_0005",
+      "arm_0006",
+      "arm_0007",
+      "arm_0008",
+      "arm_0009",
+      "arm_0010",
+      "arm_0011",
+      "arm_0012",
+      "arm_0013",
+      "arm_0014",
+      "arm_0015",
+      "arm_0016",
+      "arm_0017",
+      "arm_0018",
+      "arm_0019",
+      "rep_0020",
+      "rep_0021",
+      "rep_0022",
+      "rep_0023",
+      "rep_0024",
+      "rep_0025",
+      "rep_0026",
+      "rep_0027",
+      "rep_0028",
+      "rep_0029",
+      "rep_0030",
+      "rep_0031",
+      "rep_0032",
+      "rep_0033",
+      "rep_0034",
+      "rep_0035",
+      "rep_0036",
+      "rep_0037",
+      "rep_0038",
+      "rep_0039"
+    ],
+    "misaligned": [],
+    "total": 40
+  }
+}
