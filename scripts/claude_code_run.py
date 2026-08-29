@@ -103,6 +103,16 @@ def ingest(judge: str, task: str, allow_partial: bool, publish: bool = False) ->
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
     verdicts: Dict[str, str] = {}
+    # Where each unit sat, so a batch-position effect is measurable afterwards
+    # instead of assumed absent. The module claimed position was "recorded per
+    # item"; it was recorded on the unit and then dropped at ingest, which is
+    # the same as not recording it.
+    placement: Dict[str, dict] = {}
+    for entry in manifest["batches"]:
+        for pos, uid in enumerate(entry["ids"]):
+            placement[uid] = {"batch": entry["name"], "position": pos,
+                              "batch_size": len(entry["ids"])}
+
     missing_batches, bad = [], []
     for entry in manifest["batches"]:
         path = Path(entry["answer_file"])
@@ -173,6 +183,7 @@ def ingest(judge: str, task: str, allow_partial: bool, publish: bool = False) ->
                     continue
                 rec[f"prompt_{arm}_raw"] = raw
                 rec[f"decision_{arm}"] = parse_variant_output(task, raw, "plain")
+                rec[f"placement_{arm}"] = placement.get(f"{pid}#{arm}")
             written += 1
             fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
 

@@ -278,3 +278,51 @@ def discrimination_verdict(task: str, best_accuracy: Optional[float]) -> dict:
         "verdict": "discriminating" if passes else "not_discriminating",
         "ranking_permitted": passes,
     }
+
+
+# ── transport control ────────────────────────────────────────────────────────
+
+def transport_contrast(delta_api: Optional[float], delta_harness: Optional[float],
+                       se_api: Optional[float] = None,
+                       se_harness: Optional[float] = None,
+                       sesoi: float = 0.02) -> dict:
+    """Compare the SAME model measured through two transports.
+
+    claude-haiku-4-5 is run both through the Anthropic API under our matched
+    budget and through Claude Code subagents in batches. Everything about the
+    model is held fixed; only the transport differs. The contrast is therefore
+    a direct estimate of what the harness does to dJSS, which is otherwise a
+    limitation a reader has to take on trust.
+
+    Reported against the SESOI rather than against zero. Two transports will
+    never agree exactly, and an interval excluding zero at a magnitude below the
+    smallest effect declared of interest would be a statement about sample size,
+    not about transports. The useful question is whether the transport moves
+    dJSS by less than the effect the paper is about.
+
+    Standard errors are combined as if independent, which is conservative here:
+    the two runs share items, and shared items would induce positive
+    correlation and a SMALLER standard error for the difference than this gives.
+    """
+    if delta_api is None or delta_harness is None:
+        return {"comparable": False, "reason": "a transport is missing its delta"}
+    diff = delta_harness - delta_api
+    out = {
+        "comparable": True,
+        "delta_api": float(delta_api),
+        "delta_harness": float(delta_harness),
+        "transport_shift": float(diff),
+        "sesoi": sesoi,
+        "within_sesoi": abs(diff) < sesoi,
+        "verdict": ("transport effect below the smallest effect of interest"
+                    if abs(diff) < sesoi else
+                    "transport effect is of reportable size and must be stated"),
+    }
+    if se_api is not None and se_harness is not None:
+        se = float((se_api ** 2 + se_harness ** 2) ** 0.5)
+        out["se_diff"] = se
+        out["ci_lower"] = diff - _Z[0.05] * se
+        out["ci_upper"] = diff + _Z[0.05] * se
+        out["se_note"] = ("independence assumed; the runs share items, so the "
+                          "true standard error is no larger than this")
+    return out

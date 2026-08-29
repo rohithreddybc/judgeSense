@@ -178,3 +178,29 @@ def test_missing_accuracy_is_undetermined_not_a_pass():
     v = discrimination_verdict("relevance", None)
     assert v["verdict"] == "undetermined"
     assert v["ranking_permitted"] is False
+
+
+# ── transport control ────────────────────────────────────────────────────────
+
+def test_transport_contrast_is_judged_against_the_sesoi_not_zero():
+    """Two transports never agree exactly. An interval excluding zero below the
+    smallest effect of interest says something about sample size, not about
+    transports."""
+    from multiplicity import transport_contrast
+    close = transport_contrast(-0.206, -0.213)
+    assert close["within_sesoi"] is True
+    far = transport_contrast(-0.206, -0.260)
+    assert far["within_sesoi"] is False
+    assert "must be stated" in far["verdict"]
+
+
+def test_transport_contrast_reports_the_shift_with_sign():
+    from multiplicity import transport_contrast
+    out = transport_contrast(-0.20, -0.25)
+    assert out["transport_shift"] == pytest.approx(-0.05)
+
+
+def test_transport_contrast_refuses_when_a_side_is_missing():
+    from multiplicity import transport_contrast
+    assert transport_contrast(None, -0.2)["comparable"] is False
+    assert transport_contrast(-0.2, None)["comparable"] is False

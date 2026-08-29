@@ -178,9 +178,19 @@ def provenance(model_alias: str, batch_size: int, seed: int) -> dict:
         "system_prompt_sha": None,
         "harness_system_prompt": "claude_code_default",
         "comparable_to_api_judges": False,
+        # The paper separates a REFUSAL (provider-flagged decline, upstream of
+        # any judgement) from MALFORMED output (a completed answer the parser
+        # cannot map), and treats them differently: a refused arm leaves the
+        # support, a malformed arm is charged as disagreement. This transport
+        # returns no provider stop_reason, so that distinction is unavailable
+        # here and every unmappable answer necessarily lands in one bucket.
+        # Recording the flag is what stops a reader assuming the split was made.
+        "refusal_distinguishable": False,
+        "unmappable_answers_counted_as": "malformed",
         "notes": ("temperature is not exposed by the harness and the system "
                   "prompt is Claude Code's, so this judge is comparable to "
-                  "itself across arms but not to API-run judges"),
+                  "itself across arms but not to API-run judges; refusal and "
+                  "malformed output cannot be separated on this transport"),
     }
 
 
