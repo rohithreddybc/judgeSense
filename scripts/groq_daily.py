@@ -77,7 +77,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--status", action="store_true",
                     help="report progress and exit without running anything")
-    ap.add_argument("--max-minutes", type=int, default=180,
+    ap.add_argument("--max-minutes", type=int, default=360,
                     help="stop the run after this long (default 180). Once the "
                          "day's quota is gone run_v2 does not stop: it walks "
                          "the rest of the backlog recording 429s, which would "
@@ -97,25 +97,43 @@ def main() -> int:
     stamp = dt.datetime.now().isoformat(timespec="seconds")
     _move(PARK, RAW)
     rc, tail = None, []
+
+    # ONE PROCESS PER JUDGE, IN PARALLEL.
+    #
+    # The cap is 200,000 tokens per day PER MODEL, so the three quotas are
+    # independent and only a parallel run can spend all three in a day. Handing
+    # all three to a single run_v2 serialises them: the first day spent 180
+    # minutes entirely on gpt-oss-20b and never reached the other two, which
+    # turned three independent ~6-day cells into one ~24-day queue.
+    #
+    # Rate contention between them is a non-issue for the same reason the caps
+    # are: Groq meters per model, and each process talks to a different one.
+    procs = []
     try:
-        try:
-            proc = subprocess.run(
-                [sys.executable, "-u", "-m", "src.run_v2",
-                 "--judges", *JUDGES,
+        for judge in JUDGES:
+            if before[judge] >= ROWS_PER_JUDGE:
+                continue
+            procs.append((judge, subprocess.Popen(
+                [sys.executable, "-u", "-m", "src.run_v2", "--judges", judge,
                  "--budget-policy", "matched", "--repeat-baseline",
                  "--skip-preflight", "--yes"],
-                cwd=str(REPO), capture_output=True, text=True,
-                timeout=args.max_minutes * 60,
-            )
-            rc = proc.returncode
-            tail = (proc.stdout or "").strip().splitlines()[-12:]
-        except subprocess.TimeoutExpired as exc:
-            rc = "timeout"
-            out = exc.stdout or ""
-            if isinstance(out, bytes):
-                out = out.decode("utf-8", "replace")
-            tail = out.strip().splitlines()[-12:]
+                cwd=str(REPO), stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT, text=True,
+            )))
+
+        deadline = args.max_minutes * 60
+        timed_out = []
+        for judge, proc in procs:
+            try:
+                proc.wait(timeout=deadline)
+            except subprocess.TimeoutExpired:
+                timed_out.append(judge)
+                proc.kill()
+        rc = "timeout:" + ",".join(timed_out) if timed_out else "ok"
     finally:
+        for _, proc in procs:
+            if proc.poll() is None:
+                proc.kill()
         after_raw = _rows(RAW)
         _move(RAW, PARK)
         # A killed child leaves its cell lock behind; the next run would refuse

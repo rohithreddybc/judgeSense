@@ -13,5 +13,5 @@ setlocal
 set REPO=%~dp0..
 set PYTHONIOENCODING=utf-8
 cd /d "%REPO%"
-"C:\Users\rohit\anaconda3\python.exe" -u "%REPO%\scripts\groq_daily.py" --max-minutes 180 >> "%REPO%\logs\groq_daily.out" 2>&1
+"C:\Users\rohit\anaconda3\python.exe" -u "%REPO%\scripts\groq_daily.py" --max-minutes 330 >> "%REPO%\logs\groq_daily.out" 2>&1
 endlocal
