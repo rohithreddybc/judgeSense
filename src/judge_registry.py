@@ -78,22 +78,44 @@ JUDGES: Dict[str, dict] = {
     "llama3-70b": dict(provider="groq", model_id="llama-3.1-70b-versatile",
                        key="GROQ_API_KEY", kind=INSTRUCT, family="llama-3.1",
                        size_b=70, native_max_tokens=20, verified=False, pinned=False),
-    # ── Groq, free tier (2026-08-25) ────────────────────────────────────────
-    # gpt-oss is OpenAI's open-weight release, so it reaches the GPT lineage
-    # without touching the paid OpenAI API. 20B and 120B are one family at two
-    # sizes: a second within-family size ladder, at no cost.
+    # ── Groq, free tier: RETIRED 2026-08-29 ─────────────────────────────────
+    # gpt-oss is OpenAI's open-weight release, so these reached the GPT lineage
+    # without touching the paid OpenAI API, and 20B/120B were a second
+    # within-family size ladder at no cost. All three answer correctly and none
+    # was retired for quality.
+    #
+    # What retired them is throughput. Groq's free tier caps TOKENS PER DAY PER
+    # MODEL at 200,000:
+    #
+    #   Rate limit reached for model `openai/gpt-oss-20b` ... service tier
+    #   `on_demand` on tokens per day (TPD): Limit 200000, Used 199299
+    #
+    # Measured against the prompt sizes this protocol actually sends (326
+    # tokens per call for the gpt-oss pair, 80 for the 27B), completing the
+    # remaining rows needs 5.3, 7.0 and 1.5 days of quota resets. The caps are
+    # per model, so the three run in parallel and Groq clears in ~7 days, not
+    # 14 -- still far outside the horizon for this submission.
+    #
+    # They are left registered with verified=False rather than deleted, so the
+    # reason survives with the entry. Restoring them needs a paid Groq tier,
+    # not a code change. The gpt-oss size ladder dies with them; the qwen-3
+    # 8B/14B/32B ladder on HuggingFace is unaffected and carries the scale
+    # contrast on its own.
     "gpt-oss-20b": dict(provider="groq", model_id="openai/gpt-oss-20b",
                         key="GROQ_API_KEY", kind=REASONING, family="gpt-oss",
-                        size_b=20, native_max_tokens=1024, verified=True, pinned=False),
+                        size_b=20, native_max_tokens=1024, verified=True, pinned=False,
+                        retired="groq free tier: 200k tokens/day/model, 5.3 days to finish"),
     "gpt-oss-120b": dict(provider="groq", model_id="openai/gpt-oss-120b",
                          key="GROQ_API_KEY", kind=REASONING, family="gpt-oss",
-                         size_b=120, native_max_tokens=1024, verified=True, pinned=False),
+                         size_b=120, native_max_tokens=1024, verified=True, pinned=False,
+                        retired="groq free tier: 200k tokens/day/model, 7.0 days to finish"),
     # qwen3.6-27b on Groq was probed alongside these and is NOT registered: it
     # opens <think> and never reaches a label inside the budget, the same
     # failure as the DeepSeek R1 aliases.
     "qwen3.8-27b": dict(provider="groq", model_id="qwen/qwen3.8-27b",
                         key="GROQ_API_KEY", kind=INSTRUCT, family="qwen-3.8",
-                        size_b=27, native_max_tokens=20, verified=True, pinned=False),
+                        size_b=27, native_max_tokens=20, verified=True, pinned=False,
+                        retired="groq free tier: 200k tokens/day/model, 1.5 days to finish"),
     # NOT a 7B model. "mistral-small-latest" is a floating alias that does not
     # resolve to a 7B checkpoint, and size_b feeds family_ladders, so a scale
     # claim would have been built on a parameter count the name asserted and the
@@ -255,9 +277,23 @@ JUDGES: Dict[str, dict] = {
     # is the truth for a model that cannot switch it off.
     #
     # The only Pro-tier judge in the slate; every other Google entry is a Flash.
+    #
+    # RETIRED 2026-08-29, for throughput rather than quality. The free tier
+    # allows 250 requests per day for this model:
+    #
+    #   Quota exceeded for metric:
+    #   generativelanguage.googleapis.com/generate_requests_per_model_per_day,
+    #   limit: 250, model: gemini-3.1-pro
+    #
+    # A full judge is 4,280 arm calls, so the cell needs 16.3 days of quota
+    # resets. Unlike the Groq three, which clear in about a week and are
+    # scheduled to accumulate daily, sixteen days is not worth holding the
+    # slate open for one Pro-tier entry. Restoring it needs a paid Google
+    # tier, not a code change.
     "gemini-3.1-pro": dict(provider="google", model_id="gemini-3.1-pro-preview",
                            key="GOOGLE_API_KEY", kind=REASONING, family="gemini-3.1",
-                           size_b=None, native_max_tokens=1024, verified=True, pinned=False),
+                           size_b=None, native_max_tokens=1024, verified=True, pinned=False,
+                        retired="google free tier: 250 requests/day, 16.3 days to finish"),
 
     # ── purpose-built judges (xmQT Limitations) ─────────────────────────────
     # Model identifiers taken from published model cards and NOT yet exercised
@@ -331,6 +367,12 @@ def family_ladders(min_rungs: int = 2, verified_only: bool = True) -> Dict[str, 
     for name, spec in JUDGES.items():
         if verified_only and not spec["verified"]:
             continue
+        # A retired judge produces no rows, so a ladder resting on one is a
+        # scale claim with nothing behind it. The gpt-oss 20B/120B pair is
+        # exactly that case: both checkpoints are good, neither will finish
+        # inside the free tier's daily cap.
+        if spec.get("retired"):
+            continue
         if spec["size_b"] is None:
             continue
         grouped.setdefault(spec["family"], []).append(name)
@@ -375,15 +417,30 @@ STRUCTURAL_AXIS_JUDGES = (
 )
 
 
+def is_retired(name: str) -> bool:
+    """Has this judge been withdrawn from the default roster?
+
+    Retirement is separate from verification. A retired judge's checkpoint is
+    confirmed and its answers are good; what disqualifies it is throughput --
+    all four current entries are behind free-tier daily caps that would take
+    between 1.5 and 16.3 days of quota resets to spend. `retired` carries that
+    measurement as its value, so the reason travels with the entry.
+    """
+    return bool(JUDGES[name].get("retired"))
+
+
 def select_judges(names: Optional[List[str]] = None, allow_unverified: bool = False) -> List[str]:
     """
     Resolve a judge selection, rejecting unknown or unverified entries.
 
     Unverified checkpoints fail here rather than mid-run: discovering a bad model
     id after paying for half a sweep is the expensive way to learn it.
+
+    Retired judges are dropped from the DEFAULT roster but honoured when named,
+    which is what lets the daily quota job run them while the sweep does not.
     """
     selection = list(names) if names is not None else [
-        n for n, s in JUDGES.items() if s["verified"]
+        n for n, s in JUDGES.items() if s["verified"] and not s.get("retired")
     ]
     unknown = [n for n in selection if n not in JUDGES]
     if unknown:
