@@ -26,6 +26,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import io
+import json
 import os
 import subprocess
 import sys
@@ -56,11 +57,29 @@ GROUPS = {
 
 
 def rows_for(judge: str) -> int:
-    n = 0
+    """Count DISTINCT pair_ids, not lines.
+
+    Raw output is append-only, so a row re-run after an error leaves the failed
+    record in place and appends the good one. Counting lines therefore counts
+    those superseded records too, and a cell can read as over-target while
+    still missing items -- which is exactly what happened: kimi-k3 and
+    qwen3.8-27b-hf both reported past 1260 with 39 preference items never run,
+    and the sweep declared itself finished. Reading uniques matches how the
+    results loader collapses the file (last write wins).
+    """
+    seen: set[tuple[str, str]] = set()
     for p in RAW.glob(f"{judge}_*.jsonl"):
+        task = p.stem.rsplit("_", 1)[1]
         with io.open(p, encoding="utf-8") as fh:
-            n += sum(1 for line in fh if line.strip())
-    return n
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    seen.add((task, str(json.loads(line)["pair_id"])))
+                except (ValueError, KeyError):
+                    continue
+    return len(seen)
 
 
 def unfinished() -> dict[str, list[str]]:
