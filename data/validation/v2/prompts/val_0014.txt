@@ -1,0 +1,266 @@
+You are checking whether pairs of evaluation INSTRUCTIONS ask for the
+same judgement.
+
+Each item below shows two instructions, A and B. They are meant to differ only
+in surface wording: the same decision, on the same content, in different words.
+
+For each item answer YES or NO:
+  YES  the two instructions ask for the same judgement, and a judge answering
+       both correctly would give the same answer
+  NO   the two instructions ask for materially different judgements, or one
+       inverts the meaning of the answer, or one asks for something the other
+       does not
+
+Judge each item entirely on its own. Ignore the content being evaluated; you
+are comparing the instructions only.
+
+
+----- ITEM rele_v2_0071_original -----
+task: relevance
+A: T3
+B: T5
+
+----- ITEM rele_v2_0072_original -----
+task: relevance
+A: T1
+B: T3
+
+----- ITEM rele_v2_0073_original -----
+task: relevance
+A: T2
+B: T4
+
+----- ITEM rele_v2_0074_original -----
+task: relevance
+A: T2
+B: T4
+
+----- ITEM rele_v2_0075_original -----
+task: relevance
+A: T4
+B: T5
+
+----- ITEM rele_v2_0076_original -----
+task: relevance
+A: T2
+B: T3
+
+----- ITEM rele_v2_0077_original -----
+task: relevance
+A: T1
+B: T5
+
+----- ITEM rele_v2_0078_original -----
+task: relevance
+A: T3
+B: T5
+
+----- ITEM rele_v2_0079_original -----
+task: relevance
+A: T2
+B: T3
+
+----- ITEM rele_v2_0080_original -----
+task: relevance
+A: T1
+B: T4
+
+----- ITEM rele_v2_0081_original -----
+task: relevance
+A: T2
+B: T4
+
+----- ITEM rele_v2_0082_original -----
+task: relevance
+A: T2
+B: T5
+
+----- ITEM rele_v2_0083_original -----
+task: relevance
+A: T1
+B: T4
+
+----- ITEM rele_v2_0084_original -----
+task: relevance
+A: T1
+B: T2
+
+----- ITEM rele_v2_0085_original -----
+task: relevance
+A: T1
+B: T4
+
+----- ITEM rele_v2_0086_original -----
+task: relevance
+A: T3
+B: T5
+
+----- ITEM rele_v2_0087_original -----
+task: relevance
+A: T2
+B: T5
+
+----- ITEM rele_v2_0088_original -----
+task: relevance
+A: T3
+B: T4
+
+----- ITEM rele_v2_0089_original -----
+task: relevance
+A: T1
+B: T3
+
+----- ITEM rele_v2_0090_original -----
+task: relevance
+A: T2
+B: T4
+
+----- ITEM rele_v2_0091_original -----
+task: relevance
+A: T2
+B: T5
+
+----- ITEM rele_v2_0092_original -----
+task: relevance
+A: T3
+B: T4
+
+----- ITEM rele_v2_0093_original -----
+task: relevance
+A: T2
+B: T4
+
+----- ITEM rele_v2_0094_original -----
+task: relevance
+A: T1
+B: T2
+
+----- ITEM rele_v2_0095_original -----
+task: relevance
+A: T4
+B: T5
+
+----- ITEM rele_v2_0096_original -----
+task: relevance
+A: T4
+B: T5
+
+----- ITEM rele_v2_0097_original -----
+task: relevance
+A: T3
+B: T4
+
+----- ITEM rele_v2_0098_original -----
+task: relevance
+A: T1
+B: T4
+
+----- ITEM rele_v2_0099_original -----
+task: relevance
+A: T3
+B: T5
+
+----- ITEM rele_v2_0100_original -----
+task: relevance
+A: T4
+B: T5
+
+----- ITEM rele_v2_0101_original -----
+task: relevance
+A: T1
+B: T4
+
+----- ITEM rele_v2_0102_original -----
+task: relevance
+A: T2
+B: T5
+
+----- ITEM rele_v2_0103_original -----
+task: relevance
+A: T3
+B: T5
+
+----- ITEM rele_v2_0104_original -----
+task: relevance
+A: T2
+B: T3
+
+----- ITEM rele_v2_0105_original -----
+task: relevance
+A: T3
+B: T4
+
+----- ITEM rele_v2_0106_original -----
+task: relevance
+A: T2
+B: T3
+
+----- ITEM rele_v2_0107_original -----
+task: relevance
+A: T4
+B: T5
+
+----- ITEM rele_v2_0108_original -----
+task: relevance
+A: T3
+B: T5
+
+----- ITEM rele_v2_0109_original -----
+task: relevance
+A: T1
+B: T2
+
+----- ITEM rele_v2_0110_original -----
+task: relevance
+A: T2
+B: T3
+
+----- ITEM rele_v2_0111_original -----
+task: relevance
+A: T1
+B: T4
+
+----- ITEM rele_v2_0112_original -----
+task: relevance
+A: T1
+B: T5
+
+----- ITEM rele_v2_0113_original -----
+task: relevance
+A: T2
+B: T3
+
+----- ITEM rele_v2_0114_original -----
+task: relevance
+A: T2
+B: T3
+
+----- ITEM rele_v2_0115_original -----
+task: relevance
+A: T1
+B: T5
+
+----- ITEM rele_v2_0116_original -----
+task: relevance
+A: T2
+B: T3
+
+----- ITEM rele_v2_0117_original -----
+task: relevance
+A: T3
+B: T4
+
+----- ITEM rele_v2_0118_original -----
+task: relevance
+A: T3
+B: T5
+
+----- ITEM rele_v2_0119_original -----
+task: relevance
+A: T3
+B: T5
+
+----- ITEM rele_v2_0120_original -----
+task: relevance
+A: T1
+B: T3

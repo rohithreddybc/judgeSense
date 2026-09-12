@@ -1,0 +1,266 @@
+You are checking whether pairs of evaluation INSTRUCTIONS ask for the
+same judgement.
+
+Each item below shows two instructions, A and B. They are meant to differ only
+in surface wording: the same decision, on the same content, in different words.
+
+For each item answer YES or NO:
+  YES  the two instructions ask for the same judgement, and a judge answering
+       both correctly would give the same answer
+  NO   the two instructions ask for materially different judgements, or one
+       inverts the meaning of the answer, or one asks for something the other
+       does not
+
+Judge each item entirely on its own. Ignore the content being evaluated; you
+are comparing the instructions only.
+
+
+----- ITEM pref_v2_0001_original -----
+task: preference
+A: T2
+B: T3
+
+----- ITEM pref_v2_0002_original -----
+task: preference
+A: T1
+B: T4
+
+----- ITEM pref_v2_0003_original -----
+task: preference
+A: T4
+B: T5
+
+----- ITEM pref_v2_0004_original -----
+task: preference
+A: T1
+B: T2
+
+----- ITEM pref_v2_0005_original -----
+task: preference
+A: T1
+B: T5
+
+----- ITEM pref_v2_0006_original -----
+task: preference
+A: T1
+B: T4
+
+----- ITEM pref_v2_0007_original -----
+task: preference
+A: T2
+B: T5
+
+----- ITEM pref_v2_0008_original -----
+task: preference
+A: T1
+B: T4
+
+----- ITEM pref_v2_0009_original -----
+task: preference
+A: T2
+B: T5
+
+----- ITEM pref_v2_0010_original -----
+task: preference
+A: T2
+B: T4
+
+----- ITEM pref_v2_0011_original -----
+task: preference
+A: T4
+B: T5
+
+----- ITEM pref_v2_0012_original -----
+task: preference
+A: T2
+B: T5
+
+----- ITEM pref_v2_0013_original -----
+task: preference
+A: T1
+B: T2
+
+----- ITEM pref_v2_0014_original -----
+task: preference
+A: T1
+B: T2
+
+----- ITEM pref_v2_0015_original -----
+task: preference
+A: T1
+B: T4
+
+----- ITEM pref_v2_0016_original -----
+task: preference
+A: T1
+B: T3
+
+----- ITEM pref_v2_0017_original -----
+task: preference
+A: T2
+B: T4
+
+----- ITEM pref_v2_0018_original -----
+task: preference
+A: T3
+B: T4
+
+----- ITEM pref_v2_0019_original -----
+task: preference
+A: T1
+B: T2
+
+----- ITEM pref_v2_0020_original -----
+task: preference
+A: T1
+B: T3
+
+----- ITEM pref_v2_0021_original -----
+task: preference
+A: T1
+B: T2
+
+----- ITEM pref_v2_0022_original -----
+task: preference
+A: T2
+B: T3
+
+----- ITEM pref_v2_0023_original -----
+task: preference
+A: T3
+B: T4
+
+----- ITEM pref_v2_0024_original -----
+task: preference
+A: T1
+B: T2
+
+----- ITEM pref_v2_0025_original -----
+task: preference
+A: T2
+B: T4
+
+----- ITEM pref_v2_0026_original -----
+task: preference
+A: T1
+B: T3
+
+----- ITEM pref_v2_0027_original -----
+task: preference
+A: T3
+B: T4
+
+----- ITEM pref_v2_0028_original -----
+task: preference
+A: T1
+B: T4
+
+----- ITEM pref_v2_0029_original -----
+task: preference
+A: T3
+B: T4
+
+----- ITEM pref_v2_0030_original -----
+task: preference
+A: T2
+B: T3
+
+----- ITEM pref_v2_0031_original -----
+task: preference
+A: T1
+B: T4
+
+----- ITEM pref_v2_0032_original -----
+task: preference
+A: T1
+B: T3
+
+----- ITEM pref_v2_0033_original -----
+task: preference
+A: T1
+B: T5
+
+----- ITEM pref_v2_0034_original -----
+task: preference
+A: T1
+B: T5
+
+----- ITEM pref_v2_0035_original -----
+task: preference
+A: T1
+B: T4
+
+----- ITEM pref_v2_0036_original -----
+task: preference
+A: T1
+B: T5
+
+----- ITEM pref_v2_0037_original -----
+task: preference
+A: T2
+B: T4
+
+----- ITEM pref_v2_0038_original -----
+task: preference
+A: T2
+B: T5
+
+----- ITEM pref_v2_0039_original -----
+task: preference
+A: T1
+B: T3
+
+----- ITEM pref_v2_0040_original -----
+task: preference
+A: T1
+B: T3
+
+----- ITEM pref_v2_0041_original -----
+task: preference
+A: T3
+B: T5
+
+----- ITEM pref_v2_0042_original -----
+task: preference
+A: T1
+B: T4
+
+----- ITEM pref_v2_0043_original -----
+task: preference
+A: T1
+B: T2
+
+----- ITEM pref_v2_0044_original -----
+task: preference
+A: T3
+B: T5
+
+----- ITEM pref_v2_0045_original -----
+task: preference
+A: T2
+B: T3
+
+----- ITEM pref_v2_0046_original -----
+task: preference
+A: T3
+B: T5
+
+----- ITEM pref_v2_0047_original -----
+task: preference
+A: T4
+B: T5
+
+----- ITEM pref_v2_0048_original -----
+task: preference
+A: T2
+B: T3
+
+----- ITEM pref_v2_0049_original -----
+task: preference
+A: T3
+B: T4
+
+----- ITEM pref_v2_0050_original -----
+task: preference
+A: T2
+B: T5

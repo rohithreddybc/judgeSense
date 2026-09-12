@@ -1,0 +1,266 @@
+You are checking whether pairs of evaluation INSTRUCTIONS ask for the
+same judgement.
+
+Each item below shows two instructions, A and B. They are meant to differ only
+in surface wording: the same decision, on the same content, in different words.
+
+For each item answer YES or NO:
+  YES  the two instructions ask for the same judgement, and a judge answering
+       both correctly would give the same answer
+  NO   the two instructions ask for materially different judgements, or one
+       inverts the meaning of the answer, or one asks for something the other
+       does not
+
+Judge each item entirely on its own. Ignore the content being evaluated; you
+are comparing the instructions only.
+
+
+----- ITEM fact_v2_0151 -----
+task: factuality
+A: T3
+B: T4
+
+----- ITEM fact_v2_0152 -----
+task: factuality
+A: T2
+B: T4
+
+----- ITEM fact_v2_0153 -----
+task: factuality
+A: T1
+B: T3
+
+----- ITEM fact_v2_0154 -----
+task: factuality
+A: T1
+B: T3
+
+----- ITEM fact_v2_0155 -----
+task: factuality
+A: T2
+B: T5
+
+----- ITEM fact_v2_0156 -----
+task: factuality
+A: T1
+B: T3
+
+----- ITEM fact_v2_0157 -----
+task: factuality
+A: T2
+B: T4
+
+----- ITEM fact_v2_0158 -----
+task: factuality
+A: T2
+B: T5
+
+----- ITEM fact_v2_0159 -----
+task: factuality
+A: T2
+B: T4
+
+----- ITEM fact_v2_0160 -----
+task: factuality
+A: T3
+B: T5
+
+----- ITEM fact_v2_0161 -----
+task: factuality
+A: T2
+B: T3
+
+----- ITEM fact_v2_0162 -----
+task: factuality
+A: T2
+B: T3
+
+----- ITEM fact_v2_0163 -----
+task: factuality
+A: T4
+B: T5
+
+----- ITEM fact_v2_0164 -----
+task: factuality
+A: T3
+B: T4
+
+----- ITEM fact_v2_0165 -----
+task: factuality
+A: T2
+B: T4
+
+----- ITEM fact_v2_0166 -----
+task: factuality
+A: T1
+B: T2
+
+----- ITEM fact_v2_0167 -----
+task: factuality
+A: T1
+B: T3
+
+----- ITEM fact_v2_0168 -----
+task: factuality
+A: T4
+B: T5
+
+----- ITEM fact_v2_0169 -----
+task: factuality
+A: T2
+B: T3
+
+----- ITEM fact_v2_0170 -----
+task: factuality
+A: T2
+B: T5
+
+----- ITEM fact_v2_0171 -----
+task: factuality
+A: T1
+B: T5
+
+----- ITEM fact_v2_0172 -----
+task: factuality
+A: T4
+B: T5
+
+----- ITEM fact_v2_0173 -----
+task: factuality
+A: T1
+B: T4
+
+----- ITEM fact_v2_0174 -----
+task: factuality
+A: T1
+B: T2
+
+----- ITEM fact_v2_0175 -----
+task: factuality
+A: T1
+B: T2
+
+----- ITEM fact_v2_0176 -----
+task: factuality
+A: T3
+B: T5
+
+----- ITEM fact_v2_0177 -----
+task: factuality
+A: T4
+B: T5
+
+----- ITEM fact_v2_0178 -----
+task: factuality
+A: T3
+B: T4
+
+----- ITEM fact_v2_0179 -----
+task: factuality
+A: T2
+B: T5
+
+----- ITEM fact_v2_0180 -----
+task: factuality
+A: T1
+B: T4
+
+----- ITEM fact_v2_0181 -----
+task: factuality
+A: T4
+B: T5
+
+----- ITEM fact_v2_0182 -----
+task: factuality
+A: T3
+B: T4
+
+----- ITEM fact_v2_0183 -----
+task: factuality
+A: T3
+B: T4
+
+----- ITEM fact_v2_0184 -----
+task: factuality
+A: T3
+B: T4
+
+----- ITEM fact_v2_0185 -----
+task: factuality
+A: T1
+B: T3
+
+----- ITEM fact_v2_0186 -----
+task: factuality
+A: T3
+B: T5
+
+----- ITEM fact_v2_0187 -----
+task: factuality
+A: T1
+B: T2
+
+----- ITEM fact_v2_0188 -----
+task: factuality
+A: T3
+B: T4
+
+----- ITEM fact_v2_0189 -----
+task: factuality
+A: T1
+B: T4
+
+----- ITEM fact_v2_0190 -----
+task: factuality
+A: T1
+B: T3
+
+----- ITEM fact_v2_0191 -----
+task: factuality
+A: T1
+B: T5
+
+----- ITEM fact_v2_0192 -----
+task: factuality
+A: T4
+B: T5
+
+----- ITEM fact_v2_0193 -----
+task: factuality
+A: T2
+B: T5
+
+----- ITEM fact_v2_0194 -----
+task: factuality
+A: T3
+B: T4
+
+----- ITEM fact_v2_0195 -----
+task: factuality
+A: T2
+B: T3
+
+----- ITEM fact_v2_0196 -----
+task: factuality
+A: T1
+B: T5
+
+----- ITEM fact_v2_0197 -----
+task: factuality
+A: T2
+B: T5
+
+----- ITEM fact_v2_0198 -----
+task: factuality
+A: T1
+B: T4
+
+----- ITEM fact_v2_0199 -----
+task: factuality
+A: T1
+B: T5
+
+----- ITEM fact_v2_0200 -----
+task: factuality
+A: T2
+B: T3

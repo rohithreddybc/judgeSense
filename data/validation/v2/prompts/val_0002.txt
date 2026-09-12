@@ -1,0 +1,266 @@
+You are checking whether pairs of evaluation INSTRUCTIONS ask for the
+same judgement.
+
+Each item below shows two instructions, A and B. They are meant to differ only
+in surface wording: the same decision, on the same content, in different words.
+
+For each item answer YES or NO:
+  YES  the two instructions ask for the same judgement, and a judge answering
+       both correctly would give the same answer
+  NO   the two instructions ask for materially different judgements, or one
+       inverts the meaning of the answer, or one asks for something the other
+       does not
+
+Judge each item entirely on its own. Ignore the content being evaluated; you
+are comparing the instructions only.
+
+
+----- ITEM cohe_v2_0101 -----
+task: coherence
+A: T4
+B: T5
+
+----- ITEM cohe_v2_0102 -----
+task: coherence
+A: T4
+B: T5
+
+----- ITEM cohe_v2_0103 -----
+task: coherence
+A: T1
+B: T2
+
+----- ITEM cohe_v2_0104 -----
+task: coherence
+A: T1
+B: T3
+
+----- ITEM cohe_v2_0105 -----
+task: coherence
+A: T3
+B: T4
+
+----- ITEM cohe_v2_0106 -----
+task: coherence
+A: T3
+B: T4
+
+----- ITEM cohe_v2_0107 -----
+task: coherence
+A: T1
+B: T5
+
+----- ITEM cohe_v2_0108 -----
+task: coherence
+A: T2
+B: T3
+
+----- ITEM cohe_v2_0109 -----
+task: coherence
+A: T2
+B: T5
+
+----- ITEM cohe_v2_0110 -----
+task: coherence
+A: T2
+B: T5
+
+----- ITEM cohe_v2_0111 -----
+task: coherence
+A: T2
+B: T3
+
+----- ITEM cohe_v2_0112 -----
+task: coherence
+A: T1
+B: T2
+
+----- ITEM cohe_v2_0113 -----
+task: coherence
+A: T1
+B: T4
+
+----- ITEM cohe_v2_0114 -----
+task: coherence
+A: T1
+B: T4
+
+----- ITEM cohe_v2_0115 -----
+task: coherence
+A: T1
+B: T2
+
+----- ITEM cohe_v2_0116 -----
+task: coherence
+A: T3
+B: T4
+
+----- ITEM cohe_v2_0117 -----
+task: coherence
+A: T1
+B: T4
+
+----- ITEM cohe_v2_0118 -----
+task: coherence
+A: T1
+B: T2
+
+----- ITEM cohe_v2_0119 -----
+task: coherence
+A: T2
+B: T4
+
+----- ITEM cohe_v2_0120 -----
+task: coherence
+A: T2
+B: T4
+
+----- ITEM cohe_v2_0121 -----
+task: coherence
+A: T2
+B: T5
+
+----- ITEM cohe_v2_0122 -----
+task: coherence
+A: T4
+B: T5
+
+----- ITEM cohe_v2_0123 -----
+task: coherence
+A: T3
+B: T5
+
+----- ITEM cohe_v2_0124 -----
+task: coherence
+A: T4
+B: T5
+
+----- ITEM cohe_v2_0125 -----
+task: coherence
+A: T1
+B: T4
+
+----- ITEM cohe_v2_0126 -----
+task: coherence
+A: T3
+B: T4
+
+----- ITEM cohe_v2_0127 -----
+task: coherence
+A: T1
+B: T3
+
+----- ITEM cohe_v2_0128 -----
+task: coherence
+A: T2
+B: T3
+
+----- ITEM cohe_v2_0129 -----
+task: coherence
+A: T1
+B: T5
+
+----- ITEM cohe_v2_0130 -----
+task: coherence
+A: T2
+B: T5
+
+----- ITEM cohe_v2_0131 -----
+task: coherence
+A: T4
+B: T5
+
+----- ITEM cohe_v2_0132 -----
+task: coherence
+A: T2
+B: T4
+
+----- ITEM cohe_v2_0133 -----
+task: coherence
+A: T1
+B: T2
+
+----- ITEM cohe_v2_0134 -----
+task: coherence
+A: T3
+B: T4
+
+----- ITEM cohe_v2_0135 -----
+task: coherence
+A: T1
+B: T2
+
+----- ITEM cohe_v2_0136 -----
+task: coherence
+A: T2
+B: T3
+
+----- ITEM cohe_v2_0137 -----
+task: coherence
+A: T2
+B: T5
+
+----- ITEM cohe_v2_0138 -----
+task: coherence
+A: T1
+B: T4
+
+----- ITEM cohe_v2_0139 -----
+task: coherence
+A: T1
+B: T4
+
+----- ITEM cohe_v2_0140 -----
+task: coherence
+A: T4
+B: T5
+
+----- ITEM cohe_v2_0141 -----
+task: coherence
+A: T3
+B: T5
+
+----- ITEM cohe_v2_0142 -----
+task: coherence
+A: T1
+B: T4
+
+----- ITEM cohe_v2_0143 -----
+task: coherence
+A: T1
+B: T5
+
+----- ITEM cohe_v2_0144 -----
+task: coherence
+A: T1
+B: T2
+
+----- ITEM cohe_v2_0145 -----
+task: coherence
+A: T1
+B: T3
+
+----- ITEM cohe_v2_0146 -----
+task: coherence
+A: T1
+B: T4
+
+----- ITEM cohe_v2_0147 -----
+task: coherence
+A: T1
+B: T5
+
+----- ITEM cohe_v2_0148 -----
+task: coherence
+A: T1
+B: T5
+
+----- ITEM cohe_v2_0149 -----
+task: coherence
+A: T2
+B: T5
+
+----- ITEM cohe_v2_0150 -----
+task: coherence
+A: T1
+B: T2
