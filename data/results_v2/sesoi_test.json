@@ -1,0 +1,59 @@
+{
+ "sesoi": 0.02,
+ "null": "mean dJSS >= -SESOI",
+ "alternative": "mean dJSS < -SESOI",
+ "by_task": {
+  "coherence": {
+   "n_judges": 19,
+   "mean_delta": -0.1809,
+   "se": 0.019,
+   "margin_beyond_sesoi": -0.1609,
+   "z": -8.468,
+   "p_one_sided": 1.2437086848766382e-17,
+   "p_raw": 1.2437086848766382e-17,
+   "p_adj": 4.974834739506553e-17,
+   "reject": true,
+   "rank": 1,
+   "n_tests": 4
+  },
+  "factuality": {
+   "n_judges": 24,
+   "mean_delta": -0.0567,
+   "se": 0.0077,
+   "margin_beyond_sesoi": -0.0367,
+   "z": -4.766,
+   "p_one_sided": 9.38507353358415e-07,
+   "p_raw": 9.38507353358415e-07,
+   "p_adj": 2.815522060075245e-06,
+   "reject": true,
+   "rank": 2,
+   "n_tests": 4
+  },
+  "preference": {
+   "n_judges": 20,
+   "mean_delta": -0.0448,
+   "se": 0.0082,
+   "margin_beyond_sesoi": -0.0248,
+   "z": -3.024,
+   "p_one_sided": 0.0012456742504687148,
+   "p_raw": 0.0012456742504687148,
+   "p_adj": 0.0024913485009374296,
+   "reject": true,
+   "rank": 3,
+   "n_tests": 4
+  },
+  "relevance": {
+   "n_judges": 24,
+   "mean_delta": -0.0343,
+   "se": 0.0064,
+   "margin_beyond_sesoi": -0.0143,
+   "z": -2.234,
+   "p_one_sided": 0.01272920461540577,
+   "p_raw": 0.01272920461540577,
+   "p_adj": 0.01272920461540577,
+   "reject": true,
+   "rank": 4,
+   "n_tests": 4
+  }
+ }
+}

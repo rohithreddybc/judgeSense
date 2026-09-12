@@ -1,0 +1,54 @@
+{
+ "coherence": {
+  "n_judges": 19,
+  "n_sources": 92,
+  "mean_delta": -0.1792,
+  "source_ci95": [
+   -0.1912,
+   -0.1673
+  ],
+  "item_clustered_se": 0.019,
+  "item_clustered_mean": -0.1809,
+  "excludes_zero": true,
+  "excludes_sesoi": true
+ },
+ "factuality": {
+  "n_judges": 24,
+  "n_sources": 250,
+  "mean_delta": -0.0579,
+  "source_ci95": [
+   -0.0677,
+   -0.049
+  ],
+  "item_clustered_se": 0.0077,
+  "item_clustered_mean": -0.0567,
+  "excludes_zero": true,
+  "excludes_sesoi": true
+ },
+ "preference": {
+  "n_judges": 20,
+  "n_sources": 130,
+  "mean_delta": -0.0525,
+  "source_ci95": [
+   -0.065,
+   -0.0404
+  ],
+  "item_clustered_se": 0.0082,
+  "item_clustered_mean": -0.0448,
+  "excludes_zero": true,
+  "excludes_sesoi": true
+ },
+ "relevance": {
+  "n_judges": 24,
+  "n_sources": 50,
+  "mean_delta": -0.0384,
+  "source_ci95": [
+   -0.0466,
+   -0.0312
+  ],
+  "item_clustered_se": 0.0064,
+  "item_clustered_mean": -0.0343,
+  "excludes_zero": true,
+  "excludes_sesoi": true
+ }
+}

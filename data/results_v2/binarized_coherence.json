@@ -1,0 +1,123 @@
+{
+ "n_judges": 19,
+ "split": "high = {4,5}, low = {1,2,3}",
+ "mean_five_point": -0.1792,
+ "mean_binarised": -0.0741,
+ "mean_shrinkage": 0.586,
+ "per_judge": [
+  {
+   "judge": "claude-haiku",
+   "five_point": -0.208,
+   "binarised": -0.068,
+   "shrinkage": 0.673
+  },
+  {
+   "judge": "claude-opus-4-7",
+   "five_point": -0.188,
+   "binarised": -0.02,
+   "shrinkage": 0.894
+  },
+  {
+   "judge": "claude-sonnet",
+   "five_point": -0.16,
+   "binarised": -0.088,
+   "shrinkage": 0.45
+  },
+  {
+   "judge": "gemini-3.7-flash",
+   "five_point": -0.048,
+   "binarised": -0.02,
+   "shrinkage": 0.583
+  },
+  {
+   "judge": "gemini-flash",
+   "five_point": -0.292,
+   "binarised": -0.148,
+   "shrinkage": 0.493
+  },
+  {
+   "judge": "gemma-4-31b",
+   "five_point": -0.108,
+   "binarised": -0.036,
+   "shrinkage": 0.667
+  },
+  {
+   "judge": "kimi-k3",
+   "five_point": -0.084,
+   "binarised": -0.036,
+   "shrinkage": 0.571
+  },
+  {
+   "judge": "llama-3.3-70b",
+   "five_point": -0.22,
+   "binarised": -0.036,
+   "shrinkage": 0.836
+  },
+  {
+   "judge": "llama-4-maverick",
+   "five_point": -0.22,
+   "binarised": -0.036,
+   "shrinkage": 0.836
+  },
+  {
+   "judge": "llama-4-scout",
+   "five_point": -0.324,
+   "binarised": -0.076,
+   "shrinkage": 0.765
+  },
+  {
+   "judge": "llama3-8b",
+   "five_point": -0.332,
+   "binarised": -0.1,
+   "shrinkage": 0.699
+  },
+  {
+   "judge": "magistral-small",
+   "five_point": -0.14,
+   "binarised": -0.12,
+   "shrinkage": 0.143
+  },
+  {
+   "judge": "mistral-medium",
+   "five_point": -0.076,
+   "binarised": -0.052,
+   "shrinkage": 0.316
+  },
+  {
+   "judge": "mistral-small",
+   "five_point": -0.096,
+   "binarised": -0.096,
+   "shrinkage": -0.0
+  },
+  {
+   "judge": "qwen-3.6-flash",
+   "five_point": -0.152,
+   "binarised": -0.06,
+   "shrinkage": 0.605
+  },
+  {
+   "judge": "qwen3-32b",
+   "five_point": -0.264,
+   "binarised": -0.152,
+   "shrinkage": 0.424
+  },
+  {
+   "judge": "qwen3.7-flash",
+   "five_point": -0.148,
+   "binarised": -0.064,
+   "shrinkage": 0.568
+  },
+  {
+   "judge": "qwen3.8-27b-hf",
+   "five_point": -0.216,
+   "binarised": -0.104,
+   "shrinkage": 0.519
+  },
+  {
+   "judge": "qwen",
+   "five_point": -0.128,
+   "binarised": -0.096,
+   "shrinkage": 0.25
+  }
+ ]
+}
