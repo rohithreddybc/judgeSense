@@ -1,0 +1,99 @@
+{
+ "coherence": {
+  "n_judges": 19,
+  "n_vendors": 6,
+  "mean": -0.1809,
+  "se_cluster": 0.02608,
+  "se_naive": 0.01897,
+  "inflation": 1.37,
+  "t": -6.94,
+  "df": 5,
+  "p_null": 0.0009542808706511038,
+  "t_sesoi": -6.17,
+  "p_sesoi": 0.0008129805832544975,
+  "vendors": [
+   "alibaba",
+   "anthropic",
+   "google",
+   "meta",
+   "mistral",
+   "moonshot"
+  ],
+  "holm_null": true,
+  "holm_sesoi": true
+ },
+ "factuality": {
+  "n_judges": 24,
+  "n_vendors": 8,
+  "mean": -0.0567,
+  "se_cluster": 0.01147,
+  "se_naive": 0.00768,
+  "inflation": 1.49,
+  "t": -4.94,
+  "df": 7,
+  "p_null": 0.0016737661303421064,
+  "t_sesoi": -3.2,
+  "p_sesoi": 0.0075650123543942955,
+  "vendors": [
+   "alibaba",
+   "anthropic",
+   "deepseek",
+   "google",
+   "meta",
+   "mistral",
+   "moonshot",
+   "zhipu"
+  ],
+  "holm_null": true,
+  "holm_sesoi": true
+ },
+ "preference": {
+  "n_judges": 20,
+  "n_vendors": 7,
+  "mean": -0.0448,
+  "se_cluster": 0.01195,
+  "se_naive": 0.00824,
+  "inflation": 1.45,
+  "t": -3.75,
+  "df": 6,
+  "p_null": 0.009531135862464856,
+  "t_sesoi": -2.08,
+  "p_sesoi": 0.0416473374304795,
+  "vendors": [
+   "alibaba",
+   "anthropic",
+   "deepseek",
+   "google",
+   "meta",
+   "mistral",
+   "moonshot"
+  ],
+  "holm_null": true,
+  "holm_sesoi": false
+ },
+ "relevance": {
+  "n_judges": 24,
+  "n_vendors": 8,
+  "mean": -0.0343,
+  "se_cluster": 0.0104,
+  "se_naive": 0.00639,
+  "inflation": 1.63,
+  "t": -3.3,
+  "df": 7,
+  "p_null": 0.013137088350282697,
+  "t_sesoi": -1.38,
+  "p_sesoi": 0.10552229744494329,
+  "vendors": [
+   "alibaba",
+   "anthropic",
+   "deepseek",
+   "google",
+   "meta",
+   "mistral",
+   "moonshot",
+   "zhipu"
+  ],
+  "holm_null": true,
+  "holm_sesoi": false
+ }
+}

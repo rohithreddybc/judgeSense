@@ -1,0 +1,75 @@
+% <<< GENERATED: scripts/make_setup_appendix.py -- do not edit by hand
+\section{Experimental setup}
+\label{app:setup}
+
+Every judge below was reached through the provider named, at
+\texttt{temperature}~$=0$ where the provider accepts it, with an identical
+output budget of $1{,}024$ tokens and explicit suppression of reasoning traces
+where the provider exposes that control. Whether suppression was requested and
+whether it was honoured are recorded per call in the released logs, never
+inferred. One judge rejects an explicit temperature parameter and therefore ran
+at its provider default; its cells are marked in Table~\ref{tab:main}.
+
+\begin{longtable}{llll}
+\caption{\textbf{The twenty-five reported judges.} Alias as used throughout the
+paper, the vendor that trained the checkpoint, the checkpoint identifier sent
+to the provider, and the provider that served it. Vendor and provider differ
+wherever a model is served by a host that did not train it. Takeaway: every
+alias in Table~\ref{tab:main} resolves to a pinned checkpoint string.}
+\label{tab:setup}\\
+\toprule
+Alias & Vendor & Checkpoint & Provider \\
+\midrule
+\endfirsthead
+\multicolumn{4}{l}{\footnotesize\itshape Table~\ref{tab:setup}, continued.}\\
+\toprule
+Alias & Vendor & Checkpoint & Provider \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+\texttt{claude-haiku} & Anthropic & \texttt{\scriptsize claude-haiku-4-5-20251001} & anthropic \\
+\texttt{claude-opus-4-7} & Anthropic & \texttt{\scriptsize claude-opus-4-7} & anthropic \\
+\texttt{claude-sonnet} & Anthropic & \texttt{\scriptsize claude-sonnet-4-5} & anthropic \\
+\texttt{deepseek-v4-flash} & DeepSeek & \texttt{\scriptsize deepseek/deepseek-v4-flash} & novita \\
+\texttt{deepseek-v4-flash-ds} & DeepSeek & \texttt{\scriptsize deepseek-v4-flash-0731} & dashscope \\
+\texttt{deepseek-v4-pro} & DeepSeek & \texttt{\scriptsize deepseek-v4-pro-0813} & dashscope \\
+\texttt{gemini-3.7-flash} & Google & \texttt{\scriptsize gemini-3.7-flash} & google \\
+\texttt{gemini-flash} & Google & \texttt{\scriptsize gemini-2.5-flash} & google \\
+\texttt{gemma-4-31b} & Google & \texttt{\scriptsize google/gemma-4-31B-it} & huggingface \\
+\texttt{glm-5.2} & Zhipu & \texttt{\scriptsize glm-5.2} & dashscope \\
+\texttt{kimi-k3} & Moonshot & \texttt{\scriptsize kimi-k3} & dashscope \\
+\texttt{llama-3.3-70b} & Meta & \texttt{\scriptsize meta-llama/Llama-3.3-70B-Instruct} & huggingface \\
+\texttt{llama-4-maverick} & Meta & \texttt{\scriptsize meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8} & huggingface \\
+\texttt{llama-4-scout} & Meta & \texttt{\scriptsize meta-llama/Llama-4-Scout-17B-16E-Instruct} & huggingface \\
+\texttt{llama3-8b} & Meta & \texttt{\scriptsize meta-llama/Llama-3.1-8B-Instruct} & huggingface \\
+\texttt{magistral-small} & Mistral & \texttt{\scriptsize magistral-small-latest} & mistral \\
+\texttt{mistral-medium} & Mistral & \texttt{\scriptsize mistral-medium-2604} & mistral \\
+\texttt{mistral-small} & Mistral & \texttt{\scriptsize mistral-small-latest} & mistral \\
+\texttt{qwen} & Alibaba & \texttt{\scriptsize qwen/qwen-2.5-72b-instruct} & novita \\
+\texttt{qwen-3.6-flash} & Alibaba & \texttt{\scriptsize qwen3.6-35b-a3b} & dashscope \\
+\texttt{qwen3-14b} & Alibaba & \texttt{\scriptsize Qwen/Qwen3-14B} & huggingface \\
+\texttt{qwen3-32b} & Alibaba & \texttt{\scriptsize Qwen/Qwen3-32B} & huggingface \\
+\texttt{qwen3-8b} & Alibaba & \texttt{\scriptsize Qwen/Qwen3-8B} & huggingface \\
+\texttt{qwen3.7-flash} & Alibaba & \texttt{\scriptsize qwen3.7-flash-2026-07-15} & dashscope \\
+\texttt{qwen3.8-27b-hf} & Alibaba & \texttt{\scriptsize Qwen/Qwen3.8-27B} & huggingface \\
+\end{longtable}
+
+\paragraph{Judges registered but not reported.}
+4 checkpoints are in the registry and carry no cell in
+Table~\ref{tab:main}. None was dropped for its answers; each was withdrawn on
+throughput, because the provider's free tier could not finish a cell in a
+usable time. They are listed so the roster is auditable rather than curated.
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Alias & Vendor & Why it was withdrawn \\
+\midrule
+\texttt{gemini-3.1-pro} & Google & 250 requests/day, 16.3 days to finish \\
+\texttt{gpt-oss-120b} & OpenAI & 200k tokens/day/model, 7.0 days to finish \\
+\texttt{gpt-oss-20b} & OpenAI & 200k tokens/day/model, 5.3 days to finish \\
+\texttt{qwen3.8-27b} & Alibaba & 200k tokens/day/model, 1.5 days to finish \\
+\bottomrule
+\end{tabular}
+\end{center}

@@ -793,29 +793,55 @@ def main(argv=None) -> int:
     def _fmt(value, places=3):
         return "---" if value is None else f"{value:.{places}f}"
 
+    # The paper prints this as a longtable: a hundred rows cross a page break,
+    # and a plain tabular silently overfull. The chip column draws the estimate
+    # beside it (\dvis, defined in the preamble) and the bands group the four
+    # tasks of one judge so the grouping survives a break.
+    HEAD = (r"Judge & Task & $n$ & JSS & $\mathrm{JSS}_{\text{rep}}$ & "
+            r"\multicolumn{1}{c}{\footnotesize\itshape effect} & "
+            r"$\Delta\mathrm{JSS}$ [95\% CI] & $r$ & $m$ \\")
     lines = [
-        r"\begin{table}[t]",
-        r"\centering",
-        r"\caption{Paraphrase sensitivity per judge and task. "
+        r"{\footnotesize",
+        r"\begin{longtable}{llrrrclrr}",
+        r"\caption{\textbf{Paraphrase sensitivity per judge and task.} "
         r"$\Delta\mathrm{JSS} = \mathrm{JSS}_{\text{para}} - "
         r"\mathrm{JSS}_{\text{rep}}$ is the pre-registered endpoint; a negative "
         r"value means rewording costs more agreement than re-issuing the "
-        r"identical prompt. Intervals are 95\% item-clustered bootstrap over "
-        r"2{,}000 resamples. Cells below the declared support floor of 100 "
+        r"identical prompt does. Intervals are 95\% item-clustered bootstrap "
+        r"over 2{,}000 resamples. Cells below the declared support floor of 100 "
         r"clusters report no endpoint rather than one computed from too few. "
-        r"$r$ is the provider-reported refusal rate and $m$ the malformed-output "
-        r"rate over the arms the judge attempted, so the two do not overlap. The JSS column is computed over "
-        r"all rows of the cell; $\mathrm{JSS}_{\text{rep}}$ and "
-        r"$\Delta\mathrm{JSS}$ are computed over the canonical ordering only, "
-        r"so the two columns do not subtract to the printed delta where a cell "
-        r"carries refusals or a swapped-ordering imbalance.}",
-        r"\label{tab:main}",
-        r"\begin{tabular}{llrrrlrr}",
+        r"$r$ is the provider-reported refusal rate and $m$ the "
+        r"malformed-output rate over the arms the judge attempted, so the two "
+        r"do not overlap. JSS is computed over all rows of a cell while "
+        r"$\mathrm{JSS}_{\text{rep}}$ and $\Delta\mathrm{JSS}$ use the canonical "
+        r"ordering only, so the two columns do not subtract to the printed "
+        r"delta wherever a cell carries refusals or a swapped-ordering "
+        r"imbalance. The bar beside each estimate draws it from a zero line, "
+        r"leftward for a cost and rightward for a gain, with the hairline "
+        r"marking the declared $0.02$ threshold; bands group the four tasks of "
+        r"one judge. Takeaway: rewording costs agreement almost everywhere, the "
+        r"coherence column is the largest loss for nearly every judge, and the "
+        r"judges disagree with each other most on that same column.}"
+        r"\label{tab:main}\\",
         r"\toprule",
-        r"Judge & Task & $n$ & JSS & $\mathrm{JSS}_{\text{rep}}$ & "
-        r"$\Delta\mathrm{JSS}$ [95\% CI] & $r$ & $m$ \\",
+        r"\rowcolor{headBand}",
+        HEAD,
         r"\midrule",
+        r"\endfirsthead",
+        r"\multicolumn{9}{l}{\footnotesize\itshape Table~\ref{tab:main}, "
+        r"continued from the previous page.}\\",
+        r"\toprule",
+        r"\rowcolor{headBand}",
+        HEAD,
+        r"\midrule",
+        r"\endhead",
+        r"\midrule",
+        r"\multicolumn{9}{r}{\footnotesize\itshape continued overleaf}\\",
+        r"\endfoot",
+        r"\bottomrule",
+        r"\endlastfoot",
     ]
+    band = False
     for judge in sorted(summary):
         first = True
         for task in ("factuality", "coherence", "relevance", "preference"):
@@ -826,22 +852,26 @@ def main(argv=None) -> int:
             if delta.get("delta") is None:
                 # State WHY the endpoint is absent; a blank cell reads as an
                 # oversight, and the reason is itself a reportable result.
-                d_txt = r"\emph{support below floor}"
+                chip, d_txt = "", r"\emph{support below floor}"
             else:
+                chip = f"\\dvis{{{delta['delta']:.3f}}}"
                 d_txt = (f"${delta['delta']:+.3f}$ "
-                         f"[{delta['ci_lower']:.3f}, {delta['ci_upper']:.3f}]")
-            lines.append(
+                         f"{{\\scriptsize[{delta['ci_lower']:.3f}, "
+                         f"{delta['ci_upper']:.3f}]}}")
+            row = (
                 f"{judge if first else ''} & {task} & {cell.get('n_rows', 0)} & "
                 f"{_fmt(cell.get('jss_strict'))} & {_fmt(delta.get('jss_rep'))} & "
-                f"{d_txt} & {_fmt(cell.get('refusal_rate'))} & "
+                f"{chip} & {d_txt} & {_fmt(cell.get('refusal_rate'))} & "
                 f"{_fmt(cell.get('malformed_rate'))} \\\\"
             )
+            lines.append((r"\rowcolor{judgeBand}" + row) if band else row)
             first = False
         if not first:
             lines.append(r"\addlinespace")
+            band = not band
     if lines[-1] == r"\addlinespace":
         lines.pop()
-    lines += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
+    lines += [r"\end{longtable}}"]
     OUT_TEX.parent.mkdir(parents=True, exist_ok=True)
     table_tex = "\n".join(lines) + "\n"
     OUT_TEX.write_text(table_tex, encoding="utf-8")
