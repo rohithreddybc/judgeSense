@@ -4,19 +4,44 @@ WHY
 
 Intervals in the paper cluster at the item, which is correct for the arms and
 repeats nested inside one item. But items are themselves nested in source
-records: the 500 relevance rows come from 250 TREC-COVID query/passage items
-drawn from 50 topics, and the coherence items come from 92 SummEval documents.
-Two items from one document are not independent draws, so item-clustered
-intervals are too narrow wherever that nesting is strong.
-
-Reviewer p5cJ raised the unit-of-analysis question and the paper answers it at
-the item level. This answers the harder version. It needs no API calls: every
-row is already committed.
+records, and two items from one record are not independent draws, so
+item-clustered intervals are too narrow wherever that nesting is strong.
 
 Resamples source records with replacement, recomputes the per-task pooled mean
 over the judges, and reports the interval beside the item-clustered one.
 
     python scripts/source_clustered_bootstrap.py
+
+CORRECTION, and how the old version was wrong
+
+The first version of this script derived the cluster from the shape of
+`item_id`: strip a trailing index when the field before it is also numeric.
+That rule reads `cohe_summeval_77_5` and `relv_treccovid_32_0` correctly, and
+it silently mis-reads the other two tasks:
+
+    fact_tqa_0001                  -> no numeric field before the index,
+                                      so the item was treated as its own record
+    pref_mtbench_141_ee4474fa1d9f  -> trailing field is a hash,
+                                      so the item was treated as its own record
+
+Both are nested, and the dataset says so in a field the script never read. Every
+row carries `source.source_record_id`, and counting distinct values of it gives
+125 TruthfulQA records behind 250 factuality items (each question supplies one
+accurate and one inaccurate statement) and 68 MT-Bench questions behind 130
+preference items. The old rule reported 250 and 130 clusters for those tasks,
+which is the item count: for half the study the "source-clustered" interval was
+the item-clustered interval under another name.
+
+This version reads `source.source_record_id` and reduces it to the unit the
+nesting actually occurs at:
+
+    factuality   validation[548]                         the TruthfulQA record
+    coherence    test[77].machine_summaries[5]           the SummEval document
+    relevance    query[32]#pair0                         the TREC-COVID topic
+    preference   question_id=141;model_a=...;turn=1      the MT-Bench question
+
+Deriving the key from provenance rather than from a naming convention also means
+a future rebuild that renames items cannot silently change the clustering.
 """
 from __future__ import annotations
 
@@ -24,6 +49,7 @@ import collections
 import io
 import json
 import random
+import re
 import sys
 from pathlib import Path
 
@@ -37,41 +63,37 @@ TASKS = ("coherence", "factuality", "preference", "relevance")
 N_BOOT = 2000
 SEED = 42
 
+# source_record_id -> the record the nesting happens at. Anchored, so a string
+# that does not match the expected shape raises instead of silently falling
+# through to the item, which is the failure this replaces.
+RECORD_RE = {
+    "coherence": re.compile(r"^(test\[\d+\])\."),
+    "relevance": re.compile(r"^(query\[\d+\])#"),
+    "preference": re.compile(r"^(question_id=\d+);"),
+    "factuality": re.compile(r"^(validation\[\d+\])$"),
+}
+
 
 def source_of() -> dict:
-    """pair_id -> the source RECORD it came from, not the item.
-
-    The record is encoded in item_id, whose last underscore-separated field is
-    the index of the item within it:
-
-        cohe_summeval_77_5   -> SummEval document 77, summary 5
-        relv_treccovid_32_0  -> TREC-COVID topic 32, passage 0
-
-    but only two of the four tasks are nested that way. TruthfulQA items are
-    standalone questions (`fact_tqa_0001`) and MT-Bench items carry a hash
-    (`pref_mtbench_141_ee4474fa1d9f`), so for those the item IS the record.
-
-    The rule that separates the two cases: strip the trailing index only when
-    the field before it is also numeric, which is what a record-plus-index
-    scheme looks like. Stripping unconditionally collapsed all 250 factuality
-    items onto the single cluster `fact_tqa` and produced a zero-width
-    interval, which is how the bug announced itself.
-
-    `source` holds a provenance dict and `source_benchmark` its dataset name,
-    so neither identifies the record.
-    """
+    """pair_id -> the source RECORD it came from, read from its provenance."""
     m = {}
     for p in sorted(V2.glob("*.jsonl")):
+        task = p.stem
+        pat = RECORD_RE[task]
         for line in io.open(p, encoding="utf-8"):
             line = line.strip()
             if not line:
                 continue
             r = json.loads(line)
-            item = str(r["item_id"])
-            parts = item.split("_")
-            nested = (len(parts) >= 3 and parts[-1].isdigit()
-                      and parts[-2].isdigit())
-            m[r["pair_id"]] = "_".join(parts[:-1]) if nested else item
+            rid = r["source"]["source_record_id"]
+            hit = pat.match(rid)
+            if not hit:
+                raise SystemExit(
+                    f"{task}: source_record_id {rid!r} does not match the "
+                    f"expected record shape. Clustering would silently fall "
+                    f"back to the item, which is the bug this guard replaces."
+                )
+            m[r["pair_id"]] = f"{task}:{hit.group(1)}"
     return m
 
 
@@ -79,7 +101,7 @@ def agreement(row, arm_a, arm_b):
     a, b = row.get(arm_a), row.get(arm_b)
     if a is None or b is None:
         return None
-    return 1.0 if a == b else 0.0
+    return int(a == b)
 
 
 def load_cells(src_map):
@@ -162,4 +184,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())

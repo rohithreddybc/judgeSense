@@ -2,9 +2,9 @@
  "coherence": {
   "n_judges": 19,
   "n_sources": 92,
-  "mean_delta": -0.1792,
+  "mean_delta": -0.179,
   "source_ci95": [
-   -0.1912,
+   -0.1908,
    -0.1673
   ],
   "item_clustered_se": 0.019,
@@ -14,10 +14,10 @@
  },
  "factuality": {
   "n_judges": 24,
-  "n_sources": 250,
-  "mean_delta": -0.0579,
+  "n_sources": 125,
+  "mean_delta": -0.058,
   "source_ci95": [
-   -0.0677,
+   -0.0667,
    -0.049
   ],
   "item_clustered_se": 0.0077,
@@ -27,11 +27,11 @@
  },
  "preference": {
   "n_judges": 20,
-  "n_sources": 130,
-  "mean_delta": -0.0525,
+  "n_sources": 68,
+  "mean_delta": -0.0524,
   "source_ci95": [
-   -0.065,
-   -0.0404
+   -0.0659,
+   -0.0403
   ],
   "item_clustered_se": 0.0082,
   "item_clustered_mean": -0.0448,
@@ -41,10 +41,10 @@
  "relevance": {
   "n_judges": 24,
   "n_sources": 50,
-  "mean_delta": -0.0384,
+  "mean_delta": -0.0385,
   "source_ci95": [
-   -0.0466,
-   -0.0312
+   -0.0465,
+   -0.0305
   ],
   "item_clustered_se": 0.0064,
   "item_clustered_mean": -0.0343,
