@@ -2,7 +2,6 @@
   "builder_version": "2.0.0",
   "built_at": "2026-08-22T04:50:17.258715+00:00",
   "seed": 42,
-  "items_per_task": 250,
   "tasks": {
     "factuality": {
       "file": "factuality.jsonl",
@@ -10,7 +9,9 @@
       "unique_items": 250,
       "unique_prompt_pairs": 250,
       "distinct_source_records": 125,
-      "source_dataset": "truthful_qa"
+      "source_dataset": "truthful_qa",
+      "source_record_unit": "TruthfulQA record; each supplies one accurate and one inaccurate statement",
+      "distinct_record_ids": 125
     },
     "coherence": {
       "file": "coherence.jsonl",
@@ -18,7 +19,9 @@
       "unique_items": 250,
       "unique_prompt_pairs": 250,
       "distinct_source_records": 92,
-      "source_dataset": "mteb/summeval"
+      "source_dataset": "mteb/summeval",
+      "source_record_unit": "SummEval source document",
+      "distinct_record_ids": 250
     },
     "relevance": {
       "file": "relevance.jsonl",
@@ -26,15 +29,21 @@
       "unique_items": 250,
       "unique_prompt_pairs": 250,
       "distinct_source_records": 50,
-      "source_dataset": "BeIR/trec-covid"
+      "source_dataset": "BeIR/trec-covid",
+      "source_record_unit": "TREC-COVID topic",
+      "distinct_record_ids": 250
     },
     "preference": {
       "file": "preference.jsonl",
       "rows": 260,
       "unique_items": 130,
       "unique_prompt_pairs": 130,
-      "distinct_source_records": 127,
-      "source_dataset": "lmsys/mt_bench_human_judgments"
+      "distinct_source_records": 68,
+      "source_dataset": "lmsys/mt_bench_human_judgments",
+      "source_record_unit": "MT-Bench question",
+      "distinct_record_ids": 130
     }
-  }
+  },
+  "items_per_task_requested": 250,
+  "note": "distinct_source_records is the upstream unit two items can share and is what intervals should cluster on; distinct_record_ids counts the full source.source_record_id, which is one per item on factuality and preference."
 }

@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import itertools
 import json
+import re
 import random
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -205,6 +206,24 @@ def build_task_records(task: str, items: List[SourceItem],
     return records
 
 
+# The upstream unit two items of a task can share. Intervals cluster on
+# this; the full source_record_id is one per item on factuality and
+# preference, so the two counts differ on exactly those tasks.
+SOURCE_NESTING = {
+    "factuality": re.compile(r"^(validation\[\d+\])$"),
+    "coherence": re.compile(r"^(test\[\d+\])\."),
+    "relevance": re.compile(r"^(query\[\d+\])#"),
+    "preference": re.compile(r"^(question_id=\d+);"),
+}
+SOURCE_NESTING_NAME = {
+    "factuality": "TruthfulQA record; each supplies one accurate and one "
+                  "inaccurate statement",
+    "coherence": "SummEval source document",
+    "relevance": "TREC-COVID topic",
+    "preference": "MT-Bench question",
+}
+
+
 def build_all(output_dir: Path, items_per_task: int = DEFAULT_ITEMS_PER_TASK,
               seed: int = 42, tasks: List[str] | None = None) -> dict:
     """
@@ -236,21 +255,45 @@ def build_all(output_dir: Path, items_per_task: int = DEFAULT_ITEMS_PER_TASK,
         with open(path, "w", encoding="utf-8") as fh:
             for rec in records:
                 fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
-        # Distinct UPSTREAM source records behind the items: an item_id is unique
-        # per (source record, answer field / doc pair), so several items can share
-        # one upstream question, article, or topic. Disclosing this makes the
-        # effective source diversity explicit rather than implying 250 independent
-        # sources per task (reviewer qkzU W3/Q2).
-        n_source = len({
-            r["source"]["source_record_id"].split("#")[0].split(".")[0]
-            for r in records
-        })
+        # Distinct UPSTREAM source records behind the items: an item_id is
+        # unique per (source record, answer field / doc pair), so several items
+        # can share one upstream question, article, or topic. Disclosing this
+        # makes the effective source diversity explicit rather than implying
+        # 250 independent sources per task (reviewer qkzU W3/Q2).
+        #
+        # This was `split("#")[0].split(".")[0]`, a guess about the shape of a
+        # string whose shape differs per task. It reads relevance
+        # (`query[32]#pair0`) and coherence (`test[77].machine_summaries[5]`)
+        # and mangles preference, whose identifier is
+        # `question_id=141;model_a=gpt-3.5-turbo;model_b=gpt-4;turn=1`: there is
+        # no "#", and the split on "." cuts inside the model name at the dot in
+        # "gpt-3.5-turbo". Three records collided on the truncated prefix, and
+        # the manifest reported 127 upstream records where there are 68
+        # MT-Bench questions behind 130 items.
+        #
+        # Anchored per task, so an identifier that does not parse raises here
+        # instead of silently truncating to something shorter.
+        nest = SOURCE_NESTING[task]
+        reduced = []
+        for r in records:
+            rid = r["source"]["source_record_id"]
+            hit = nest.match(rid)
+            if not hit:
+                raise ValueError(
+                    f"{task}: source_record_id {rid!r} does not match the "
+                    f"expected shape; refusing to guess its upstream record"
+                )
+            reduced.append(hit.group(1))
+        n_source = len(set(reduced))
+        n_record_ids = len({r["source"]["source_record_id"] for r in records})
         manifest["tasks"][task] = {
             "file": path.name,
             "rows": len(records),
             "unique_items": len({r["item_id"] for r in records}),
             "unique_prompt_pairs": len({r["prompt_pair_id"] for r in records}),
             "distinct_source_records": n_source,
+            "source_record_unit": SOURCE_NESTING_NAME[task],
+            "distinct_record_ids": n_record_ids,
             "source_dataset": loaded[task][0].source.source_dataset,
         }
         print(f"  wrote {len(records)} records -> {path}")
