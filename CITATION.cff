@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use JudgeSense, please cite the paper below."
+title: "JudgeSense: A Benchmark for Prompt Sensitivity in LLM-as-a-Judge Systems"
+authors:
+  - family-names: Bellibatlu
+    given-names: Rohith Reddy
+    orcid: "https://orcid.org/0009-0003-6083-0364"
+    affiliation: "Florida International University"
+  - family-names: Raff
+    given-names: Edward
+    affiliation: "CrowdStrike; University of Maryland Baltimore County"
+  - family-names: Zhang
+    given-names: Wenbin
+    affiliation: "Florida International University"
+preferred-citation:
+  type: article
+  title: "JudgeSense: A Benchmark for Prompt Sensitivity in LLM-as-a-Judge Systems"
+  authors:
+    - family-names: Bellibatlu
+      given-names: Rohith Reddy
+      orcid: "https://orcid.org/0009-0003-6083-0364"
+    - family-names: Raff
+      given-names: Edward
+    - family-names: Zhang
+      given-names: Wenbin
+  year: 2026
+  doi: "10.48550/arXiv.2604.23478"
+  url: "https://doi.org/10.48550/arXiv.2604.23478"
+  journal: "arXiv preprint arXiv:2604.23478"
+license: MIT
+repository-code: "https://github.com/rohithreddybc/judgeSense"

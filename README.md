@@ -13,7 +13,7 @@ A framework for quantifying prompt sensitivity in LLM-as-a-Judge evaluation syst
 
 Large language models are increasingly deployed as automated judges to evaluate the outputs of other models, yet the reliability of these systems remains poorly understood. **JudgeSense** quantifies prompt sensitivity in LLM-as-a-Judge systems via the **Judge Sensitivity Score (JSS)**: how often a judge's decision changes when prompt phrasing varies while evaluation intent stays constant.
 
-**Dataset**: [Rohithreddybc/judgesense-benchmark](https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark) — v2.0, 880 unique items across 4 tasks.
+**Dataset**: [Rohithreddybc/judgesense-benchmark](https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark) — v2.1, 880 unique items across 4 tasks.
 
 ## What the benchmark provides
 
@@ -142,14 +142,17 @@ mean); relevance and preference add `ab_order`, `candidate_map`, and
 
 ## Results
 
-A three-judge sweep against the v2 dataset is complete and committed:
-claude-haiku-4-5, claude-sonnet-4-5 and claude-opus-4-7 over all four
-tasks. Factuality, coherence and relevance are complete for all three; the
-preference split is complete for claude-haiku only, the other two having
-stopped mid-run when the API balance was exhausted. Raw outputs are in
-`data/results_v2/raw/`, and every reported figure is regenerated from them
-by `scripts/regenerate_results.py`. Eleven of the fourteen registered judges
-are unrun.
+The sweep against the v2 dataset is complete: twenty-five judges from six
+providers over all four tasks, giving ninety-eight judge--task cells that carry
+an endpoint. Two cells report none, the Sonnet and Opus preference splits having
+stopped below the declared support floor when the API balance was exhausted
+mid-run. Raw outputs are in `data/results_v2/raw/`, and every reported figure is
+regenerated from them by `scripts/regenerate_results.py`.
+
+Confirmatory contrasts cluster judges by the vendor that trained the checkpoint,
+since sibling checkpoints are not independent evidence; `scripts/cluster_by_vendor.py`
+computes them. Under that clustering, coherence and factuality clear the declared
+0.02 threshold and preference and relevance do not.
 confidence intervals at a declared unit of analysis, chance-corrected scores
 alongside raw JSS, and malformed-output rates reported rather than dropped.
 
@@ -214,15 +217,21 @@ If you use JudgeSense in your research, please cite:
 
 ```bibtex
 @misc{bellibatlu2026judgesense,
-      title={JudgeSense: A Benchmark for Prompt Sensitivity in LLM-as-a-Judge Systems}, 
-      author={Rohith Reddy Bellibatlu},
-      year={2026},
-      eprint={2604.23478},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL},
-      url={https://arxiv.org/abs/2604.23478}, 
+  title         = {JudgeSense: A Benchmark for Prompt Sensitivity in LLM-as-a-Judge Systems},
+  author        = {Bellibatlu, Rohith Reddy and Raff, Edward and Zhang, Wenbin},
+  year          = {2026},
+  eprint        = {2604.23478},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  doi           = {10.48550/arXiv.2604.23478},
+  url           = {https://doi.org/10.48550/arXiv.2604.23478}
 }
 ```
+
+The author list and year above match the arXiv record exactly. Google
+Scholar merges citations to one work by matching title, authors and
+year, so an entry that differs from the arXiv metadata is counted as a
+separate work.
 
 ## License
 
