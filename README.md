@@ -17,16 +17,16 @@ Large language models are increasingly deployed as automated judges to evaluate 
 (18 September 2026) is the current version and the one that describes this
 release: 25 judges across 6 providers, confirmatory contrasts clustered by
 vendor. It supersedes v1 and v2, whose reported numbers were computed on a
-dataset this release replaces — see [ERRATA.md](ERRATA.md).
+dataset this release replaces; see [ERRATA.md](ERRATA.md).
 
-**Dataset**: [Rohithreddybc/judgesense-benchmark](https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark) — v2.1, 880 unique items across 4 tasks.
+**Dataset**: [Rohithreddybc/judgesense-benchmark](https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark): v2.1, 880 unique items across 4 tasks.
 
 ## What the benchmark provides
 
 - **880 unique items** (250 factuality, 250 coherence, 250 relevance, 130 preference), loaded at build time from `truthful_qa`, `mteb/summeval`, `BeIR/trec-covid`, and `lmsys/mt_bench_human_judgments`. Every record carries a provenance chain resolving to a specific row in a specific split, with retrieval timestamp and loader version.
 - **Ground truth from the source**: TruthfulQA's accuracy labels, SummEval's expert coherence ratings, TREC-COVID graded relevance judgements (both candidates human-graded: the positive at grade 2, the distractor at grade 0), and real human preference votes from MT-Bench.
 - **Position-bias swap design**: pairwise tasks present candidates in both A/B and B/A orderings, so a judge answering by position alone scores ~50%, not 100%.
-- **One prompt pair per item** — rows are never duplicated to inflate the count.
+- **One prompt pair per item**: rows are never duplicated to inflate the count.
 - **Cluster-aware statistics**: confidence intervals require an explicitly declared unit of analysis (`row`, `structural_pair`, `prompt_pair`, `item`) and resample clusters, never rows.
 - **Chance-corrected and ordinal-aware metrics**: Cohen's kappa over the two arms, quadratic-weighted kappa for the Likert task, and a strict mode counting unparseable output as disagreement rather than dropping it.
 - **Polarity remapping** so polarity-inverted templates can be scored rather than excluded (`src/polarity.py`).
@@ -36,7 +36,7 @@ dataset this release replaces — see [ERRATA.md](ERRATA.md).
 
 JSS is the fraction of prompt pairs where both phrasings elicit the same decision. It measures agreement between two phrasings and never consults ground truth.
 
-Raw JSS partly rewards judges that compress their output distribution, so chance correction matters — see `src/metrics_v2.py` for the kappa, ordinal, and strict-mode variants alongside it.
+Raw JSS partly rewards judges that compress their output distribution, so chance correction matters; see `src/metrics_v2.py` for the kappa, ordinal, and strict-mode variants alongside it.
 
 ## Installation
 
@@ -89,7 +89,7 @@ python src/metrics.py --results data/results/raw_outputs/
 | Relevance | `BeIR/trec-covid` + qrels | 250 | 500 |
 | Preference | `lmsys/mt_bench_human_judgments` | 130 | 260 |
 
-Pairwise tasks contribute two rows per item — one per candidate ordering.
+Pairwise tasks contribute two rows per item, one per candidate ordering.
 
 ### Quick usage
 
@@ -111,7 +111,7 @@ python scripts/data_audit.py --config data/audit_config_v2.json   # must pass
 ```
 
 The loaders fetch from the upstream datasets and fail loudly if a source is
-unreachable — there is no fallback to cached or synthetic items.
+unreachable; there is no fallback to cached or synthetic items.
 
 ### Schema
 
@@ -141,7 +141,7 @@ unreachable — there is no fallback to cached or synthetic items.
 }
 ```
 
-`item_id` and `prompt_pair_id` are the clustering keys — use them when computing
+`item_id` and `prompt_pair_id` are the clustering keys; use them when computing
 confidence intervals. Coherence adds `ground_truth_raw` (the unrounded expert
 mean); relevance and preference add `ab_order`, `candidate_map`, and
 `ground_truth_position`.
@@ -172,7 +172,7 @@ be carried forward.
 # 1. Build the dataset from source (fails loudly if a source is unreachable)
 python src/dataset_builder_v2.py --output data/v2 --items-per-task 250
 
-# 2. Gate it — this must pass before any results are computed
+# 2. Gate it: this must pass before any results are computed
 python scripts/data_audit.py --config data/audit_config_v2.json
 
 # 3. Run judges (requires API keys; see .env.example)
@@ -182,8 +182,7 @@ python src/evaluate.py --model gpt-4o --task coherence
 python -c "from src.metrics_v2 import compute_all_metrics_v2"
 ```
 
-Judge configuration — families, parameter sizes, matched vs native token
-budgets, and which checkpoints are verified — lives in `src/judge_registry.py`.
+Judge configuration (families, parameter sizes, matched vs native token budgets, and which checkpoints are verified) lives in `src/judge_registry.py`.
 Use `run_plan()` to state a sweep's call count before spending it.
 
 ## Repository structure
@@ -246,7 +245,7 @@ separate work.
 
 ## Contact
 
-Rohith Reddy Bellibatlu — ORCID [0009-0003-6083-0364](https://orcid.org/0009-0003-6083-0364)
+Rohith Reddy Bellibatlu, ORCID [0009-0003-6083-0364](https://orcid.org/0009-0003-6083-0364)
 
 ---
 
