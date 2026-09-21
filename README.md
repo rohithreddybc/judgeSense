@@ -2,7 +2,7 @@
 
 A framework for quantifying prompt sensitivity in LLM-as-a-Judge evaluation systems.
 
-[![arXiv](https://img.shields.io/badge/arXiv-2604.23478-red.svg)](https://arxiv.org/abs/2604.23478)
+[![arXiv](https://img.shields.io/badge/arXiv-2604.23478v3-red.svg)](https://arxiv.org/abs/2604.23478)
 [![Dataset](https://img.shields.io/badge/dataset-HuggingFace-orange.svg)](https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -12,6 +12,12 @@ A framework for quantifying prompt sensitivity in LLM-as-a-Judge evaluation syst
 ## Overview
 
 Large language models are increasingly deployed as automated judges to evaluate the outputs of other models, yet the reliability of these systems remains poorly understood. **JudgeSense** quantifies prompt sensitivity in LLM-as-a-Judge systems via the **Judge Sensitivity Score (JSS)**: how often a judge's decision changes when prompt phrasing varies while evaluation intent stays constant.
+
+**Paper**: [arXiv:2604.23478v3](https://doi.org/10.48550/arXiv.2604.23478)
+(18 September 2026) is the current version and the one that describes this
+release: 25 judges across 6 providers, confirmatory contrasts clustered by
+vendor. It supersedes v1 and v2, whose reported numbers were computed on a
+dataset this release replaces — see [ERRATA.md](ERRATA.md).
 
 **Dataset**: [Rohithreddybc/judgesense-benchmark](https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark) — v2.1, 880 unique items across 4 tasks.
 
@@ -73,7 +79,7 @@ python src/metrics.py --results data/results/raw_outputs/
 
 ## Dataset
 
-- **HuggingFace**: [Rohithreddybc/judgesense-benchmark](https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark) (v2.0)
+- **HuggingFace**: [Rohithreddybc/judgesense-benchmark](https://huggingface.co/datasets/Rohithreddybc/judgesense-benchmark) (v2.1)
 - **License**: CC-BY-4.0 (upstream datasets retain their own terms)
 
 | Task | Source dataset | Unique items | Rows |
